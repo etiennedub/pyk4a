@@ -1,7 +1,9 @@
 from distutils.core import setup, Extension
+import numpy
 
 module = Extension('k4a_module',
                     sources=['pyk4a/pyk4a.cpp'],
+                    include_dirs=[numpy.get_include()],
                     library_dirs=['/usr/local/lib64/'],
                     libraries=['k4a'])
 
