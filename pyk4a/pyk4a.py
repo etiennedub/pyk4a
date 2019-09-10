@@ -1,7 +1,7 @@
 import k4a_module
 from enum import Enum
 
-from config import Config
+from pyk4a.config import Config
 
 # k4a_result_t
 class Result(Enum):

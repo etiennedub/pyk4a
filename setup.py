@@ -1,4 +1,5 @@
-from distutils.core import setup, Extension
+from distutils.core import Extension
+from setuptools import setup
 import numpy
 
 module = Extension('k4a_module',
@@ -14,4 +15,4 @@ setup(name='pyk4a',
       author='Etienne Dubeau',
       author_email='etienne.dubeau.1@ulaval.ca',
       packages=['pyk4a'],
-      ext_modules=[module])
+      module=[module])
