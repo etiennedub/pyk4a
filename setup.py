@@ -15,4 +15,4 @@ setup(name='pyk4a',
       author='Etienne Dubeau',
       author_email='etienne.dubeau.1@ulaval.ca',
       packages=['pyk4a'],
-      module=[module])
+      ext_modules=[module])
