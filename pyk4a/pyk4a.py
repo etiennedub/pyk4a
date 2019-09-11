@@ -13,14 +13,21 @@ class PyK4A:
     def __init__(self, config : Config, device_id=0):
         self._device_id = 0
         self._config = config
+        self.is_running = False
+
+    def __del__(self):
+        if self.is_running:
+            self.disconnect()
 
     def connect(self):
         self._device_open()
         self._device_start_cameras()
+        self.is_running = True
 
     def disconnect(self):
         self._device_stop_cameras()
         self._device_close()
+        self.is_running = False
 
     def _device_open(self):
         res = k4a_module.device_open(self._device_id)
