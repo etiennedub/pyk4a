@@ -9,7 +9,7 @@ To use the SDK, refer to the installation instructions [here](https://github.com
 ## Install
 To install using pip:
 ```
-pip install git+https://github.com/etiennedub/pyk4a.git
+pip install pyk4a
 ```
 
 ## Example
