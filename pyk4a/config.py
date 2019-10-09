@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum
 
 # k4a_fps_t
 class FPS(Enum):
@@ -30,6 +30,25 @@ class WiredSyncMode(Enum):
     K4A_WIRED_SYNC_MODE_STANDALONE = 0
     K4A_WIRED_SYNC_MODE_MASTER = 1
     K4A_WIRED_SYNC_MODE_SUBORDINATE = 2
+
+# k4a_color_control_command_t
+class ColorControlCommand(IntEnum):
+    EXPOSURE_TIME_ABSOLUTE = 0
+    AUTO_EXPOSURE_PRIORITY = 1  # deprecated
+    BRIGHTNESS = 2
+    CONTRAST = 3
+    SATURATION = 4
+    SHARPNESS = 5
+    WHITEBALANCE = 6
+    BACKLIGHT_COMPENSATION = 7
+    GAIN = 8
+    POWERLINE_FREQUENCY = 9
+
+# k4a_color_control_mode_t
+class ColorControlMode(IntEnum):
+    AUTO = 0
+    MANUAL = 1
+
 
 class Config:
     def __init__(self,

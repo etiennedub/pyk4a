@@ -35,6 +35,32 @@ extern "C" {
         return Py_BuildValue("III", result, in_jack, out_jack);
     }
 
+    static PyObject* device_get_color_control(PyObject* self, PyObject* args){
+        k4a_color_control_command_t command;
+        k4a_color_control_mode_t mode;
+        int32_t value = 0;
+        PyArg_ParseTuple(args, "I", &command);
+
+        k4a_result_t result = k4a_device_get_color_control(device, command, &mode, &value);
+        if (result == K4A_RESULT_FAILED) {
+            return Py_BuildValue("III", 0, 0, 0);
+        }
+        return Py_BuildValue("III", result, mode, value);
+    }
+
+    static PyObject* device_set_color_control(PyObject* self, PyObject* args){
+        k4a_color_control_command_t command = K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE;
+        k4a_color_control_mode_t mode = K4A_COLOR_CONTROL_MODE_MANUAL;
+        int32_t value = 0;
+        PyArg_ParseTuple(args, "III", &command, &mode, &value);
+
+        k4a_result_t result = k4a_device_set_color_control(device, command, mode, value);
+        if (result == K4A_RESULT_FAILED) {
+            return Py_BuildValue("I", K4A_RESULT_FAILED);
+        }
+        return Py_BuildValue("I", result);
+    }
+
     static PyObject* device_start_cameras(PyObject* self, PyObject* args){
         k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
         PyArg_ParseTuple(args, "IIIIIIIII", &config.color_format,
@@ -165,6 +191,8 @@ extern "C" {
         {"device_get_depth_image", device_get_depth_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
         {"device_close", device_close, METH_VARARGS, "Close an Azure Kinect device"},
         {"device_get_sync_jack", device_get_sync_jack, METH_VARARGS, "Get the device jack status for the synchronization in and synchronization out connectors."},
+        {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
+        {"device_set_color_control", device_set_color_control, METH_VARARGS, "Set device color control."},
         {NULL, NULL, 0, NULL}
     };
 
