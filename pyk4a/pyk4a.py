@@ -4,15 +4,27 @@ from enum import Enum
 
 from pyk4a.config import Config, ColorControlMode, ColorControlCommand
 
-# k4a_result_t
+
+# k4a_wait_result_t
 class Result(Enum):
     Success = 0
     Failed = 1
+    Timeout = 2
+
+
+class K4AException(Exception):
+    pass
+
+
+class K4ATimeoutException(K4AException):
+    pass
+
 
 class PyK4A:
     TIMEOUT_WAIT_INFINITE = -1
-    def __init__(self, config : Config, device_id=0):
-        self._device_id = 0
+
+    def __init__(self, config=Config(), device_id=0):
+        self._device_id = device_id
         self._config = config
         self.is_running = False
 
@@ -22,11 +34,11 @@ class PyK4A:
 
     def connect(self):
         self._device_open()
-        self._device_start_cameras()
+        self._start_cameras()
         self.is_running = True
 
     def disconnect(self):
-        self._device_stop_cameras()
+        self._stop_cameras()
         self._device_close()
         self.is_running = False
 
@@ -38,16 +50,15 @@ class PyK4A:
         res = k4a_module.device_close()
         self._verify_error(res)
 
-    def _device_start_cameras(self):
+    def _start_cameras(self):
         res = k4a_module.device_start_cameras(*self._config.unpack())
         self._verify_error(res)
 
-    def _device_stop_cameras(self):
+    def _stop_cameras(self):
         res = k4a_module.device_stop_cameras()
         self._verify_error(res)
 
-    def device_get_capture(self, timeout=TIMEOUT_WAIT_INFINITE,
-            color_only=False, transform_depth_to_color=True):
+    def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, color_only=False, transform_depth_to_color=True):
         res = k4a_module.device_get_capture(timeout)
         self._verify_error(res)
 
@@ -59,7 +70,8 @@ class PyK4A:
 
         return color, depth
 
-    def device_get_sync_jack(self):
+    @property
+    def sync_jack_status(self) -> Tuple[bool, bool]:
         res, jack_in, jack_out = k4a_module.device_get_sync_jack()
         self._verify_error(res)
         return jack_in == 1, jack_out == 1
@@ -69,76 +81,116 @@ class PyK4A:
         self._verify_error(res)
         return value, ColorControlMode(mode)
 
-    def _set_color_control(self, cmd: ColorControlCommand,
-                                 value: int,
-                                 mode=ColorControlMode.MANUAL):
+    def _set_color_control(self, cmd: ColorControlCommand, value: int, mode=ColorControlMode.MANUAL):
         res = k4a_module.device_set_color_control(cmd, mode, value)
         self._verify_error(res)
 
-    def set_exposure(self, value: int):
-        self._set_color_control(ColorControlCommand.EXPOSURE_TIME_ABSOLUTE, value)
+    @property
+    def brightness(self) -> int:
+        return self._get_color_control(ColorControlCommand.BRIGHTNESS)[0]
 
-    def set_brightness(self, value: int):
+    @property
+    def contrast(self) -> int:
+        return self._get_color_control(ColorControlCommand.CONTRAST)[0]
+
+    @property
+    def saturation(self) -> int:
+        return self._get_color_control(ColorControlCommand.SATURATION)[0]
+
+    @property
+    def sharpness(self) -> int:
+        return self._get_color_control(ColorControlCommand.SHARPNESS)[0]
+
+    @property
+    def backlight_compensation(self) -> int:
+        return self._get_color_control(ColorControlCommand.BACKLIGHT_COMPENSATION)[0]
+
+    @property
+    def gain(self) -> int:
+        return self._get_color_control(ColorControlCommand.GAIN)[0]
+
+    @property
+    def powerline_frequency(self) -> int:
+        return self._get_color_control(ColorControlCommand.POWERLINE_FREQUENCY)[0]
+
+    @property
+    def exposure(self) -> int:
+        # sets mode to manual
+        return self._get_color_control(ColorControlCommand.EXPOSURE_TIME_ABSOLUTE)[0]
+
+    @property
+    def exposure_mode_auto(self) -> bool:
+        return self._get_color_control(ColorControlCommand.EXPOSURE_TIME_ABSOLUTE)[1] == ColorControlMode.AUTO
+
+    @property
+    def whitebalance(self) -> int:
+        # sets mode to manual
+        return self._get_color_control(ColorControlCommand.WHITEBALANCE)[0]
+
+    @property
+    def whitebalance_mode_auto(self) -> bool:
+        return self._get_color_control(ColorControlCommand.WHITEBALANCE)[1] == ColorControlMode.AUTO
+
+    @brightness.setter
+    def brightness(self, value: int):
         self._set_color_control(ColorControlCommand.BRIGHTNESS, value)
 
-    def set_contrast(self, value: int):
+    @contrast.setter
+    def contrast(self, value: int):
         self._set_color_control(ColorControlCommand.CONTRAST, value)
 
-    def set_saturation(self, value: int):
+    @saturation.setter
+    def saturation(self, value: int):
         self._set_color_control(ColorControlCommand.SATURATION, value)
 
-    def set_sharpness(self, value: int):
+    @sharpness.setter
+    def sharpness(self, value: int):
         self._set_color_control(ColorControlCommand.SHARPNESS, value)
 
-    def set_whitebalance(self, value: int, mode=ColorControlMode.MANUAL):
-        self._set_color_control(ColorControlCommand.WHITEBALANCE, value, mode=mode)
-
-    def set_backlight_compensation(self, value: int):
+    @backlight_compensation.setter
+    def backlight_compensation(self, value: int):
         self._set_color_control(ColorControlCommand.BACKLIGHT_COMPENSATION, value)
 
-    def set_gain(self, value: int):
+    @gain.setter
+    def gain(self, value: int):
         self._set_color_control(ColorControlCommand.GAIN, value)
 
-    def set_powerline_frequency(self, value: int):
+    @powerline_frequency.setter
+    def powerline_frequency(self, value: int):
         self._set_color_control(ColorControlCommand.POWERLINE_FREQUENCY, value)
 
-    def get_exposure(self) -> Tuple[int, ColorControlMode]:
-        return self._get_color_control(ColorControlCommand.EXPOSURE_TIME_ABSOLUTE)
+    @exposure.setter
+    def exposure(self, value: int):
+        self._set_color_control(ColorControlCommand.EXPOSURE_TIME_ABSOLUTE, value)
 
-    def get_brightness(self) -> Tuple[int, ColorControlMode]:
-        return self._get_color_control(ColorControlCommand.BRIGHTNESS)
+    @exposure_mode_auto.setter
+    def exposure_mode_auto(self, mode_auto: bool, value=2500):
+        mode = ColorControlMode.AUTO if mode_auto else ColorControlMode.MANUAL
+        self._set_color_control(ColorControlCommand.EXPOSURE_TIME_ABSOLUTE, value=value, mode=mode)
 
-    def get_contrast(self) -> Tuple[int, ColorControlMode]:
-        return self._get_color_control(ColorControlCommand.CONTRAST)
+    @whitebalance.setter
+    def whitebalance(self, value: int, mode=ColorControlMode.MANUAL):
+        self._set_color_control(ColorControlCommand.WHITEBALANCE, value)
 
-    def get_saturation(self) -> Tuple[int, ColorControlMode]:
-        return self._get_color_control(ColorControlCommand.SATURATION)
-
-    def get_sharpness(self) -> Tuple[int, ColorControlMode]:
-        return self._get_color_control(ColorControlCommand.SHARPNESS)
-
-    def get_whitebalance(self) -> Tuple[int, ColorControlMode]:
-        return self._get_color_control(ColorControlCommand.WHITEBALANCE)
-
-    def get_backlight_compensation(self) -> Tuple[int, ColorControlMode]:
-        return self._get_color_control(ColorControlCommand.BACKLIGHT_COMPENSATION)
-
-    def get_gain(self) -> Tuple[int, ColorControlMode]:
-        return self._get_color_control(ColorControlCommand.GAIN)
-
-    def get_powerline_frequency(self) -> Tuple[int, ColorControlMode]:
-        return self._get_color_control(ColorControlCommand.POWERLINE_FREQUENCY)
+    @whitebalance_mode_auto.setter
+    def whitebalance_mode_auto(self, mode_auto: bool, value=2500):
+        mode = ColorControlMode.AUTO if mode_auto else ColorControlMode.MANUAL
+        self._set_color_control(ColorControlCommand.WHITEBALANCE, value=value, mode=mode)
 
     @staticmethod
     def _verify_error(res):
-        if Result(res) == Result.Failed:
-            raise RuntimeError('Function return status : {}'.format(res))
+        res = Result(res)
+        if res == Result.Failed:
+            raise K4AException()
+        elif res == Result.Timeout:
+            raise K4ATimeoutException()
+
 
 if __name__ == "__main__":
     k4a = PyK4A(Config())
     k4a.connect()
     print("Connected")
-    jack_in, jack_out = k4a.device_get_sync_jack()
+    jack_in, jack_out = k4a.get_sync_jack()
     print("Jack status : in -> {} , out -> {}".format(jack_in, jack_out))
     for _ in range(10):
         color, depth = k4a.device_get_capture(color_only=False)

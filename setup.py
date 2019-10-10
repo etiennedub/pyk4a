@@ -1,5 +1,6 @@
 from setuptools import setup, Extension
 
+
 # Bypass import numpy before running install_requires
 # https://stackoverflow.com/questions/54117786/add-numpy-get-include-argument-to-setuptools-without-preinstalled-numpy
 class get_numpy_include:
@@ -7,10 +8,11 @@ class get_numpy_include:
         import numpy
         return numpy.get_include()
 
+
 module = Extension('k4a_module',
-                    sources=['pyk4a/pyk4a.cpp'],
-                    include_dirs=[get_numpy_include()],
-                    libraries=['k4a'])
+                   sources=['pyk4a/pyk4a.cpp'],
+                   include_dirs=[get_numpy_include()],
+                   libraries=['k4a'])
 
 setup(name='pyk4a',
       version='0.1',
