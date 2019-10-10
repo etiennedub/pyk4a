@@ -14,22 +14,21 @@ pip install pyk4a
 
 ## Example
 
-For a basic example who display the first frame, you can run this code:
+For a basic example displaying the first frame, you can run this code:
 
 ```
-from pyk4a.config import Config
-from pyk4a.pyk4a import PyK4A
+from pyk4a import PyK4A
 
-# Load camera with the basic config
-k4a = PyK4A(Config())
+# Load camera with the default config
+k4a = PyK4A()
 k4a.connect()
 
 # Get the next color frame without the depth (blocking function)
-img_color = k4a.device_get_capture(color_only=True)
+img_color = k4a.get_capture(color_only=True)
 
 # Display with pyplot
 from matplotlib import pyplot as plt
-plt.imshow(img_color[:,:,2::-1]) # BGRA to RGB
+plt.imshow(img_color[:, :, 2::-1]) # BGRA to RGB
 plt.show()
 ```
 
@@ -43,7 +42,7 @@ python viewer.py
 
 ## Documentation
 
-No documentation is made available but most methods are used in the example. You can follow it as reference.
+No documentation is available but most methods are used in the example. You can follow it as reference.
 You can also check directly the code of the main class [PyK4A](https://github.com/etiennedub/pyk4a/blob/master/pyk4a/pyk4a.py).
 
 ## Contribution
