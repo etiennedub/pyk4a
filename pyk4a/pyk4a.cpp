@@ -115,10 +115,10 @@ extern "C" {
         color_image = k4a_capture_get_color_image(capture);
         if (color_image) {
             uint8_t* buffer = k4a_image_get_buffer(color_image);
-            unsigned long dims[3];
-            dims[0] = (unsigned long) k4a_image_get_height_pixels(color_image);
-            dims[1] = (unsigned long) k4a_image_get_width_pixels(color_image);
-            dims[2] = (unsigned long) 4;
+            npy_intp dims[3];
+            dims[0] = k4a_image_get_height_pixels(color_image);
+            dims[1] = k4a_image_get_width_pixels(color_image);
+            dims[2] = 4;
             PyArrayObject* np_color_image = (PyArrayObject*) PyArray_SimpleNewFromData(3, (npy_intp*) dims, NPY_UINT8, buffer);
             return PyArray_Return(np_color_image);
         }
@@ -155,9 +155,9 @@ extern "C" {
 
         if (depth_image) {
             uint8_t* buffer = k4a_image_get_buffer(depth_image);
-            unsigned long dims[2];
-            dims[0] = (unsigned long) k4a_image_get_height_pixels(depth_image);
-            dims[1] = (unsigned long) k4a_image_get_width_pixels(depth_image);
+            npy_intp dims[2];
+            dims[0] = k4a_image_get_height_pixels(depth_image);
+            dims[1] = k4a_image_get_width_pixels(depth_image);
             PyArrayObject* np_depth_image = (PyArrayObject*) PyArray_SimpleNewFromData(2, (npy_intp*) dims, NPY_UINT16, buffer);
             return PyArray_Return(np_depth_image);
         }
