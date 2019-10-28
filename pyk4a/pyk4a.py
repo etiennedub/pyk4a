@@ -67,8 +67,8 @@ class PyK4A:
             return color
 
         depth = k4a_module.device_get_depth_image(transform_depth_to_color)
-
-        return color, depth
+        pose = k4a_module.device_get_pose_data()
+        return color, depth, pose
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
