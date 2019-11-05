@@ -191,6 +191,11 @@ class PyK4A:
             "default_mode": default_mode,
         }
 
+    def reset_color_control_to_default(self):
+        for cmd in ColorControlCommand:
+            capability = self._get_color_control_capabilities(cmd)
+            self._set_color_control(cmd, capability["default_value"], capability["default_mode"])
+
     @staticmethod
     def _verify_error(res):
         res = Result(res)
