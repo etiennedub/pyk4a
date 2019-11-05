@@ -177,6 +177,20 @@ class PyK4A:
         mode = ColorControlMode.AUTO if mode_auto else ColorControlMode.MANUAL
         self._set_color_control(ColorControlCommand.WHITEBALANCE, value=value, mode=mode)
 
+    def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> (bool, int, int, int, int, int):
+        (res, supports_auto, min_value, max_value,
+         step_value, default_value, default_mode) = k4a_module.device_get_color_control_capabilities(cmd)
+        self._verify_error(res)
+        return {
+            "color_control_command": cmd,
+            "supports_auto": supports_auto == 1,
+            "min_value": min_value,
+            "max_value": max_value,
+            "step_value": step_value,
+            "default_value": default_value,
+            "default_mode": default_mode,
+        }
+
     @staticmethod
     def _verify_error(res):
         res = Result(res)
