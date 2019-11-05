@@ -10,8 +10,6 @@ extern "C" {
 
     k4a_capture_t capture;
     k4a_transformation_t transformation_handle;
-    k4a_image_t depth_image;
-    k4a_image_t color_image;
     k4a_device_t device;
 
     static PyObject* device_open(PyObject* self, PyObject* args){
@@ -86,14 +84,8 @@ extern "C" {
     }
 
     static PyObject* device_stop_cameras(PyObject* self, PyObject* args){
-        if (transformation_handle)
-            k4a_transformation_destroy(transformation_handle);
-        if (capture)
-            k4a_capture_release(capture);
-        if (depth_image)
-            k4a_image_release(depth_image);
-        if (color_image)
-            k4a_image_release(color_image);
+        if (transformation_handle) k4a_transformation_destroy(transformation_handle);
+        if (capture) k4a_capture_release(capture);
         k4a_device_stop_cameras(device);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
@@ -101,28 +93,36 @@ extern "C" {
     static PyObject* device_get_capture(PyObject* self, PyObject* args){
         int32_t timeout;
         PyArg_ParseTuple(args, "I", &timeout);
-
-        if (capture)
-            k4a_capture_release(capture);
+        if (capture) k4a_capture_release(capture);
         k4a_capture_create(&capture);
         k4a_wait_result_t result = k4a_device_get_capture(device, &capture, timeout);
         return Py_BuildValue("I", result);
     }
 
+    static void capsule_cleanup(PyObject *capsule) {
+        k4a_image_t *image = (k4a_image_t*)PyCapsule_GetContext(capsule);
+        k4a_image_release(*image);
+        free(image);
+    }
+
     static PyObject* device_get_color_image(PyObject* self, PyObject* args){
-        if (color_image)
-            k4a_image_release(color_image);
-        color_image = k4a_capture_get_color_image(capture);
+        k4a_image_t* color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        *color_image = k4a_capture_get_color_image(capture);
         if (color_image) {
-            uint8_t* buffer = k4a_image_get_buffer(color_image);
+            uint8_t* buffer = k4a_image_get_buffer(*color_image);
             npy_intp dims[3];
-            dims[0] = k4a_image_get_height_pixels(color_image);
-            dims[1] = k4a_image_get_width_pixels(color_image);
+            dims[0] = k4a_image_get_height_pixels(*color_image);
+            dims[1] = k4a_image_get_width_pixels(*color_image);
             dims[2] = 4;
-            PyArrayObject* np_color_image = (PyArrayObject*) PyArray_SimpleNewFromData(3, (npy_intp*) dims, NPY_UINT8, buffer);
+
+            PyArrayObject* np_color_image = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
+            PyObject *capsule = PyCapsule_New(buffer, NULL, capsule_cleanup);
+            PyCapsule_SetContext(capsule, color_image);
+            PyArray_SetBaseObject((PyArrayObject *) np_color_image, capsule);
             return PyArray_Return(np_color_image);
         }
         else {
+            free(color_image);
             return Py_BuildValue("");
         }
     }
@@ -131,37 +131,45 @@ extern "C" {
         int is_transform_enabled;
         PyArg_ParseTuple(args, "p", &is_transform_enabled);
 
-        if (depth_image)
-            k4a_image_release(depth_image);
-        depth_image = k4a_capture_get_depth_image(capture);
-        if (is_transform_enabled && depth_image && color_image) {
+        k4a_image_t* depth_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        *depth_image = k4a_capture_get_depth_image(capture);
+        if (is_transform_enabled && *depth_image) {
             k4a_image_t color_image = k4a_capture_get_color_image(capture);
-            k4a_image_t depth_image_transformed;
-            k4a_image_create(
-                    k4a_image_get_format(depth_image),
-                    k4a_image_get_width_pixels(color_image),
-                    k4a_image_get_height_pixels(color_image),
-                    k4a_image_get_width_pixels(color_image) * (int)sizeof(uint16_t),
-                    &depth_image_transformed);
-            k4a_result_t res = k4a_transformation_depth_image_to_color_camera(
-                    transformation_handle,
-                    depth_image, depth_image_transformed);
-            if (res == K4A_RESULT_FAILED)
-                return Py_BuildValue("");
-            k4a_image_release(color_image);
-            k4a_image_release(depth_image);
-            depth_image = depth_image_transformed;
+            if (color_image) {
+                k4a_image_t depth_image_transformed;
+                k4a_image_create(
+                        k4a_image_get_format(*depth_image),
+                        k4a_image_get_width_pixels(color_image),
+                        k4a_image_get_height_pixels(color_image),
+                        k4a_image_get_width_pixels(color_image) * (int)sizeof(uint16_t),
+                        &depth_image_transformed);
+                k4a_result_t res = k4a_transformation_depth_image_to_color_camera(
+                        transformation_handle,
+                        *depth_image, depth_image_transformed);
+                if (res == K4A_RESULT_FAILED){
+                    free(depth_image);
+                    return Py_BuildValue("");
+                }
+
+                k4a_image_release(color_image);
+                k4a_image_release(*depth_image);
+                *depth_image = depth_image_transformed;
+            }
         }
 
-        if (depth_image) {
-            uint8_t* buffer = k4a_image_get_buffer(depth_image);
+        if (*depth_image) {
+            uint8_t* buffer = k4a_image_get_buffer(*depth_image);
             npy_intp dims[2];
-            dims[0] = k4a_image_get_height_pixels(depth_image);
-            dims[1] = k4a_image_get_width_pixels(depth_image);
-            PyArrayObject* np_depth_image = (PyArrayObject*) PyArray_SimpleNewFromData(2, (npy_intp*) dims, NPY_UINT16, buffer);
+            dims[0] = k4a_image_get_height_pixels(*depth_image);
+            dims[1] = k4a_image_get_width_pixels(*depth_image);
+            PyArrayObject* np_depth_image = (PyArrayObject*) PyArray_SimpleNewFromData(2, dims, NPY_UINT16, buffer);
+            PyObject *capsule = PyCapsule_New(buffer, NULL, capsule_cleanup);
+            PyCapsule_SetContext(capsule, depth_image);
+            PyArray_SetBaseObject((PyArrayObject *) np_depth_image, capsule);
             return PyArray_Return(np_depth_image);
         }
         else {
+            free(depth_image);
             return Py_BuildValue("");
         }
     }
@@ -234,7 +242,7 @@ extern "C" {
             INITERROR;
         struct module_state *st = GETSTATE(module);
 
-        st->error = PyErr_NewException("pyvicon_module.Error", NULL, NULL);
+        st->error = PyErr_NewException("pyk4a_module.Error", NULL, NULL);
         if (st->error == NULL)
         {
             Py_DECREF(module);
