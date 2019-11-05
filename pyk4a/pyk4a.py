@@ -211,10 +211,10 @@ class PyK4A:
         assert capability["color_control_command"] == cmd
         if (mode == ColorControlMode.AUTO and capability["supports_auto"]):
             raise K4AValueException(f"Color control {cmd.name} does not support automatic mode.")
-        elif (capability["min_value"] < value):
+        elif (capability["min_value"] > value):
             raise K4AValueException(f"Color control value is smaller than minumum accepted by device: "
-                                    f"{capability['min_value']} < {value}")
-        elif (capability["max_value"] > value):
+                                    f"{capability['min_value']} > {value}")
+        elif (capability["max_value"] < value):
             raise K4AValueException("Color control value is larger than maximum accepted by device: "
                                     f"{capability['max_value']} < {value}")
         elif (value % capability["step_value"] != 0):
