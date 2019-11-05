@@ -20,21 +20,13 @@ class K4ATimeoutException(K4AException):
     pass
 
 
-class K4AValueException(ValueError):
-    pass
-
-
 class PyK4A:
     TIMEOUT_WAIT_INFINITE = -1
 
-    def __init__(self, config=Config(), device_id=0, debug_color_control_setter_args=False):
+    def __init__(self, config=Config(), device_id=0):
         self._device_id = device_id
         self._config = config
         self.is_running = False
-
-        # If set, for each call of a color control setter,
-        # fetches color_control_capabilities and raise error if value is not valid.
-        self._debug_color_control_setter_args = debug_color_control_setter_args
 
     def __del__(self):
         if self.is_running:
@@ -90,8 +82,6 @@ class PyK4A:
         return value, ColorControlMode(mode)
 
     def _set_color_control(self, cmd: ColorControlCommand, value: int, mode=ColorControlMode.MANUAL):
-        if self._debug_color_control_setter_args:
-            self._verify_color_control_setter_args(cmd, value, mode)
         res = k4a_module.device_set_color_control(cmd, mode, value)
         self._verify_error(res)
 
@@ -205,21 +195,6 @@ class PyK4A:
         for cmd in ColorControlCommand:
             capability = self._get_color_control_capabilities(cmd)
             self._set_color_control(cmd, capability["default_value"], capability["default_mode"])
-
-    def _verify_color_control_setter_args(self, cmd: ColorControlCommand, value: int, mode: ColorControlMode):
-        capability = self._get_color_control_capabilities(cmd)
-        assert capability["color_control_command"] == cmd
-        if (mode == ColorControlMode.AUTO and capability["supports_auto"]):
-            raise K4AValueException(f"Color control {cmd.name} does not support automatic mode.")
-        elif (capability["min_value"] < value):
-            raise K4AValueException(f"Color control value is smaller than minumum accepted by device: "
-                                    f"{capability['min_value']} < {value}")
-        elif (capability["max_value"] > value):
-            raise K4AValueException("Color control value is larger than maximum accepted by device: "
-                                    f"{capability['max_value']} < {value}")
-        elif (value % capability["step_value"] != 0):
-            raise K4AValueException(f"Color control value does not respect step function: "
-                                    f"{value} is not a multiple of {capability['step_value']}")
 
     @staticmethod
     def _verify_error(res):
