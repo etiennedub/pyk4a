@@ -15,7 +15,7 @@ module = Extension('k4a_module',
                    libraries=['k4a'])
 
 setup(name='pyk4a',
-      version='0.2',
+      version='0.3',
       description='Python wrapper over Azure Kinect SDK',
       license='GPL-3.0',
       author='Etienne Dubeau',
