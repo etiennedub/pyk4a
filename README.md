@@ -1,5 +1,11 @@
 # pyk4a
-This library is a simple wrapper in Python 3 for Azure-Kinect-Sensor-SDK. 
+This library is a simple and pythonic wrapper in Python 3 for the Azure-Kinect-Sensor-SDK.
+
+Images are returned as numpy arrays and behave like python objects.
+
+This approach incurs almost no overhead in terms of CPU, memory or other resources.
+It also simplifies usage. Kinect C api image buffers are directly reused and image releases are performed automatically by the python garbage collector.
+
 
 ## Prerequisites
 The [Azure-Kinect-Sensor-SDK](https://github.com/microsoft/Azure-Kinect-Sensor-SDK) is required to build this library.
@@ -60,4 +66,12 @@ No documentation is available but most methods are used in the example. You can 
 You can also check directly the code of the main class [PyK4A](https://github.com/etiennedub/pyk4a/blob/master/pyk4a/pyk4a.py).
 
 ## Contribution
-If a methods is not implemented, feel free to send a pull request.
+
+Feel free to send pull requests.
+
+Bug reports are also appreciated. Please include as much details as possible.
+
+### TODO:
+
+- Support for all sensors (other than color and depth)
+- get_capture in MJPG
