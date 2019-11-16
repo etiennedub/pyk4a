@@ -210,16 +210,3 @@ class PyK4A:
             raise K4AException()
         elif res == Result.Timeout:
             raise K4ATimeoutException()
-
-
-if __name__ == "__main__":
-    k4a = PyK4A(Config())
-    k4a.connect()
-    print("Connected")
-    jack_in, jack_out = k4a.get_sync_jack()
-    print("Jack status : in -> {} , out -> {}".format(jack_in, jack_out))
-    for _ in range(10):
-        color, depth = k4a.device_get_capture(color_only=False)
-        print(color.shape, depth.shape)
-    k4a.disconnect()
-    print("Disconnected")
