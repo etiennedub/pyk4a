@@ -1,6 +1,7 @@
-from typing import Tuple
+from typing import Tuple, Union, Optional
 import k4a_module
 from enum import Enum
+import numpy as np
 
 from pyk4a.config import Config, ColorControlMode, ColorControlCommand
 
@@ -59,16 +60,41 @@ class PyK4A:
         self._verify_error(res)
 
     def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, color_only=False, transform_depth_to_color=True):
+        r"""Fetch a capture from the device and return as numpy array(s) or None.
+
+        Arguments:
+            :param timeout: Timeout in ms. Default is infinite.
+            :param color_only: If true, returns color image only as np.array
+            :param transform_depth_to_color: If true, transforms the depth image to the color image reference, using the
+                kinect azure device calibration parameters.
+
+
+        Returns:
+            :return img_color [, img_depth] # image could be None if config synchronized_images_only==False
+
+        Examples::
+            - if config synchronized_images_only=True
+                >>> k4a.get_capture(color_only=True) # type: np.ndarray
+            - if config synchronized_images_only=False, you must check if returs for each image is None
+                >>> k4a.get_capture(color_only=True) # type: Optional[np.ndarray]
+                >>> k4a.get_capture() # type: Tuple[Optional[np.ndarray], Optional[np.ndarray]]
+        """
+
         res = k4a_module.device_get_capture(timeout)
         self._verify_error(res)
 
-        color = k4a_module.device_get_color_image()
+        color = self._get_capture_color()
         if color_only:
             return color
+        else:
+            depth = self._get_capture_depth(transform_depth_to_color)
+            return color, depth
 
-        depth = k4a_module.device_get_depth_image(transform_depth_to_color)
+    def _get_capture_color(self) -> Optional[np.ndarray]:
+        return k4a_module.device_get_color_image()
 
-        return color, depth
+    def _get_capture_depth(self, transform_depth_to_color: bool) -> Optional[np.ndarray]:
+        return k4a_module.device_get_depth_image(transform_depth_to_color)
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
