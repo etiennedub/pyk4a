@@ -169,7 +169,7 @@ class PyK4A:
         self._set_color_control(ColorControlCommand.EXPOSURE_TIME_ABSOLUTE, value=value, mode=mode)
 
     @whitebalance.setter
-    def whitebalance(self, value: int, mode=ColorControlMode.MANUAL):
+    def whitebalance(self, value: int):
         self._set_color_control(ColorControlCommand.WHITEBALANCE, value)
 
     @whitebalance_mode_auto.setter
