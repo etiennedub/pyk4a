@@ -59,6 +59,24 @@ extern "C" {
         return Py_BuildValue("I", result);
     }
 
+    static PyObject* device_get_color_control_capabilities(PyObject* self, PyObject* args){
+        k4a_color_control_command_t command;
+        bool supports_auto;
+        int32_t min_value;
+        int32_t max_value;
+        int32_t step_value;
+        int32_t default_value;
+        k4a_color_control_mode_t default_mode;
+        PyArg_ParseTuple(args, "I", &command);
+
+
+        k4a_result_t result = k4a_device_get_color_control_capabilities(device, command, &supports_auto, &min_value, &max_value, &step_value, &default_value, &default_mode);
+        if (result == K4A_RESULT_FAILED) {
+            return Py_BuildValue("IIIIIII", 0, 0, 0, 0, 0, 0, 0);
+        }
+        return Py_BuildValue("IIIIIII", result, supports_auto, min_value, max_value, step_value, default_value, default_mode);
+    }
+
     static PyObject* device_start_cameras(PyObject* self, PyObject* args){
         k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
         PyArg_ParseTuple(args, "IIIIIIIII", &config.color_format,
@@ -201,6 +219,7 @@ extern "C" {
         {"device_get_sync_jack", device_get_sync_jack, METH_VARARGS, "Get the device jack status for the synchronization in and synchronization out connectors."},
         {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
         {"device_set_color_control", device_set_color_control, METH_VARARGS, "Set device color control."},
+        {"device_get_color_control_capabilities", device_get_color_control_capabilities, METH_VARARGS, "Get device color control capabilities."},
         {NULL, NULL, 0, NULL}
     };
 
