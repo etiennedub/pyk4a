@@ -15,6 +15,10 @@ extern "C" {
     k4a_capture_t capture;
     k4a_transformation_t transformation_handle;
     k4a_device_t device;
+    k4abt_tracker_t tracker;
+    k4a_calibration_t calibration;
+    int NUM_JOINTS = 32;
+    int NUM_DATA = 10;
 
     static PyObject* device_open(PyObject* self, PyObject* args){
         int device_id;
@@ -91,7 +95,7 @@ extern "C" {
                 &config.disable_streaming_indicator);
 
         k4a_result_t result;
-        k4a_calibration_t calibration;
+      	k4abt_tracker_configuration_t tracker_calibration = K4ABT_TRACKER_CONFIG_DEFAULT;
         result = k4a_device_get_calibration(device, config.depth_mode,
                 config.color_resolution, &calibration);
         if (result == K4A_RESULT_FAILED) {
@@ -102,12 +106,17 @@ extern "C" {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
         result = k4a_device_start_cameras(device, &config);
+        result = k4abt_tracker_create(&calibration, tracker_calibration, &tracker);
+        if (result == K4A_RESULT_FAILED) {
+            return Py_BuildValue("I", K4A_RESULT_FAILED);
+        }
         return Py_BuildValue("I", result);
     }
 
     static PyObject* device_stop_cameras(PyObject* self, PyObject* args){
         if (transformation_handle) k4a_transformation_destroy(transformation_handle);
         if (capture) k4a_capture_release(capture);
+        if (tracker) k4abt_tracker_destroy(tracker);
         k4a_device_stop_cameras(device);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
@@ -125,6 +134,73 @@ extern "C" {
         k4a_image_t *image = (k4a_image_t*)PyCapsule_GetContext(capsule);
         k4a_image_release(*image);
         free(image);
+    }
+
+    static void pose_capsule_cleanup(PyObject *capsule) {
+        double_t *buffer = (double_t*)PyCapsule_GetContext(capsule);
+        delete buffer;
+    }
+
+    static PyObject* device_get_pose_data(PyObject* self, PyObject* args){
+        k4abt_tracker_enqueue_capture(tracker, capture, 0);
+        k4abt_frame_t body_frame = NULL;
+        k4a_wait_result_t pop_frame_result = k4abt_tracker_pop_result(tracker, &body_frame, 0);
+
+        if (pop_frame_result == K4A_WAIT_RESULT_SUCCEEDED)
+        {
+            size_t num_bodies = k4abt_frame_get_num_bodies(body_frame);
+            double_t* buffer = new double_t[num_bodies*NUM_JOINTS*NUM_DATA];
+
+            for (size_t i = 0; i < num_bodies; i++)
+            {
+                k4abt_skeleton_t skeleton;
+                k4abt_frame_get_body_skeleton(body_frame, i, &skeleton);
+                for (int j = 0; j < (int)K4ABT_JOINT_COUNT; j++)
+                {
+                    k4a_float3_t position = skeleton.joints[j].position;
+                    k4a_float2_t position_image;
+                    int valid;
+                    //Convert 3d points in mm to image coordinates
+                    k4a_calibration_3d_to_2d(&calibration,
+                                             &position,
+                                             K4A_CALIBRATION_TYPE_DEPTH,
+                                             K4A_CALIBRATION_TYPE_COLOR,
+                                             &position_image, &valid);
+
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 0] = position_image.v[0];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 1] = position_image.v[1];
+
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 2] = position.v[0];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 3] = position.v[1];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 4] = position.v[2];
+
+                    k4a_quaternion_t orientation = skeleton.joints[j].orientation;
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 5] = orientation.v[0];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 6] = orientation.v[1];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 7] = orientation.v[2];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 8] = orientation.v[3];
+
+                    k4abt_joint_confidence_level_t confidence_level = skeleton.joints[j].confidence_level;
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 9] = confidence_level;
+                }
+            }
+
+            k4abt_frame_release(body_frame);
+
+            npy_intp dims[3];
+            dims[0] = num_bodies;
+            dims[1] = NUM_JOINTS;
+            dims[2] = NUM_DATA;
+
+            PyArrayObject* np_pose_data = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_DOUBLE, buffer);
+            PyObject *capsule = PyCapsule_New(buffer, NULL, pose_capsule_cleanup);
+            PyCapsule_SetContext(capsule, buffer);
+            PyArray_SetBaseObject((PyArrayObject *) np_pose_data, capsule);
+            return PyArray_Return(np_pose_data);
+        }
+        else {
+            return Py_BuildValue("");
+        }
     }
 
     static PyObject* device_get_color_image(PyObject* self, PyObject* args){
@@ -227,6 +303,7 @@ extern "C" {
         {"device_start_cameras", device_start_cameras, METH_VARARGS, "Starts color and depth camera capture"},
         {"device_stop_cameras", device_stop_cameras, METH_VARARGS, "Stops the color and depth camera capture"},
         {"device_get_capture", device_get_capture, METH_VARARGS, "Reads a sensor capture"},
+        {"device_get_pose_data", device_get_pose_data, METH_VARARGS, "Get the body pose estimates associated with the given capture"},
         {"device_get_color_image", device_get_color_image, METH_VARARGS, "Get the color image associated with the given capture"},
         {"device_get_depth_image", device_get_depth_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
         {"device_close", device_close, METH_VARARGS, "Close an Azure Kinect device"},
