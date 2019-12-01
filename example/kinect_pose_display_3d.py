@@ -49,7 +49,8 @@ class Visualizer(object):
         self.traces[name].setData(pos=points, color=color)
 
     def update(self):
-        _, _, pose = self.k4a.get_capture()
+        _, _ = self.k4a.get_capture()
+        pose = self.k4a.get_pose()
         if pose is not None:
             for i in range(pose.shape[0]):
                 pts = pose[i, :, :3].reshape(-1, 3)[kinect2coco]

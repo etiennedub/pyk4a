@@ -12,7 +12,8 @@ k4a = PyK4A(Config(color_resolution=ColorResolution.RES_720P,
 k4a.connect()
 
 while True:
-    frame, _, pose = k4a.get_capture()
+    frame, _ = k4a.get_capture()
+    pose = k4a.get_pose()
     source_H, source_W, _ = frame.shape
     frame = cv2.resize(frame, (256 * source_W // source_H, 256))
     target_H, target_W, _ = frame.shape
