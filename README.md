@@ -60,6 +60,11 @@ cd pyk4a/example
 python viewer.py
 ```
 
+## Body Tracking SDK 
+
+Follow regular install and add these arguments to your pip call `--global-option="build_ext" --global-option="--enable-body-tracking"`
+
+
 ## Documentation
 
 No documentation is available but most methods are used in the example. You can follow it as reference.

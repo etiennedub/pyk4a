@@ -197,14 +197,12 @@ extern "C" {
     }
 
     static PyObject* is_body_tracking_supported(PyObject* self, PyObject* args){
-        return Py_BuildValue("I", #ifdef ENABLE_BODY_TRACKING 1 #else 0 #endif);
+            return Py_BuildValue("I", #ifdef ENABLE_BODY_TRACKING 1 #else 0 #endif);
     }
 
     #ifdef ENABLE_BODY_TRACKING
-        #warning "Implement body tracking stuff here or in pyk4abt.cpp ?"
+        #error "Implement body tracking stuff here."
     #endif
-
-
 
     // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp
     //###################
