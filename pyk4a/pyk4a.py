@@ -91,6 +91,11 @@ class PyK4A:
             depth = self._get_capture_depth(transform_depth_to_color)
             return color, depth
 
+    def get_pose(self) -> Optional[np.ndarray]:
+        # Make sure to call get_capture before calling this function.
+        assert PyK4A.BODY_TRACKING_SUPPORT == True
+        return k4a_module.device_get_pose_data()
+
     def _get_capture_color(self) -> Optional[np.ndarray]:
         return k4a_module.device_get_color_image()
 
