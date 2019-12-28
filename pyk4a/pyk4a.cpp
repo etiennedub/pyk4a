@@ -3,7 +3,7 @@
 
 #include <k4a/k4a.h>
 #ifdef ENABLE_BODY_TRACKING
-    #warning "Body tracking is enabled."
+    // #warning "Body tracking is enabled."
     #include <k4abt.h>
 #endif
 #include <stdio.h>
