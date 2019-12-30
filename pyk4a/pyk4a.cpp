@@ -17,8 +17,8 @@ extern "C" {
     k4a_calibration_t calibration;
 #ifdef ENABLE_BODY_TRACKING
     k4abt_tracker_t tracker;
-    #define NUM_JOINTS = 32;
-    #define NUM_DATA = 10;
+    #define NUM_JOINTS 32
+    #define NUM_DATA 10
 #endif
 
     static PyObject* device_open(PyObject* self, PyObject* args){
@@ -224,6 +224,11 @@ extern "C" {
     }
 
 #ifdef ENABLE_BODY_TRACKING
+    static void pose_capsule_cleanup(PyObject *capsule) {
+        double_t *buffer = (double_t*)PyCapsule_GetContext(capsule);
+        delete buffer;
+    }
+
     static PyObject* device_get_pose_data(PyObject* self, PyObject* args){
         k4abt_tracker_enqueue_capture(tracker, capture, 0);
         k4abt_frame_t body_frame = NULL;
@@ -286,10 +291,6 @@ extern "C" {
         }
     }
 
-    static void pose_capsule_cleanup(PyObject *capsule) {
-        double_t *buffer = (double_t*)PyCapsule_GetContext(capsule);
-        delete buffer;
-    }
 #endif
 
 
@@ -324,7 +325,7 @@ extern "C" {
         {"device_get_color_control_capabilities", device_get_color_control_capabilities, METH_VARARGS, "Get device color control capabilities."},
         {"is_body_tracking_supported", is_body_tracking_supported, METH_VARARGS, "Checks if compiled with body tracking support."}
 #ifdef ENABLE_BODY_TRACKING
-        {"device_get_pose_data", device_get_pose_data, METH_VARARGS, "Get the body pose estimates associated with the given capture"},
+        ,{"device_get_pose_data", device_get_pose_data, METH_VARARGS, "Get the body pose estimates associated with the given capture"},
 #endif
         {NULL, NULL, 0, NULL}
     };
