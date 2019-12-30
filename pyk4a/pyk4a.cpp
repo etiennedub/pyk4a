@@ -15,7 +15,7 @@ extern "C" {
     k4a_transformation_t transformation_handle;
     k4a_device_t device;
     k4a_calibration_t calibration;
-#ifdef
+#ifdef ENABLE_BODY_TRACKING
     k4abt_tracker_t tracker;
     #define NUM_JOINTS = 32;
     #define NUM_DATA = 10;
@@ -216,7 +216,11 @@ extern "C" {
     }
 
     static PyObject* is_body_tracking_supported(PyObject* self, PyObject* args){
-        return Py_BuildValue("I", #ifdef ENABLE_BODY_TRACKING 1 #else 0 #endif);
+#ifdef ENABLE_BODY_TRACKING
+        return Py_BuildValue("I", 1, );
+#else
+        return Py_BuildValue("I", 0, );
+#endif
     }
 
 #ifdef ENABLE_BODY_TRACKING
