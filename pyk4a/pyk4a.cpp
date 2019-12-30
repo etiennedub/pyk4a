@@ -217,9 +217,9 @@ extern "C" {
 
     static PyObject* is_body_tracking_supported(PyObject* self, PyObject* args){
 #ifdef ENABLE_BODY_TRACKING
-        return Py_BuildValue("I", 1, );
+        return Py_BuildValue("I", 1);
 #else
-        return Py_BuildValue("I", 0, );
+        return Py_BuildValue("I", 0);
 #endif
     }
 
