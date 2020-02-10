@@ -208,7 +208,7 @@ extern "C" {
                         k4a_image_get_width_pixels(color_image),
                         k4a_image_get_height_pixels(color_image),
                         k4a_image_get_width_pixels(color_image) * (int)sizeof(uint16_t),
-                        &depth_image_transformed);
+                        &ir_image_transformed);
                 k4a_result_t res = k4a_transformation_depth_image_to_color_camera(
                         transformation_handle,
                         *ir_image, ir_image_transformed);
