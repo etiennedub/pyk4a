@@ -192,6 +192,53 @@ extern "C" {
         }
     }
 
+	
+	    static PyObject* device_get_ir_image(PyObject* self, PyObject* args){
+        int is_transform_enabled;
+        PyArg_ParseTuple(args, "p", &is_transform_enabled);
+
+        k4a_image_t* ir_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        *ir_image = k4a_capture_get_ir_image(capture);
+        if (is_transform_enabled && *ir_image) {
+            k4a_image_t color_image = k4a_capture_get_color_image(capture);
+            if (color_image) {
+                k4a_image_t ir_image_transformed;
+                k4a_image_create(
+                        k4a_image_get_format(*ir_image),
+                        k4a_image_get_width_pixels(color_image),
+                        k4a_image_get_height_pixels(color_image),
+                        k4a_image_get_width_pixels(color_image) * (int)sizeof(uint16_t),
+                        &depth_image_transformed);
+                k4a_result_t res = k4a_transformation_depth_image_to_color_camera(
+                        transformation_handle,
+                        *ir_image, ir_image_transformed);
+                if (res == K4A_RESULT_FAILED){
+                    free(ir_image);
+                    return Py_BuildValue("");
+                }
+
+                k4a_image_release(color_image);
+                k4a_image_release(*ir_image);
+                *ir_image = ir_image_transformed;
+            }
+        }
+
+        if (*ir_image) {
+            uint8_t* buffer = k4a_image_get_buffer(*ir_image);
+            npy_intp dims[2];
+            dims[0] = k4a_image_get_height_pixels(*ir_image);
+            dims[1] = k4a_image_get_width_pixels(*ir_image);
+            PyArrayObject* np_ir_image = (PyArrayObject*) PyArray_SimpleNewFromData(2, dims, NPY_UINT16, buffer);
+            PyObject *capsule = PyCapsule_New(buffer, NULL, capsule_cleanup);
+            PyCapsule_SetContext(capsule, ir_image);
+            PyArray_SetBaseObject((PyArrayObject *) np_ir_image, capsule);
+            return PyArray_Return(np_ir_image);
+        }
+        else {
+            free(ir_image);
+            return Py_BuildValue("");
+        }
+    }
     // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp
     //###################
     //Module initialisation
@@ -215,6 +262,7 @@ extern "C" {
         {"device_get_capture", device_get_capture, METH_VARARGS, "Reads a sensor capture"},
         {"device_get_color_image", device_get_color_image, METH_VARARGS, "Get the color image associated with the given capture"},
         {"device_get_depth_image", device_get_depth_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
+		{"device_get_ir_image", device_get_ir_image, METH_VARARGS, "Set or add a ir image to the associated capture"}
         {"device_close", device_close, METH_VARARGS, "Close an Azure Kinect device"},
         {"device_get_sync_jack", device_get_sync_jack, METH_VARARGS, "Get the device jack status for the synchronization in and synchronization out connectors."},
         {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},

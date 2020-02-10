@@ -59,7 +59,7 @@ class PyK4A:
         res = k4a_module.device_stop_cameras()
         self._verify_error(res)
 
-    def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, color_only=False, transform_depth_to_color=True):
+    def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, color_only=False, transform_depth_to_color=True,transform_ir_to_color=True):
         r"""Fetch a capture from the device and return as numpy array(s) or None.
 
         Arguments:
@@ -88,13 +88,18 @@ class PyK4A:
             return color
         else:
             depth = self._get_capture_depth(transform_depth_to_color)
-            return color, depth
+            ir = self._get_ir_depth(transform_ir_to_color)
+            return color, depth, ir
 
     def _get_capture_color(self) -> Optional[np.ndarray]:
         return k4a_module.device_get_color_image()
 
     def _get_capture_depth(self, transform_depth_to_color: bool) -> Optional[np.ndarray]:
         return k4a_module.device_get_depth_image(transform_depth_to_color)
+
+    def _get_capture_ir(self, transform_ir_to_color: bool) -> Optional[np.ndarray]:
+        return k4a_module.device_get_ir_image(transform_ir_to_color)
+
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
