@@ -16,8 +16,9 @@ k4a.whitebalance = 4510
 assert k4a.whitebalance == 4510
 
 while 1:
-    img_color = k4a.get_capture(color_only=True)
-    # img_color, img_depth = k4a.get_capture()  # Would also fetch the depth image
+    
+    #img_color = k4a.get_capture(color_only=True)
+    img_color, img_depth,img_ir = k4a.get_capture()  # Would also fetch the depth image
     if np.any(img_color):
         cv2.imshow('k4a', img_color[:, :, :3])
         key = cv2.waitKey(10)

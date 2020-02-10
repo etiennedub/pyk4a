@@ -88,7 +88,7 @@ class PyK4A:
             return color
         else:
             depth = self._get_capture_depth(transform_depth_to_color)
-            ir = self._get_ir_depth(transform_ir_to_color)
+            ir = self._get_capture_ir(transform_ir_to_color)
             return color, depth, ir
 
     def _get_capture_color(self) -> Optional[np.ndarray]:
