@@ -262,7 +262,7 @@ extern "C" {
         {"device_get_capture", device_get_capture, METH_VARARGS, "Reads a sensor capture"},
         {"device_get_color_image", device_get_color_image, METH_VARARGS, "Get the color image associated with the given capture"},
         {"device_get_depth_image", device_get_depth_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
-		{"device_get_ir_image", device_get_ir_image, METH_VARARGS, "Set or add a ir image to the associated capture"}
+		{"device_get_ir_image", device_get_ir_image, METH_VARARGS, "Set or add a ir image to the associated capture"},
         {"device_close", device_close, METH_VARARGS, "Close an Azure Kinect device"},
         {"device_get_sync_jack", device_get_sync_jack, METH_VARARGS, "Get the device jack status for the synchronization in and synchronization out connectors."},
         {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
