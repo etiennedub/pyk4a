@@ -59,7 +59,7 @@ class PyK4A:
         res = k4a_module.device_stop_cameras()
         self._verify_error(res)
 
-    def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, color_only=False, transform_depth_to_color=True,transform_ir_to_color=True):
+    def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, color_only=False, transform_depth_to_color=True):
         r"""Fetch a capture from the device and return as numpy array(s) or None.
 
         Arguments:
@@ -80,6 +80,7 @@ class PyK4A:
                 >>> k4a.get_capture() # type: Tuple[Optional[np.ndarray], Optional[np.ndarray]]
         """
 
+
         res = k4a_module.device_get_capture(timeout)
         self._verify_error(res)
 
@@ -87,8 +88,9 @@ class PyK4A:
         if color_only:
             return color
         else:
+
             depth = self._get_capture_depth(transform_depth_to_color)
-            ir = self._get_capture_ir(transform_ir_to_color)
+            ir = self._get_capture_ir(False)
             return color, depth, ir
 
     def _get_capture_color(self) -> Optional[np.ndarray]:
