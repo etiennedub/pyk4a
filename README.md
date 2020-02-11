@@ -37,13 +37,6 @@ Don't forget to add the folder containing the release `k4a.dll` to your Path env
 A advanced example is available in the [example](https://github.com/etiennedub/pyk4a/tree/master/example) folder.
 To execute it [opencv-python](https://github.com/skvark/opencv-python) is required.
 
-
-```
-git clone https://github.com/etiennedub/pyk4a.git
-cd pyk4a/example
-python viewer.py
-```
-
 ## Documentation
 
 No documentation is available but most methods are used in the example. You can follow it as reference.
