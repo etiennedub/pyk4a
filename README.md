@@ -29,16 +29,18 @@ Make sure you replace the paths in the following instructions with your own k4a 
 ```
 pip install git+https://github.com/kevinkit/pyk4a.git --global-option=build_ext --global-option="-IC:\Program Files\Azure Kinect SDK v1.2.0\sdk\include" --global-option="-LC:\Program Files\Azure Kinect SDK v1.2.0\sdk\windows-desktop\amd64\release\lib"```
 ```
+
 Don't forget to add the folder containing the release `k4a.dll` to your Path env variable `C:\Program Files\Azure Kinect SDK v1.3.0\sdk\windows-desktop\amd64\release\bin`
 
 ## Example
 
 For a basic example using color camera, depth and IR camera you can use the file in the examples folder
 
-```
 
 Otherwise, a more avanced example is available in the [example](https://github.com/etiennedub/pyk4a/tree/master/example) folder.
 To execute it [opencv-python](https://github.com/skvark/opencv-python) is required.
+
+
 ```
 git clone https://github.com/etiennedub/pyk4a.git
 cd pyk4a/example
