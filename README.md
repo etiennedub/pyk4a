@@ -34,10 +34,7 @@ Don't forget to add the folder containing the release `k4a.dll` to your Path env
 
 ## Example
 
-For a basic example using color camera, depth and IR camera you can use the file in the examples folder
-
-
-Otherwise, a more avanced example is available in the [example](https://github.com/etiennedub/pyk4a/tree/master/example) folder.
+A advanced example is available in the [example](https://github.com/etiennedub/pyk4a/tree/master/example) folder.
 To execute it [opencv-python](https://github.com/skvark/opencv-python) is required.
 
 
