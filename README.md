@@ -27,29 +27,14 @@ pip install pyk4a
 Make sure you replace the paths in the following instructions with your own k4a sdk path.
 
 ```
-pip install pyk4a --global-option=build_ext --global-option="-IC:\Program Files\Azure Kinect SDK v1.3.0\sdk\include" --global-option="-LC:\Program Files\Azure Kinect SDK v1.3.0\sdk\windows-desktop\amd64\release\lib"
-```
+pip install git+https://github.com/kevinkit/pyk4a.git --global-option=build_ext --global-option="-IC:\Program Files\Azure Kinect SDK v1.2.0\sdk\include" --global-option="-LC:\Program Files\Azure Kinect SDK v1.2.0\sdk\windows-desktop\amd64\release\lib"```
 
 Don't forget to add the folder containing the release `k4a.dll` to your Path env variable `C:\Program Files\Azure Kinect SDK v1.3.0\sdk\windows-desktop\amd64\release\bin`
 
 ## Example
 
-For a basic example displaying the first frame, you can run this code:
+For a basic example using color camera, depth and IR camera you can use the file in the examples folder
 
-```
-from pyk4a import PyK4A
-
-# Load camera with the default config
-k4a = PyK4A()
-k4a.connect()
-
-# Get the next color frame without the depth (blocking function)
-img_color = k4a.get_capture(color_only=True)
-
-# Display with pyplot
-from matplotlib import pyplot as plt
-plt.imshow(img_color[:, :, 2::-1]) # BGRA to RGB
-plt.show()
 ```
 
 Otherwise, a more avanced example is available in the [example](https://github.com/etiennedub/pyk4a/tree/master/example) folder.
@@ -73,5 +58,5 @@ Bug reports are also appreciated. Please include as much details as possible.
 
 ### TODO:
 
-- Support for all sensors (other than color and depth)
+- Allow mapping of ir sensor to color
 - get_capture in MJPG
