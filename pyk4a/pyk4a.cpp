@@ -117,6 +117,48 @@ extern "C" {
         return Py_BuildValue("I", result);
     }
 
+    static PyObject* calibration_set_from_raw(PyObject* self, PyObject* args){
+        char * raw_calibration;
+        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+        PyArg_ParseTuple(args, "sIIIIIIIII", &raw_calibration, &config.color_format,
+                &config.color_resolution, &config.depth_mode,
+                &config.camera_fps, &config.synchronized_images_only,
+                &config.depth_delay_off_color_usec, &config.wired_sync_mode,
+                &config.subordinate_delay_off_master_usec,
+                &config.disable_streaming_indicator);
+        size_t raw_calibration_size = strlen(raw_calibration) + 1;
+        k4a_result_t result;
+        k4a_calibration_t calibration;
+
+        result = k4a_calibration_get_from_raw(raw_calibration,
+                raw_calibration_size, config.depth_mode,
+                config.color_resolution, &calibration);
+        if (result == K4A_RESULT_FAILED) {
+            return Py_BuildValue("I", K4A_RESULT_FAILED);
+        }
+        if (transformation_handle) k4a_transformation_destroy(transformation_handle);
+        transformation_handle = k4a_transformation_create(&calibration);
+        return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
+    }
+
+    static PyObject* device_get_calibration(PyObject* self, PyObject* args){
+        k4a_buffer_result_t result;
+        size_t data_size;
+        result = k4a_device_get_raw_calibration(device, NULL, &data_size);
+        if (result == K4A_BUFFER_RESULT_FAILED) {
+            return Py_BuildValue("");
+        }
+        uint8_t* data = (uint8_t*) malloc(data_size);
+        result = k4a_device_get_raw_calibration(device, data, &data_size);
+        if (result == K4A_BUFFER_RESULT_FAILED) {
+            return Py_BuildValue("");
+        }
+
+        PyObject* res = Py_BuildValue("s", data);
+        free(data);
+        return res;
+    }
+
     static void capsule_cleanup(PyObject *capsule) {
         k4a_image_t *image = (k4a_image_t*)PyCapsule_GetContext(capsule);
         k4a_image_release(*image);
@@ -220,6 +262,8 @@ extern "C" {
         {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
         {"device_set_color_control", device_set_color_control, METH_VARARGS, "Set device color control."},
         {"device_get_color_control_capabilities", device_get_color_control_capabilities, METH_VARARGS, "Get device color control capabilities."},
+        {"device_get_calibration", device_get_calibration, METH_VARARGS, "Get device calibration in json format."},
+        {"calibration_set_from_raw", calibration_set_from_raw, METH_VARARGS, "Temporary set the calibration from a json format. Must be called after device_start_cameras."},
         {NULL, NULL, 0, NULL}
     };
 

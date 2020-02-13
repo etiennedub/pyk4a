@@ -43,6 +43,17 @@ class PyK4A:
         self._device_close()
         self.is_running = False
 
+    def save_calibration_json(self, path):
+        calibration = k4a_module.device_get_calibration()
+        with open(path, 'w') as f:
+            f.write(calibration)
+
+    def load_calibration_json(self, path):
+        with open(path, 'r') as f:
+            calibration = f.read()
+        res = k4a_module.calibration_set_from_raw(calibration, *self._config.unpack())
+        self._verify_error(res)
+
     def _device_open(self):
         res = k4a_module.device_open(self._device_id)
         self._verify_error(res)
