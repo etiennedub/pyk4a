@@ -66,23 +66,23 @@ class Config:
                  wired_sync_mode=WiredSyncMode.STANDALONE,
                  subordinate_delay_off_master_usec=0,
                  disable_streaming_indicator=False):
-        self._color_resolution = color_resolution
-        self._depth_mode = depth_mode
-        self._camera_fps = camera_fps
-        self._synchronized_images_only = synchronized_images_only
-        self._depth_delay_off_color_usec = depth_delay_off_color_usec
-        self._wired_sync_mode = wired_sync_mode
-        self._subordinate_delay_off_master_usec = subordinate_delay_off_master_usec
-        self._disable_streaming_indicator = disable_streaming_indicator
-        self._color_format = 3  # BGRA32
+        self.color_resolution = color_resolution
+        self.depth_mode = depth_mode
+        self.camera_fps = camera_fps
+        self.synchronized_images_only = synchronized_images_only
+        self.depth_delay_off_color_usec = depth_delay_off_color_usec
+        self.wired_sync_mode = wired_sync_mode
+        self.subordinate_delay_off_master_usec = subordinate_delay_off_master_usec
+        self.disable_streaming_indicator = disable_streaming_indicator
+        self.color_format = 3  # BGRA32
 
     def unpack(self):
-        return (self._color_format,
-                self._color_resolution,
-                self._depth_mode,
-                self._camera_fps,
-                self._synchronized_images_only,
-                self._depth_delay_off_color_usec,
-                self._wired_sync_mode,
-                self._subordinate_delay_off_master_usec,
-                self._disable_streaming_indicator)
+        return (self.color_format,
+                self.color_resolution,
+                self.depth_mode,
+                self.camera_fps,
+                self.synchronized_images_only,
+                self.depth_delay_off_color_usec,
+                self.wired_sync_mode,
+                self.subordinate_delay_off_master_usec,
+                self.disable_streaming_indicator)
