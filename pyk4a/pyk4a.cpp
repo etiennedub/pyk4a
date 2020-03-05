@@ -326,7 +326,7 @@ extern "C" {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
         // Return object...
-        return PyBuildValue("s", target_point3d_mm);
+        return Py_BuildValue("s", target_point3d_mm);
     }
 
     // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp
