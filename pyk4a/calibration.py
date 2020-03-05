@@ -1,7 +1,7 @@
 from enum import IntEnum
 import k4a_module
 import numpy as np
-from pyk4a import Result, K4AException, K4ATimeoutException
+from .pyk4a import Result, K4AException, K4ATimeoutException
 
 
 class CalibrationType(IntEnum):
