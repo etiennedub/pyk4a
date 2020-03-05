@@ -314,10 +314,14 @@ extern "C" {
         k4a_calibration_type_t target_camera;
 
         PyArg_ParseTuple(args, "sYII", &calibration,
-                &source_point3d_mm,
+                &source_point3d,
                 &source_camera,
                 &target_camera);
         
+        source_point3d_mm.xyz.x = source_point3d[0];
+        source_point3d_mm.xyz.y = source_point3d[1];
+        source_point3d_mm.xyz.z = source_point3d[2];
+
         cout << "source cam = " << source_camera ;
         cout << "target cam = " << target_camera ;
         cout << "source point 3d = " << source_point3d_mm.xyz.x ;
