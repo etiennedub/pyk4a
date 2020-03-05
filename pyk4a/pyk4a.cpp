@@ -320,7 +320,9 @@ extern "C" {
         
         cout << "source cam = " << source_camera ;
         cout << "target cam = " << target_camera ;
-        cout << "source point 3d = " << source_point3d_mm ;
+        cout << "source point 3d = " << source_point3d_mm.xyz.x ;
+        cout << "source point 3d = " << source_point3d_mm.xyz.y ;
+        cout << "source point 3d = " << source_point3d_mm.xyz.z ;
         res = k4a_calibration_3d_to_3d (&calibration,
                                         &source_point3d_mm,
                                         source_camera, 
