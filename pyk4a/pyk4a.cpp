@@ -3,6 +3,7 @@
 
 #include <k4a/k4a.h>
 #include <stdio.h>
+#include <iostream>
 
 #ifdef __cplusplus
 extern "C" {
@@ -316,6 +317,7 @@ extern "C" {
                 &source_camera,
                 &target_camera);
         
+        cout << "calibration = " << calibration ;
         res = k4a_calibration_3d_to_3d (&calibration,
                                         &source_point3d_mm,
                                         source_camera, 
