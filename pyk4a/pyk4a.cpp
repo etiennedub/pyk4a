@@ -322,12 +322,11 @@ extern "C" {
                                         target_camera,
                                         &target_point3d_mm);
 
-        if (res == K4A_BUFFER_RESULT_FAILED) {
+        if (res == K4A_RESULT_FAILED ) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
         // Return object...
-        PyObject* res = PyBuildValue("s", target_point3d_mm);
-        return res;
+        return PyBuildValue("s", target_point3d_mm);
     }
 
     // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp
