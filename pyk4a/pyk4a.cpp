@@ -311,7 +311,7 @@ extern "C" {
         k4a_calibration_type_t source_camera;
         k4a_calibration_type_t target_camera;
 
-        PyArg_ParseTuple(args, "IIII", &calibration,
+        PyArg_ParseTuple(args, "sYII", &calibration,
                 &source_point3d_mm,
                 &source_camera,
                 &target_camera);

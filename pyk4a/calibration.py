@@ -22,11 +22,12 @@ class Calibration:
                          source_camera,
                          target_camera):
         """
-        Transform a 3d point of a source coordinate system into a 3d point of the target coordinate system.
+        Transform a 3d point of a source coordinate system into a 3d
+        point of the target coordinate system.
         """
         res = k4a_module.calibration_3d_to_3d(
             self.calibration,
-            source_point_3d,
+            source_point_3d.tobytes(),
             source_camera,
             target_camera)
         self._verify_error(res)
