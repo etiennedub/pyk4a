@@ -4,7 +4,7 @@ from enum import Enum
 import numpy as np
 
 from pyk4a.config import Config, ColorControlMode, ColorControlCommand
-from pyk4a.calibration import Calibration
+# from pyk4a.calibration import Calibration
 
 
 # k4a_wait_result_t
