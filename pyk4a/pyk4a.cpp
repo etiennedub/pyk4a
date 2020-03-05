@@ -312,23 +312,38 @@ extern "C" {
         k4a_float3_t target_point3d_mm;
         k4a_calibration_type_t source_camera;
         k4a_calibration_type_t target_camera;
-
-        unsigned char source_point3d[3];
-
-        PyArg_ParseTuple(args, "sYII", &calibration,
-                &source_point3d,
-                &source_camera,
-                &target_camera);
+        int source_point_x;
+        int source_point_y;
+        int source_point_z;
+        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
         
-        source_point3d_mm.xyz.x = source_point3d[0];
-        source_point3d_mm.xyz.y = source_point3d[1];
-        source_point3d_mm.xyz.z = source_point3d[2];
+        PyArg_ParseTuple(args, "IIIIIIIIIIIIII", 
+                &source_point_x,
+                &source_point_y,
+                &source_point_z,
+                &source_camera,
+                &target_camera,
+                &config.color_format,
+                &config.color_resolution,
+                &config.depth_mode,
+                &config.camera_fps,
+                &config.synchronized_images_only,
+                &config.depth_delay_off_color_usec,
+                &config.wired_sync_mode,
+                &config.subordinate_delay_off_master_usec,
+                &config.disable_streaming_indicator);
+        
+        source_point3d_mm.xyz.x = source_point_x;
+        source_point3d_mm.xyz.y = source_point_y;
+        source_point3d_mm.xyz.z = source_point_z;
 
-        cout << "source cam = " << source_camera << endl;
-        cout << "target cam = " << target_camera << endl;
-        cout << "source point (x, y, z)  = (" << source_point3d_mm.xyz.x << ","
-                                              << source_point3d_mm.xyz.y << ","
-                                              << source_point3d_mm.xyz.z << ")" << endl;
+        k4a_result_t result;
+        result = k4a_device_get_calibration(device, config.depth_mode,
+                config.color_resolution, &calibration);
+        if (result == K4A_RESULT_FAILED) {
+            return Py_BuildValue("I", K4A_RESULT_FAILED);
+        }
+
         res = k4a_calibration_3d_to_3d (&calibration,
                                         &source_point3d_mm,
                                         source_camera, 
@@ -339,7 +354,7 @@ extern "C" {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
         // Return object...
-        return Py_BuildValue("s", target_point3d_mm);
+        return Py_BuildValue("Ifff", res, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
 
     // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp

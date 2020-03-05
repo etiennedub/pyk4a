@@ -15,7 +15,9 @@ class Result(Enum):
 
 
 class K4AException(Exception):
-    pass
+    def __init__(self, errorMessage=None):
+        self.error = errorMessage
+        print(f'Error Message = {self.error}')
 
 
 class K4ATimeoutException(K4AException):
@@ -29,6 +31,7 @@ class PyK4A:
         self._device_id = device_id
         self._config = config
         self.is_running = False
+        # self._calibration = Calibration()
 
     def __del__(self):
         if self.is_running:
