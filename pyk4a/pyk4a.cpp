@@ -303,6 +303,33 @@ extern "C" {
         }
     }
 
+    static PyObject* calibration_3d_to_3d(PyObject* self, PyObject *args){
+        k4a_result_t res;
+        k4a_calibration_t calibration;
+        k4a_float3_t source_point3d_mm;
+        k4a_float3_t target_point3d_mm;
+        k4a_calibration_type_t source_camera;
+        k4a_calibration_type_t target_camera;
+
+        PyArg_ParseTuple(args, "IIII", &calibration,
+                &source_point3d_mm,
+                &source_camera,
+                &target_camera);
+        
+        res = k4a_calibration_3d_to_3d (&calibration,
+                                        &source_point3d_mm,
+                                        source_camera, 
+                                        target_camera,
+                                        &target_point3d_mm);
+
+        if (res == K4A_BUFFER_RESULT_FAILED) {
+            return Py_BuildValue("I", K4A_RESULT_FAILED);
+        }
+        // Return object...
+        PyObject* res = PyBuildValue("s", target_point3d_mm);
+        return res;
+    }
+
     // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp
     //###################
     //Module initialisation
@@ -334,6 +361,7 @@ extern "C" {
         {"device_get_calibration", device_get_calibration, METH_VARARGS, "Get device calibration in json format."},
         {"calibration_set_from_raw", calibration_set_from_raw, METH_VARARGS, "Temporary set the calibration from a json format. Must be called after device_start_cameras."},
         {"transformation_depth_image_to_color_camera", transformation_depth_image_to_color_camera, METH_VARARGS, "Transforms the depth map into the geometry of the color camera."},
+        {"calibration_3d_to_3d", calibration_3d_to_3d, METH_VARARGS, "Transforms the coordinates between 2 3D systems"}
         {NULL, NULL, 0, NULL}
     };
 
