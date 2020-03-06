@@ -1,3 +1,4 @@
 build/*
 pyk4a.egg-info/*
 dist/*
+.vscode/*

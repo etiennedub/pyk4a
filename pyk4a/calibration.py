@@ -33,7 +33,7 @@ class Calibration:
         """
         # Device needs to be running for the functions to work
         if self.device.is_running:
-            res, x_targ, y_targ, z_targ = k4a_module.calibration_3d_to_3d(
+            res, x, y, z = k4a_module.calibration_3d_to_3d(
                 source_point_3d[0],
                 source_point_3d[1],
                 source_point_3d[2],
@@ -42,7 +42,7 @@ class Calibration:
                 *self.config.unpack())
 
             self._verify_error(res)
-            return [x_targ, y_targ, z_targ]
+            return [x, y, z]
         else:
             raise K4AException(f'Device not running. Please connect '
                                f'to the device (device.connect())')
@@ -57,7 +57,7 @@ class Calibration:
         """
         # Device needs to be running for the functions to work
         if self.device.is_running:
-            res, valid, x_targ, y_targ, z_targ = k4a_module.calibration_2d_to_3d(
+            res, valid, x, y, z = k4a_module.calibration_2d_to_3d(
                 source_pixel_2d[0],
                 source_pixel_2d[1],
                 depth,
@@ -65,7 +65,7 @@ class Calibration:
                 target_camera,
                 *self.config.unpack())
             self._verify_error(res)
-            return valid, [x_targ, y_targ, z_targ]
+            return valid, [x, y, z]
         else:
             raise K4AException(f'Device not running. Please connect '
                                f'to the device (device.connect())')
