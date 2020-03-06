@@ -88,7 +88,7 @@ class Config:
         self.wired_sync_mode = wired_sync_mode
         self.subordinate_delay_off_master_usec = subordinate_delay_off_master_usec
         self.disable_streaming_indicator = disable_streaming_indicator
-        self.color_format = color_format  # 3  # BGRA32
+        self.color_format = color_format
 
     def unpack(self):
         return (self.color_format,
