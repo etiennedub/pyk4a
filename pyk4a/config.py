@@ -61,7 +61,7 @@ class Config:
                  color_resolution=ColorResolution.RES_720P,
                  depth_mode=DepthMode.NFOV_UNBINNED,
                  camera_fps=FPS.FPS_30,
-                 synchronized_images_only=False,
+                 synchronized_images_only=True,
                  depth_delay_off_color_usec=0,
                  wired_sync_mode=WiredSyncMode.STANDALONE,
                  subordinate_delay_off_master_usec=0,
