@@ -14,9 +14,7 @@ class Result(Enum):
 
 
 class K4AException(Exception):
-    def __init__(self, errorMessage=None):
-        self.error = errorMessage
-        print(f'Error Message = {self.error}')
+    pass
 
 
 class K4ATimeoutException(K4AException):
