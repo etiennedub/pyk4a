@@ -160,7 +160,7 @@ extern "C" {
         if (result == K4A_BUFFER_RESULT_FAILED) {
             return Py_BuildValue("");
         }
-        // calibration_handle = data;
+
         PyObject* res = Py_BuildValue("s", data);
         free(data);
         return res;
