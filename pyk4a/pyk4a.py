@@ -30,7 +30,6 @@ class PyK4A:
         self._device_id = device_id
         self._config = config
         self.is_running = False
-        # self._calibration = Calibration()
 
     def __del__(self):
         if self.is_running:

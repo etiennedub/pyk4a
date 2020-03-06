@@ -3,8 +3,6 @@
 
 #include <k4a/k4a.h>
 #include <stdio.h>
-#include <iostream>
-using namespace std;
 
 #ifdef __cplusplus
 extern "C" {
