@@ -16,6 +16,7 @@ extern "C" {
                                     {4096, 3072}};
     k4a_capture_t capture;
     k4a_transformation_t transformation_handle;
+    k4a_calibration_t calibration_handle;
     k4a_device_t device;
 
     static PyObject* device_open(PyObject* self, PyObject* args){
@@ -93,13 +94,13 @@ extern "C" {
                 &config.disable_streaming_indicator);
 
         k4a_result_t result;
-        k4a_calibration_t calibration;
+        // k4a_calibration_t calibration;
         result = k4a_device_get_calibration(device, config.depth_mode,
-                config.color_resolution, &calibration);
+                config.color_resolution, &calibration_handle);
         if (result == K4A_RESULT_FAILED) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
-        transformation_handle = k4a_transformation_create(&calibration);
+        transformation_handle = k4a_transformation_create(&calibration_handle);
         if (transformation_handle == NULL) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
@@ -134,16 +135,16 @@ extern "C" {
                 &config.disable_streaming_indicator);
         size_t raw_calibration_size = strlen(raw_calibration) + 1;
         k4a_result_t result;
-        k4a_calibration_t calibration;
+        // k4a_calibration_t calibration;
 
         result = k4a_calibration_get_from_raw(raw_calibration,
                 raw_calibration_size, config.depth_mode,
-                config.color_resolution, &calibration);
+                config.color_resolution, &calibration_handle);
         if (result == K4A_RESULT_FAILED) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
         if (transformation_handle) k4a_transformation_destroy(transformation_handle);
-        transformation_handle = k4a_transformation_create(&calibration);
+        transformation_handle = k4a_transformation_create(&calibration_handle);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 
@@ -159,7 +160,7 @@ extern "C" {
         if (result == K4A_BUFFER_RESULT_FAILED) {
             return Py_BuildValue("");
         }
-
+        // calibration_handle = data;
         PyObject* res = Py_BuildValue("s", data);
         free(data);
         return res;
@@ -305,7 +306,6 @@ extern "C" {
 
     static PyObject* calibration_3d_to_3d(PyObject* self, PyObject *args){
         k4a_result_t res;
-        k4a_calibration_t calibration;
         k4a_float3_t source_point3d_mm;
         k4a_float3_t target_point3d_mm;
         k4a_calibration_type_t source_camera;
@@ -313,36 +313,20 @@ extern "C" {
         int source_point_x;
         int source_point_y;
         int source_point_z;
-        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
         
-        PyArg_ParseTuple(args, "IIIIIIIIIIIIII", 
+        PyArg_ParseTuple(args, "IIIII",
                 &source_point_x,
                 &source_point_y,
                 &source_point_z,
                 &source_camera,
-                &target_camera,
-                &config.color_format,
-                &config.color_resolution,
-                &config.depth_mode,
-                &config.camera_fps,
-                &config.synchronized_images_only,
-                &config.depth_delay_off_color_usec,
-                &config.wired_sync_mode,
-                &config.subordinate_delay_off_master_usec,
-                &config.disable_streaming_indicator);
+                &target_camera);
         
         source_point3d_mm.xyz.x = source_point_x;
         source_point3d_mm.xyz.y = source_point_y;
         source_point3d_mm.xyz.z = source_point_z;
 
-        k4a_result_t result;
-        result = k4a_device_get_calibration(device, config.depth_mode,
-                config.color_resolution, &calibration);
-        if (result == K4A_RESULT_FAILED) {
-            return Py_BuildValue("I", K4A_RESULT_FAILED);
-        }
 
-        res = k4a_calibration_3d_to_3d (&calibration,
+        res = k4a_calibration_3d_to_3d (&calibration_handle,
                                         &source_point3d_mm,
                                         source_camera, 
                                         target_camera,
@@ -363,38 +347,21 @@ extern "C" {
         k4a_calibration_type_t source_camera;
         k4a_calibration_type_t target_camera;
         k4a_result_t res;
-        k4a_calibration_t calibration;
         k4a_float2_t source_point2d;
         k4a_float3_t target_point3d_mm;
-        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
         
-        PyArg_ParseTuple(args, "IIfIIIIIIIIIII", 
+        PyArg_ParseTuple(args, "IIfII",
                 &source_point_x,
                 &source_point_y,
                 &source_depth_mm,
                 &source_camera,
-                &target_camera,
-                &config.color_format,
-                &config.color_resolution,
-                &config.depth_mode,
-                &config.camera_fps,
-                &config.synchronized_images_only,
-                &config.depth_delay_off_color_usec,
-                &config.wired_sync_mode,
-                &config.subordinate_delay_off_master_usec,
-                &config.disable_streaming_indicator);
+                &target_camera);
         
         source_point2d.xy.x = source_point_x;
         source_point2d.xy.y = source_point_y;
 
-        k4a_result_t result;
-        result = k4a_device_get_calibration(device, config.depth_mode,
-                config.color_resolution, &calibration);
-        if (result == K4A_RESULT_FAILED) {
-            return Py_BuildValue("I", K4A_RESULT_FAILED);
-        }
 
-        res = k4a_calibration_2d_to_3d (&calibration,
+        res = k4a_calibration_2d_to_3d (&calibration_handle,
                                         &source_point2d,
                                         source_depth_mm,
                                         source_camera, 
