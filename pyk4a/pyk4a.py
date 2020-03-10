@@ -43,6 +43,17 @@ class PyK4A:
         self._device_close()
         self.is_running = False
 
+    def save_calibration_json(self, path):
+        calibration = k4a_module.device_get_calibration()
+        with open(path, 'w') as f:
+            f.write(calibration)
+
+    def load_calibration_json(self, path):
+        with open(path, 'r') as f:
+            calibration = f.read()
+        res = k4a_module.calibration_set_from_raw(calibration, *self._config.unpack())
+        self._verify_error(res)
+
     def _device_open(self):
         res = k4a_module.device_open(self._device_id)
         self._verify_error(res)
@@ -94,7 +105,10 @@ class PyK4A:
         return k4a_module.device_get_color_image()
 
     def _get_capture_depth(self, transform_depth_to_color: bool) -> Optional[np.ndarray]:
-        return k4a_module.device_get_depth_image(transform_depth_to_color)
+        depth = k4a_module.device_get_depth_image()
+        if transform_depth_to_color:
+            depth = k4a_module.transformation_depth_image_to_color_camera(depth, self._config.color_resolution)
+        return depth
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
