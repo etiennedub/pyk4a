@@ -213,6 +213,7 @@ extern "C" {
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
                 break;
             case K4A_IMAGE_FORMAT_DEPTH16:
+            case K4A_IMAGE_FORMAT_IR16:
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(2, dims, NPY_UINT16, buffer);
                 break;
             default:
@@ -336,6 +337,25 @@ extern "C" {
         }
     }
 
+    static PyObject* device_get_ir_image(PyObject* self, PyObject* args){
+        k4a_result_t res;
+        k4a_image_t* ir_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        *ir_image = k4a_capture_get_ir_image(capture);
+
+        PyArrayObject* np_ir_image;
+        if (ir_image) {
+            res = k4a_image_to_numpy(ir_image, &np_ir_image);
+        }
+
+        if (K4A_RESULT_SUCCEEDED == res) {
+            return PyArray_Return(np_ir_image);
+        }
+        else {
+            free(ir_image);
+            return Py_BuildValue("");
+        }
+    }
+
     // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp
     //###################
     //Module initialisation
@@ -359,6 +379,7 @@ extern "C" {
         {"device_get_capture", device_get_capture, METH_VARARGS, "Reads a sensor capture"},
         {"device_get_color_image", device_get_color_image, METH_VARARGS, "Get the color image associated with the given capture"},
         {"device_get_depth_image", device_get_depth_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
+        {"device_get_ir_image", device_get_ir_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
         {"device_close", device_close, METH_VARARGS, "Close an Azure Kinect device"},
         {"device_get_sync_jack", device_get_sync_jack, METH_VARARGS, "Get the device jack status for the synchronization in and synchronization out connectors."},
         {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
