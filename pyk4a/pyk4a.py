@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Tuple, Union, Optional
 import k4a_module
 from enum import Enum
 import numpy as np
@@ -44,14 +44,14 @@ class PyK4A:
         self.is_running = False
 
     def save_calibration_json(self, path):
-        calibration = k4a_module.device_get_calibration(self._device_id)
+        calibration = k4a_module.device_get_calibration()
         with open(path, 'w') as f:
             f.write(calibration)
 
     def load_calibration_json(self, path):
         with open(path, 'r') as f:
             calibration = f.read()
-        res = k4a_module.calibration_set_from_raw(self._device_id, calibration, *self._config.unpack())
+        res = k4a_module.calibration_set_from_raw(calibration, *self._config.unpack())
         self._verify_error(res)
 
     def _device_open(self):
@@ -59,15 +59,15 @@ class PyK4A:
         self._verify_error(res)
 
     def _device_close(self):
-        res = k4a_module.device_close(self._device_id)
+        res = k4a_module.device_close()
         self._verify_error(res)
 
     def _start_cameras(self):
-        res = k4a_module.device_start_cameras(self._device_id, *self._config.unpack())
+        res = k4a_module.device_start_cameras(*self._config.unpack())
         self._verify_error(res)
 
     def _stop_cameras(self):
-        res = k4a_module.device_stop_cameras(self._device_id)
+        res = k4a_module.device_stop_cameras()
         self._verify_error(res)
 
     def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, color_only=False, transform_depth_to_color=True):
@@ -91,7 +91,7 @@ class PyK4A:
                 >>> k4a.get_capture() # type: Tuple[Optional[np.ndarray], Optional[np.ndarray]]
         """
 
-        res = k4a_module.device_get_capture(self._device_id, timeout)
+        res = k4a_module.device_get_capture(timeout)
         self._verify_error(res)
 
         color = self._get_capture_color()
@@ -102,30 +102,27 @@ class PyK4A:
             return color, depth
 
     def _get_capture_color(self) -> Optional[np.ndarray]:
-        return k4a_module.device_get_color_image(self._device_id)
-
-    def _get_capture_ir(self) -> Optional[np.ndarray]:
-        return k4a_module.device_get_ir_image(self._device_id)
+        return k4a_module.device_get_color_image()
 
     def _get_capture_depth(self, transform_depth_to_color: bool) -> Optional[np.ndarray]:
-        depth = k4a_module.device_get_depth_image(self._device_id)
+        depth = k4a_module.device_get_depth_image()
         if transform_depth_to_color:
-            depth = k4a_module.transformation_depth_image_to_color_camera(self._device_id, depth, self._config.color_resolution)
+            depth = k4a_module.transformation_depth_image_to_color_camera(depth, self._config.color_resolution)
         return depth
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
-        res, jack_in, jack_out = k4a_module.device_get_sync_jack(self._device_id)
+        res, jack_in, jack_out = k4a_module.device_get_sync_jack()
         self._verify_error(res)
         return jack_in == 1, jack_out == 1
 
     def _get_color_control(self, cmd: ColorControlCommand) -> Tuple[int, ColorControlMode]:
-        res, mode, value = k4a_module.device_get_color_control(self._device_id, cmd)
+        res, mode, value = k4a_module.device_get_color_control(cmd)
         self._verify_error(res)
         return value, ColorControlMode(mode)
 
     def _set_color_control(self, cmd: ColorControlCommand, value: int, mode=ColorControlMode.MANUAL):
-        res = k4a_module.device_set_color_control(self._device_id, cmd, mode, value)
+        res = k4a_module.device_set_color_control(cmd, mode, value)
         self._verify_error(res)
 
     @property
@@ -222,7 +219,7 @@ class PyK4A:
 
     def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> (bool, int, int, int, int, int):
         (res, supports_auto, min_value, max_value,
-         step_value, default_value, default_mode) = k4a_module.device_get_color_control_capabilities(self._device_id, cmd)
+         step_value, default_value, default_mode) = k4a_module.device_get_color_control_capabilities(cmd)
         self._verify_error(res)
         return {
             "color_control_command": cmd,
