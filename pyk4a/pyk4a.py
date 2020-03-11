@@ -105,7 +105,7 @@ class PyK4A:
         return k4a_module.device_get_color_image(self._device_id)
 
     def _get_capture_ir(self) -> Optional[np.ndarray]:
-        return k4a_module.device_get_ir_image()
+        return k4a_module.device_get_ir_image(self._device_id)
 
     def _get_capture_depth(self, transform_depth_to_color: bool) -> Optional[np.ndarray]:
         depth = k4a_module.device_get_depth_image(self._device_id)
