@@ -17,6 +17,7 @@ extern "C" {
     typedef struct device_container {
         k4a_capture_t capture;
         k4a_transformation_t transformation_handle;
+        k4a_calibration_t calibration_handle;
         k4a_device_t device;
     } device_container;
     #define MAX_DEVICES 32
@@ -107,12 +108,11 @@ extern "C" {
                 &config.disable_streaming_indicator);
 
         k4a_result_t result;
-        k4a_calibration_t calibration;
-        result = k4a_device_get_calibration(devices[device_id].device, config.depth_mode, config.color_resolution, &calibration);
+        result = k4a_device_get_calibration(devices[device_id].device, config.depth_mode, config.color_resolution, &devices[device_id].calibration_handle);
         if (result == K4A_RESULT_FAILED) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
-        devices[device_id].transformation_handle = k4a_transformation_create(&calibration);
+        devices[device_id].transformation_handle = k4a_transformation_create(&devices[device_id].calibration_handle);
         if (devices[device_id].transformation_handle == NULL) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
@@ -158,18 +158,17 @@ extern "C" {
                 &config.disable_streaming_indicator);
         size_t raw_calibration_size = strlen(raw_calibration) + 1;
         k4a_result_t result;
-        // k4a_calibration_t calibration;
 
         result = k4a_calibration_get_from_raw(raw_calibration,
                 raw_calibration_size, config.depth_mode,
-                config.color_resolution, &calibration_handle);
+                config.color_resolution, &devices[device_id].calibration_handle);
         if (result == K4A_RESULT_FAILED) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
         if (devices[device_id].transformation_handle) {
             k4a_transformation_destroy(devices[device_id].transformation_handle);
         }
-        devices[device_id].transformation_handle = k4a_transformation_create(&calibration);
+        devices[device_id].transformation_handle = k4a_transformation_create(&devices[device_id].calibration_handle);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 
@@ -359,6 +358,7 @@ extern "C" {
     }
 
     static PyObject* calibration_3d_to_3d(PyObject* self, PyObject *args){
+        uint32_t device_id;
         k4a_result_t res;
         k4a_float3_t source_point3d_mm;
         k4a_float3_t target_point3d_mm;
@@ -367,8 +367,9 @@ extern "C" {
         int source_point_x;
         int source_point_y;
         int source_point_z;
-        
-        PyArg_ParseTuple(args, "IIIII",
+
+        PyArg_ParseTuple(args, "IIIIII",
+                &device_id,
                 &source_point_x,
                 &source_point_y,
                 &source_point_z,
@@ -380,7 +381,7 @@ extern "C" {
         source_point3d_mm.xyz.z = source_point_z;
 
 
-        res = k4a_calibration_3d_to_3d (&calibration_handle,
+        res = k4a_calibration_3d_to_3d (&devices[device_id].calibration_handle,
                                         &source_point3d_mm,
                                         source_camera, 
                                         target_camera,
@@ -394,6 +395,7 @@ extern "C" {
     }
 
     static PyObject* calibration_2d_to_3d(PyObject* self, PyObject *args){
+        uint32_t device_id;
         int source_point_x;
         int source_point_y;
         float source_depth_mm;
@@ -404,7 +406,8 @@ extern "C" {
         k4a_float2_t source_point2d;
         k4a_float3_t target_point3d_mm;
         
-        PyArg_ParseTuple(args, "IIfII",
+        PyArg_ParseTuple(args, "IIIfII",
+                &device_id,
                 &source_point_x,
                 &source_point_y,
                 &source_depth_mm,
@@ -415,7 +418,7 @@ extern "C" {
         source_point2d.xy.y = source_point_y;
 
 
-        res = k4a_calibration_2d_to_3d (&calibration_handle,
+        res = k4a_calibration_2d_to_3d (&devices[device_id].calibration_handle,
                                         &source_point2d,
                                         source_depth_mm,
                                         source_camera, 

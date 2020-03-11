@@ -43,6 +43,7 @@ class Calibration:
             if target_camera is None:
                 target_camera = self.target_calibration
             res, x, y, z = k4a_module.calibration_3d_to_3d(
+                self.device._device_id,
                 source_point_3d[0],
                 source_point_3d[1],
                 source_point_3d[2],
@@ -70,6 +71,7 @@ class Calibration:
             if target_camera is None:
                 target_camera = self.target_calibration
             res, valid, x, y, z = k4a_module.calibration_2d_to_3d(
+                self.device._device_id,
                 source_pixel_2d[0],
                 source_pixel_2d[1],
                 depth,
