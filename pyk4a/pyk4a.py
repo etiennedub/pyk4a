@@ -1,4 +1,4 @@
-from typing import Tuple, Union, Optional
+from typing import Tuple, Optional
 import k4a_module
 from enum import Enum
 import numpy as np
