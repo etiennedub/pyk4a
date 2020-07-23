@@ -141,7 +141,10 @@ extern "C" {
             k4a_capture_release(devices[device_id].capture);
         }
         k4a_capture_create(&devices[device_id].capture);
-        k4a_wait_result_t result = k4a_device_get_capture(devices[device_id].device, &devices[device_id].capture, timeout);
+        k4a_wait_result_t result;
+        Py_BEGIN_ALLOW_THREADS
+        result = k4a_device_get_capture(devices[device_id].device, &devices[device_id].capture, timeout);
+        Py_END_ALLOW_THREADS
         return Py_BuildValue("I", result);
     }
 
