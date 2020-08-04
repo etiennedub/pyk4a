@@ -19,44 +19,75 @@ extern "C" {
         k4a_transformation_t transformation_handle;
         k4a_calibration_t calibration_handle;
         k4a_device_t device;
+        short thread_safe;
     } device_container;
     #define MAX_DEVICES 32
     device_container devices[MAX_DEVICES];
 
+    static PyThreadState* _gil_release(uint32_t device_id) {
+        return NULL;
+        PyThreadState *thread_state = NULL;
+        if (devices[device_id].thread_safe == 0) {
+            thread_state = PyEval_SaveThread();
+        }
+        return thread_state;
+    }
+    
+    static void _gil_restore(PyThreadState *thread_state) {
+        if (thread_state != NULL) {
+            PyEval_RestoreThread(thread_state);
+        }
+    }
+
     static PyObject* device_open(PyObject* self, PyObject* args){
         uint32_t device_id;
-        PyArg_ParseTuple(args, "I", &device_id);
-        k4a_result_t result = k4a_device_open(device_id, &devices[device_id].device);
+        short thread_safe;
+        PyThreadState *thread_state;
+        PyArg_ParseTuple(args, "IH", &device_id, &thread_safe);
 
+        devices[device_id].thread_safe = thread_safe;
+        thread_state = _gil_release(device_id);
+        k4a_result_t result = k4a_device_open(device_id, &devices[device_id].device);
+        _gil_restore(thread_state);
         return Py_BuildValue("I", result);
     }
 
     static PyObject* device_close(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         PyArg_ParseTuple(args, "I", &device_id);
+        
+        thread_state = _gil_release(device_id);
         k4a_device_close(devices[device_id].device);
+        _gil_restore(thread_state);
+        
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 
     static PyObject* device_get_sync_jack(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         bool in_jack = 0;
         bool out_jack = 0;
         PyArg_ParseTuple(args, "I", &device_id);
-
+        
+        thread_state = _gil_release(device_id);
         k4a_result_t result = k4a_device_get_sync_jack(devices[device_id].device, &in_jack, &out_jack);
+        _gil_restore(thread_state);
 
         return Py_BuildValue("III", result, in_jack, out_jack);
     }
 
     static PyObject* device_get_color_control(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         k4a_color_control_command_t command;
         k4a_color_control_mode_t mode;
         int32_t value = 0;
         PyArg_ParseTuple(args, "II", &device_id, &command);
-
+        thread_state = _gil_release(device_id);
         k4a_result_t result = k4a_device_get_color_control(devices[device_id].device, command, &mode, &value);
+        _gil_restore(thread_state);
         if (result == K4A_RESULT_FAILED) {
             return Py_BuildValue("III", 0, 0, 0);
         }
@@ -65,12 +96,15 @@ extern "C" {
 
     static PyObject* device_set_color_control(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         k4a_color_control_command_t command = K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE;
         k4a_color_control_mode_t mode = K4A_COLOR_CONTROL_MODE_MANUAL;
         int32_t value = 0;
         PyArg_ParseTuple(args, "IIII", &device_id, &command, &mode, &value);
 
+        thread_state = _gil_release(device_id);
         k4a_result_t result = k4a_device_set_color_control(devices[device_id].device, command, mode, value);
+        _gil_restore(thread_state);
         if (result == K4A_RESULT_FAILED) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
@@ -79,6 +113,7 @@ extern "C" {
 
     static PyObject* device_get_color_control_capabilities(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         k4a_color_control_command_t command;
         bool supports_auto;
         int32_t min_value;
@@ -88,8 +123,9 @@ extern "C" {
         k4a_color_control_mode_t default_mode;
         PyArg_ParseTuple(args, "II", &device_id, &command);
 
-
+        thread_state = _gil_release(device_id);
         k4a_result_t result = k4a_device_get_color_control_capabilities(devices[device_id].device, command, &supports_auto, &min_value, &max_value, &step_value, &default_value, &default_mode);
+        _gil_restore(thread_state);
         if (result == K4A_RESULT_FAILED) {
             return Py_BuildValue("IIIIIII", 0, 0, 0, 0, 0, 0, 0);
         }
@@ -98,6 +134,7 @@ extern "C" {
 
     static PyObject* device_start_cameras(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
         PyArg_ParseTuple(args, "IIIIIIIIII", &device_id,
                 &config.color_format,
@@ -108,21 +145,27 @@ extern "C" {
                 &config.disable_streaming_indicator);
 
         k4a_result_t result;
+        thread_state = _gil_release(device_id);
         result = k4a_device_get_calibration(devices[device_id].device, config.depth_mode, config.color_resolution, &devices[device_id].calibration_handle);
         if (result == K4A_RESULT_FAILED) {
+            _gil_restore(thread_state);
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
         devices[device_id].transformation_handle = k4a_transformation_create(&devices[device_id].calibration_handle);
         if (devices[device_id].transformation_handle == NULL) {
+            _gil_restore(thread_state);
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
         result = k4a_device_start_cameras(devices[device_id].device, &config);
+        _gil_restore(thread_state);
         return Py_BuildValue("I", result);
     }
 
     static PyObject* device_stop_cameras(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         PyArg_ParseTuple(args, "I", &device_id);
+        thread_state = _gil_release(device_id);
         if (devices[device_id].transformation_handle) {
             k4a_transformation_destroy(devices[device_id].transformation_handle);
         }
@@ -130,26 +173,29 @@ extern "C" {
             k4a_capture_release(devices[device_id].capture);
         }
         k4a_device_stop_cameras(devices[device_id].device);
+        _gil_restore(thread_state);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 
     static PyObject* device_get_capture(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         int32_t timeout;
         PyArg_ParseTuple(args, "II", &device_id, &timeout);
+        thread_state = _gil_release(device_id);
         if (devices[device_id].capture) {
             k4a_capture_release(devices[device_id].capture);
         }
         k4a_capture_create(&devices[device_id].capture);
         k4a_wait_result_t result;
-        Py_BEGIN_ALLOW_THREADS
         result = k4a_device_get_capture(devices[device_id].device, &devices[device_id].capture, timeout);
-        Py_END_ALLOW_THREADS
+        _gil_restore(thread_state);
         return Py_BuildValue("I", result);
     }
 
     static PyObject* calibration_set_from_raw(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         char * raw_calibration;
         k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
         PyArg_ParseTuple(args, "IsIIIIIIIII", &device_id,
@@ -162,37 +208,44 @@ extern "C" {
         size_t raw_calibration_size = strlen(raw_calibration) + 1;
         k4a_result_t result;
 
+        thread_state = _gil_release(device_id);
         result = k4a_calibration_get_from_raw(raw_calibration,
                 raw_calibration_size, config.depth_mode,
                 config.color_resolution, &devices[device_id].calibration_handle);
         if (result == K4A_RESULT_FAILED) {
+            _gil_restore(thread_state);
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
         if (devices[device_id].transformation_handle) {
             k4a_transformation_destroy(devices[device_id].transformation_handle);
         }
         devices[device_id].transformation_handle = k4a_transformation_create(&devices[device_id].calibration_handle);
+        _gil_restore(thread_state);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 
     static PyObject* device_get_calibration(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         k4a_buffer_result_t result;
         size_t data_size;
         PyArg_ParseTuple(args, "I", &device_id);
-
+        thread_state = _gil_release(device_id);
         result = k4a_device_get_raw_calibration(devices[device_id].device, NULL, &data_size);
         if (result == K4A_BUFFER_RESULT_FAILED) {
+            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
         uint8_t* data = (uint8_t*) malloc(data_size);
         result = k4a_device_get_raw_calibration(devices[device_id].device, data, &data_size);
         if (result == K4A_BUFFER_RESULT_FAILED) {
+            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
 
         PyObject* res = Py_BuildValue("s", data);
         free(data);
+        _gil_restore(thread_state);
         return res;
     }
 
@@ -258,11 +311,13 @@ extern "C" {
     static PyObject* transformation_depth_image_to_color_camera(
             PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         k4a_result_t res;
         PyArrayObject *in_array;
         k4a_color_resolution_t color_resolution;
         PyArg_ParseTuple(args, "IO!I", &device_id, &PyArray_Type, &in_array, &color_resolution);
 
+        thread_state = _gil_release(device_id);
         k4a_image_t* depth_image_transformed = (k4a_image_t*) malloc(sizeof(k4a_image_t));
 
         k4a_image_t depth_image;
@@ -290,18 +345,22 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
+            _gil_restore(thread_state);
             return PyArray_Return(np_depth_image);
         }
         else {
             free(depth_image_transformed);
+            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
     }
 
     static PyObject* device_get_color_image(PyObject* self, PyObject* args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         PyArg_ParseTuple(args, "I", &device_id);
         k4a_result_t res;
+        thread_state = _gil_release(device_id);
         k4a_image_t* color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         *color_image = k4a_capture_get_color_image(devices[device_id].capture);
         PyArrayObject* np_color_image;
@@ -310,10 +369,12 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
+            _gil_restore(thread_state);
             return PyArray_Return(np_color_image);
         }
         else {
             free(color_image);
+            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
     }
@@ -321,7 +382,10 @@ extern "C" {
     static PyObject* device_get_depth_image(PyObject* self, PyObject* args){
         k4a_result_t res;
         uint32_t device_id;
+        PyThreadState *thread_state;
         PyArg_ParseTuple(args, "I", &device_id);
+
+        thread_state = _gil_release(device_id);
         k4a_image_t* depth_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         *depth_image = k4a_capture_get_depth_image(devices[device_id].capture);
 
@@ -331,10 +395,12 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
+            _gil_restore(thread_state);
             return PyArray_Return(np_depth_image);
         }
         else {
             free(depth_image);
+            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
     }
@@ -342,7 +408,10 @@ extern "C" {
     static PyObject* device_get_ir_image(PyObject* self, PyObject* args){
         k4a_result_t res;
         uint32_t device_id;
+        PyThreadState *thread_state;
         PyArg_ParseTuple(args, "I", &device_id);
+
+        thread_state = _gil_release(device_id);
         k4a_image_t* ir_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         *ir_image = k4a_capture_get_ir_image(devices[device_id].capture);
 
@@ -352,16 +421,19 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
+            _gil_restore(thread_state);
             return PyArray_Return(np_ir_image);
         }
         else {
             free(ir_image);
+            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
     }
 
     static PyObject* calibration_3d_to_3d(PyObject* self, PyObject *args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         k4a_result_t res;
         k4a_float3_t source_point3d_mm;
         k4a_float3_t target_point3d_mm;
@@ -378,7 +450,8 @@ extern "C" {
                 &source_point_z,
                 &source_camera,
                 &target_camera);
-        
+
+        thread_state = _gil_release(device_id);
         source_point3d_mm.xyz.x = source_point_x;
         source_point3d_mm.xyz.y = source_point_y;
         source_point3d_mm.xyz.z = source_point_z;
@@ -389,7 +462,7 @@ extern "C" {
                                         source_camera, 
                                         target_camera,
                                         &target_point3d_mm);
-
+       _gil_restore(thread_state);
         if (res == K4A_RESULT_FAILED ) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
@@ -399,6 +472,7 @@ extern "C" {
 
     static PyObject* calibration_2d_to_3d(PyObject* self, PyObject *args){
         uint32_t device_id;
+        PyThreadState *thread_state;
         int source_point_x;
         int source_point_y;
         float source_depth_mm;
@@ -416,7 +490,8 @@ extern "C" {
                 &source_depth_mm,
                 &source_camera,
                 &target_camera);
-        
+
+        thread_state = _gil_release(device_id);
         source_point2d.xy.x = source_point_x;
         source_point2d.xy.y = source_point_y;
 
@@ -428,7 +503,7 @@ extern "C" {
                                         target_camera,
                                         &target_point3d_mm,
                                         &valid);
-
+        _gil_restore(thread_state);
         if (res == K4A_RESULT_FAILED ) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
