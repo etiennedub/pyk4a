@@ -25,7 +25,6 @@ extern "C" {
     device_container devices[MAX_DEVICES];
 
     static PyThreadState* _gil_release(uint32_t device_id) {
-        return NULL;
         PyThreadState *thread_state = NULL;
         if (devices[device_id].thread_safe == 0) {
             thread_state = PyEval_SaveThread();
