@@ -91,8 +91,8 @@ class PyK4A:
             - if config synchronized_images_only=False, you must check if returs for each image is None
                 >>> k4a.get_capture(color_only=True) # type: Optional[np.ndarray]
                 >>> k4a.get_capture() # type: Tuple[Optional[np.ndarray], Optional[np.ndarray]]
-            - if using ColorFormat.MJPG instead of the default ColorFormat.BGRA32
-                You must decode the raw MJPG. See example/viewer.py
+            - if using any ColorFormat other than ColorFormat.BGRA32, the color image must be decoded.
+                See example/color_formats.py
         """
 
         res = k4a_module.device_get_capture(self._device_id, timeout)

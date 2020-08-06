@@ -11,8 +11,8 @@ class FPS(IntEnum):
 # k4a_image_format_t
 class ColorFormat(IntEnum):
     MJPG = 0
-    # NV12 = 1
-    # YUY2 = 2
+    NV12 = 1
+    YUY2 = 2
     BGRA32 = 3
 
 

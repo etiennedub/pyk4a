@@ -5,8 +5,6 @@ from math import sin
 import numpy as np
 from pyk4a import PyK4A
 
-last_capture: Optional[Tuple[np.ndarray, np.ndarray]] = None
-
 
 class Worker(threading.Thread):
     def __init__(self):
@@ -36,6 +34,7 @@ class CameraWorker(Worker):
         super().__init__()
 
     def run(self) -> None:
+        print("Start run")
         camera = PyK4A(device_id=self._device_id, thread_safe=self._thread_safe)
         camera.connect()
         while not self._halt:
@@ -44,11 +43,10 @@ class CameraWorker(Worker):
         sleep(0.1)
         camera.disconnect()
         del camera
+        print("Stop run")
 
 
-def bench(
-    camera_workers: List[CameraWorker], cpu_workers: List[CpuWorker], duration: float
-) -> int:
+def bench(camera_workers: List[CameraWorker], cpu_workers: List[CpuWorker], duration: float) -> int:
     # start cameras
     for camera_worker in camera_workers:
         camera_worker.start()
