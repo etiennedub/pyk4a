@@ -2,6 +2,8 @@ from typing import Tuple, Optional
 import k4a_module
 from enum import Enum
 import numpy as np
+from dataclasses import dataclass
+from typing import Union
 
 from pyk4a.config import Config, ColorControlMode, ColorControlCommand
 
@@ -21,6 +23,32 @@ class K4ATimeoutException(K4AException):
     pass
 
 
+@dataclass
+class CaptureRequest:
+    """
+    Capture request specifications.
+    """
+    color: bool = True
+    depth: bool = True
+    transform_depth_to_color: bool = False
+    ir: bool = False
+    timestamps: bool = False
+
+
+@dataclass
+class CaptureResult:
+    """
+    Contains a capture's images and information
+    """
+    color: Union[np.array, None] = None
+    depth: Union[np.array, None] = None
+    ir: Union[np.array, None] = None
+    timestamp_device_color: Union[np.uint64, None] = None  # in microseconds
+    timestamp_device_depth: Union[np.uint64, None] = None  # in microseconds
+    timestamp_system_color: Union[np.uint64, None] = None  # in nanoseconds
+    timestamp_system_depth: Union[np.uint64, None] = None  # in nanoseconds
+
+
 class PyK4A:
     TIMEOUT_WAIT_INFINITE = -1
 
@@ -29,6 +57,7 @@ class PyK4A:
         self._config = config
         self._thread_safe = thread_safe
         self.is_running = False
+        self.capture = CaptureResult()
 
     def __del__(self):
         if self.is_running:
@@ -72,38 +101,35 @@ class PyK4A:
         res = k4a_module.device_stop_cameras(self._device_id)
         self._verify_error(res)
 
-    def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, color_only=False, transform_depth_to_color=True):
-        r"""Fetch a capture from the device and return as numpy array(s) or None.
+    def get_capture(self, capture_request=CaptureRequest(), timeout=TIMEOUT_WAIT_INFINITE, ) -> CaptureResult:
+        r"""Fetch a capture from the device and return as CaptureResult containing the requested images as np.array
 
         Arguments:
+            :param capture_request: CaptureRequest containing requested images and information to be fetched if
+                they are available in the current frame.
             :param timeout: Timeout in ms. Default is infinite.
-            :param color_only: If true, returns color image only as np.array
-            :param transform_depth_to_color: If true, transforms the depth image to the color image reference, using the
-                kinect azure device calibration parameters.
-
 
         Returns:
-            :return img_color [, img_depth] # image could be None if config synchronized_images_only==False
+            :return CaptureResult containing requested images and infos if they are available in the current
+                capture. There are no guarantees that the returned object will contain all the requested images.
 
-        Examples::
-            - if config synchronized_images_only=True
-                >>> k4a.get_capture(color_only=True) # type: np.ndarray
-            - if config synchronized_images_only=False, you must check if returs for each image is None
-                >>> k4a.get_capture(color_only=True) # type: Optional[np.ndarray]
-                >>> k4a.get_capture() # type: Tuple[Optional[np.ndarray], Optional[np.ndarray]]
-            - if using any ColorFormat other than ColorFormat.BGRA32, the color image must be decoded.
-                See example/color_formats.py
+        See default request in CaptureRequest
+        If using any ColorFormat other than ColorFormat.BGRA32, the color image must be decoded.
+            See example/color_formats.py
         """
 
         res = k4a_module.device_get_capture(self._device_id, timeout)
         self._verify_error(res)
 
-        color = self._get_capture_color()
-        if color_only:
-            return color
-        else:
-            depth = self._get_capture_depth(transform_depth_to_color)
-            return color, depth
+        cap = CaptureResult()
+        if capture_request.color:
+            cap.color = self._get_capture_color()
+        if capture_request.depth:
+            cap.depth = self._get_capture_depth(transform_depth_to_color=capture_request.transform_depth_to_color)
+        if capture_request.ir:
+            cap.ir = self._get_capture_ir()
+
+        return cap
 
     def _get_capture_color(self) -> Optional[np.ndarray]:
         return k4a_module.device_get_color_image(self._device_id)
@@ -114,7 +140,8 @@ class PyK4A:
     def _get_capture_depth(self, transform_depth_to_color: bool) -> Optional[np.ndarray]:
         depth = k4a_module.device_get_depth_image(self._device_id)
         if transform_depth_to_color:
-            depth = k4a_module.transformation_depth_image_to_color_camera(self._device_id, depth, self._config.color_resolution)
+            depth = k4a_module.transformation_depth_image_to_color_camera(self._device_id, depth,
+                                                                          self._config.color_resolution)
         return depth
 
     @property
@@ -225,8 +252,8 @@ class PyK4A:
         self._set_color_control(ColorControlCommand.WHITEBALANCE, value=value, mode=mode)
 
     def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> (bool, int, int, int, int, int):
-        (res, supports_auto, min_value, max_value,
-         step_value, default_value, default_mode) = k4a_module.device_get_color_control_capabilities(self._device_id, cmd)
+        ret = k4a_module.device_get_color_control_capabilities(self._device_id, cmd)
+        (res, supports_auto, min_value, max_value, step_value, default_value, default_mode) = ret
         self._verify_error(res)
         return {
             "color_control_command": cmd,
