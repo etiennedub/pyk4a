@@ -282,7 +282,8 @@ extern "C" {
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
                 break;
             case K4A_IMAGE_FORMAT_COLOR_NV12:
-                dims[0] = k4a_image_get_height_pixels(*img_src) * 3;
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[0] += dims[0] /2;
                 dims[1] = k4a_image_get_width_pixels(*img_src);
                 dims[2] = 1;
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);

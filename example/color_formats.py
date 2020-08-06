@@ -15,9 +15,9 @@ def get_color_image_size(config, imshow=True):
         raw_img_color = k4a.get_capture(color_only=True)
         if np.any(raw_img_color):
             count += 1
-            # if imshow:
-            #     cv2.imshow("k4a", convert_to_bgra_if_required(k4a, raw_img_color))
-            #     key = cv2.waitKey(10)
+            if imshow:
+                cv2.imshow("k4a", convert_to_bgra_if_required(k4a, raw_img_color))
+                key = cv2.waitKey(10)
     cv2.destroyAllWindows()
     k4a.disconnect()
     return raw_img_color.nbytes
@@ -29,6 +29,12 @@ def convert_to_bgra_if_required(k4a, img_color):
         img_color = cv2.imdecode(img_color, cv2.IMREAD_COLOR)
     elif k4a._config.color_format == pyk4a.ColorFormat.NV12:
         img_color = cv2.cvtColor(img_color, cv2.COLOR_YUV2BGRA_NV12)
+        # # this also works and it explains how the NV12 color format is stored in memory
+        # h, w = img_color.shape[0:2]
+        # h = h // 3 * 2
+        # luminance = img_color[:h]
+        # chroma = img_color[h:, :w//2]
+        # img_color = cv2.cvtColorTwoPlane(luminance, chroma, cv2.COLOR_YUV2BGRA_NV12)
     elif k4a._config.color_format == pyk4a.ColorFormat.YUY2:
         img_color = cv2.cvtColor(img_color, cv2.COLOR_YUV2BGRA_YUY2)
     return img_color
