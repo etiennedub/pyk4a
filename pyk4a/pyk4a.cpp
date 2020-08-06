@@ -7,7 +7,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+    // to debug, use fprintf(stdout, "debug msg\n") or fprintf(stderr, "debug msg\n");;
 
     // Simple way to map k4a_color_resolution_t to dimensions
     const int RESOLUTION_TO_DIMS[][2] = {{0, 0}, {1280, 720},
@@ -262,17 +262,36 @@ extern "C" {
     k4a_result_t k4a_image_to_numpy(k4a_image_t* img_src, PyArrayObject** img_dst){
         uint8_t* buffer = k4a_image_get_buffer(*img_src);
         npy_intp dims[3];
-        dims[0] = k4a_image_get_height_pixels(*img_src);
-        dims[1] = k4a_image_get_width_pixels(*img_src);
 
         k4a_image_format_t format = k4a_image_get_format(*img_src);
         switch (format){
             case K4A_IMAGE_FORMAT_COLOR_BGRA32:
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[1] = k4a_image_get_width_pixels(*img_src);
                 dims[2] = 4;
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
+                break;
+            case K4A_IMAGE_FORMAT_COLOR_MJPG:
+                dims[0] = k4a_image_get_size(*img_src);
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(1, dims, NPY_UINT8, buffer);
+                break;
+            case K4A_IMAGE_FORMAT_COLOR_YUY2:
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[1] = k4a_image_get_width_pixels(*img_src);
+                dims[2] = 2;
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
+                break;
+            case K4A_IMAGE_FORMAT_COLOR_NV12:
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[0] += dims[0] /2;
+                dims[1] = k4a_image_get_width_pixels(*img_src);
+                dims[2] = 1;
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
                 break;
             case K4A_IMAGE_FORMAT_DEPTH16:
             case K4A_IMAGE_FORMAT_IR16:
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[1] = k4a_image_get_width_pixels(*img_src);
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(2, dims, NPY_UINT16, buffer);
                 break;
             default:
