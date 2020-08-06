@@ -8,7 +8,7 @@ class FPS(IntEnum):
     FPS_30 = 2
 
 
-# k4a_image_t
+# k4a_image_format_t
 class ColorFormat(IntEnum):
     MJPG = 0
     # NV12 = 1
