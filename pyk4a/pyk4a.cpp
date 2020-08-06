@@ -2,6 +2,9 @@
 #include <numpy/arrayobject.h>
 
 #include <k4a/k4a.h>
+#ifdef ENABLE_BODY_TRACKING
+    #include <k4abt.h>
+#endif
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -20,9 +23,17 @@ extern "C" {
         k4a_calibration_t calibration_handle;
         k4a_device_t device;
         short thread_safe;
+#ifdef ENABLE_BODY_TRACKING
+        k4abt_tracker_t body_tracker;
+#endif
     } device_container;
     #define MAX_DEVICES 32
     device_container devices[MAX_DEVICES];
+
+#ifdef ENABLE_BODY_TRACKING
+    #define NUM_JOINTS 32
+    #define NUM_DATA 10
+#endif
 
     static PyThreadState* _gil_release(uint32_t device_id) {
         PyThreadState *thread_state = NULL;
@@ -164,6 +175,13 @@ extern "C" {
         }
         result = k4a_device_start_cameras(devices[device_id].device, &config);
         _gil_restore(thread_state);
+
+#ifdef ENABLE_BODY_TRACKING
+            k4abt_tracker_configuration_t tracker_calibration = K4ABT_TRACKER_CONFIG_DEFAULT;
+            if (k4abt_tracker_create(&devices[device_id].calibration_handle, tracker_calibration, &devices[device_id].body_tracker) == K4A_RESULT_FAILED) {
+                return Py_BuildValue("I", K4A_RESULT_FAILED);
+            }
+#endif
         return Py_BuildValue("I", result);
     }
 
@@ -177,8 +195,14 @@ extern "C" {
         }
         k4a_device_stop_cameras(devices[device_id].device);
         release_device_capture(device_id);
-
         _gil_restore(thread_state);
+#ifdef ENABLE_BODY_TRACKING
+        if (devices[device_id].body_tracker) {
+            k4abt_tracker_destroy(devices[device_id].body_tracker);
+            devices[device_id].body_tracker = 0;
+        }
+#endif
+
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 
@@ -252,6 +276,81 @@ extern "C" {
         _gil_restore(thread_state);
         return res;
     }
+
+    static PyObject* is_body_tracking_supported(PyObject* self, PyObject* args){
+#ifdef ENABLE_BODY_TRACKING
+        return Py_BuildValue("I", 1);
+#else
+        return Py_BuildValue("I", 0);
+#endif
+    }
+
+#ifdef ENABLE_BODY_TRACKING
+    static void pose_capsule_cleanup(PyObject *capsule) {
+        double_t *buffer = (double_t*)PyCapsule_GetContext(capsule);
+        delete buffer;
+    }
+
+    static PyObject* device_get_pose_data(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        PyArg_ParseTuple(args, "I", &device_id);
+        k4abt_tracker_enqueue_capture(devices[device_id].body_tracker, devices[device_id].capture, 0);
+        k4abt_frame_t body_frame = NULL;
+        k4a_wait_result_t pop_frame_result = k4abt_tracker_pop_result(devices[device_id].body_tracker, &body_frame, 0);
+        if (pop_frame_result == K4A_WAIT_RESULT_SUCCEEDED) {
+            size_t num_bodies = k4abt_frame_get_num_bodies(body_frame);
+            double_t* buffer = new double_t[num_bodies*NUM_JOINTS*NUM_DATA];
+            for (size_t i = 0; i < num_bodies; i++) {
+                k4abt_skeleton_t skeleton;
+                k4abt_frame_get_body_skeleton(body_frame, i, &skeleton);
+                for (int j = 0; j < (int)K4ABT_JOINT_COUNT; j++) {
+                    k4a_float3_t position = skeleton.joints[j].position;
+                    k4a_float2_t position_image;
+                    int valid;
+                    //Convert 3d points in mm to image coordinates
+                    k4a_calibration_3d_to_2d(&devices[device_id].calibration_handle,
+                                             &position,
+                                             K4A_CALIBRATION_TYPE_DEPTH,
+                                             K4A_CALIBRATION_TYPE_COLOR,
+                                             &position_image, &valid);
+
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 0] = position_image.v[0];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 1] = position_image.v[1];
+
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 2] = position.v[0];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 3] = position.v[1];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 4] = position.v[2];
+
+                    k4a_quaternion_t orientation = skeleton.joints[j].orientation;
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 5] = orientation.v[0];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 6] = orientation.v[1];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 7] = orientation.v[2];
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 8] = orientation.v[3];
+
+                    k4abt_joint_confidence_level_t confidence_level = skeleton.joints[j].confidence_level;
+                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 9] = confidence_level;
+                }
+            }
+            k4abt_frame_release(body_frame);
+
+            thread_state = _gil_release(device_id);
+            npy_intp dims[3];
+            dims[0] = num_bodies;
+            dims[1] = NUM_JOINTS;
+            dims[2] = NUM_DATA;
+            PyArrayObject* np_pose_data = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_DOUBLE, buffer);
+            PyObject *capsule = PyCapsule_New(buffer, NULL, pose_capsule_cleanup);
+            PyCapsule_SetContext(capsule, buffer);
+            PyArray_SetBaseObject((PyArrayObject *) np_pose_data, capsule);
+            _gil_restore(thread_state);
+            return PyArray_Return(np_pose_data);
+        }
+        else {
+            return Py_BuildValue("");
+        }
+    }
+#endif
 
     static void capsule_cleanup(PyObject *capsule) {
         k4a_image_t *image = (k4a_image_t*)PyCapsule_GetContext(capsule);
@@ -568,6 +667,10 @@ extern "C" {
         {"transformation_depth_image_to_color_camera", transformation_depth_image_to_color_camera, METH_VARARGS, "Transforms the depth map into the geometry of the color camera."},
         {"calibration_3d_to_3d", calibration_3d_to_3d, METH_VARARGS, "Transforms the coordinates between 2 3D systems"},
         {"calibration_2d_to_3d", calibration_2d_to_3d, METH_VARARGS, "Transforms the coordinates between a pixel and a 3D system"},
+        {"is_body_tracking_supported", is_body_tracking_supported, METH_VARARGS, "Returns body tracking support bool"},
+#ifdef ENABLE_BODY_TRACKING
+        {"device_get_pose_data", device_get_pose_data, METH_VARARGS, "Get the body pose estimates associated with the given capture"},
+#endif
         {NULL, NULL, 0, NULL}
     };
 

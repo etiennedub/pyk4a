@@ -23,6 +23,7 @@ class K4ATimeoutException(K4AException):
 
 class PyK4A:
     TIMEOUT_WAIT_INFINITE = -1
+    BODY_TRACKING_SUPPORT = k4a_module.is_body_tracking_supported() == True
 
     def __init__(self, config=Config(), device_id=0, thread_safe: bool = True):
         self._device_id = device_id
@@ -104,6 +105,11 @@ class PyK4A:
         else:
             depth = self._get_capture_depth(transform_depth_to_color)
             return color, depth
+
+    def get_pose(self) -> Optional[np.ndarray]:
+        # Make sure to call get_capture before calling this function.
+        assert PyK4A.BODY_TRACKING_SUPPORT == True
+        return k4a_module.device_get_pose_data(self._device_id, )
 
     def _get_capture_color(self) -> Optional[np.ndarray]:
         return k4a_module.device_get_color_image(self._device_id)
