@@ -8,6 +8,14 @@ class FPS(IntEnum):
     FPS_30 = 2
 
 
+# k4a_image_t
+class ColorFormat(IntEnum):
+    MJPG = 0
+    # NV12 = 1
+    # YUY2 = 2
+    BGRA32 = 3
+
+
 # k4a_depth_mode_t
 class DepthMode(IntEnum):
     OFF = 0
@@ -59,6 +67,7 @@ class ColorControlMode(IntEnum):
 class Config:
     def __init__(self,
                  color_resolution=ColorResolution.RES_720P,
+                 color_format=ColorFormat.BGRA32,
                  depth_mode=DepthMode.NFOV_UNBINNED,
                  camera_fps=FPS.FPS_30,
                  synchronized_images_only=True,
@@ -67,6 +76,7 @@ class Config:
                  subordinate_delay_off_master_usec=0,
                  disable_streaming_indicator=False):
         self.color_resolution = color_resolution
+        self.color_format = color_format
         self.depth_mode = depth_mode
         self.camera_fps = camera_fps
         self.synchronized_images_only = synchronized_images_only
@@ -74,7 +84,6 @@ class Config:
         self.wired_sync_mode = wired_sync_mode
         self.subordinate_delay_off_master_usec = subordinate_delay_off_master_usec
         self.disable_streaming_indicator = disable_streaming_indicator
-        self.color_format = 3  # BGRA32
 
     def unpack(self):
         return (self.color_format,
