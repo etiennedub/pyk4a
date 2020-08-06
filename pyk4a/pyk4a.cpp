@@ -38,6 +38,13 @@ extern "C" {
         }
     }
 
+    static void release_device_capture(uint32_t device_id){
+        if (devices[device_id].capture) {
+            k4a_capture_release(devices[device_id].capture);
+            devices[device_id].capture = 0;
+        }
+    }
+
     static PyObject* device_open(PyObject* self, PyObject* args){
         uint32_t device_id;
         short thread_safe;
@@ -168,10 +175,9 @@ extern "C" {
         if (devices[device_id].transformation_handle) {
             k4a_transformation_destroy(devices[device_id].transformation_handle);
         }
-        if (devices[device_id].capture) {
-            k4a_capture_release(devices[device_id].capture);
-        }
         k4a_device_stop_cameras(devices[device_id].device);
+        release_device_capture(device_id);
+
         _gil_restore(thread_state);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
@@ -182,9 +188,8 @@ extern "C" {
         int32_t timeout;
         PyArg_ParseTuple(args, "II", &device_id, &timeout);
         thread_state = _gil_release(device_id);
-        if (devices[device_id].capture) {
-            k4a_capture_release(devices[device_id].capture);
-        }
+        release_device_capture(device_id);
+
         k4a_capture_create(&devices[device_id].capture);
         k4a_wait_result_t result;
         result = k4a_device_get_capture(devices[device_id].device, &devices[device_id].capture, timeout);
