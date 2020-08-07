@@ -23,32 +23,6 @@ class K4ATimeoutException(K4AException):
     pass
 
 
-@dataclass
-class CaptureRequest:
-    """
-    Capture request specifications.
-    """
-    color: bool = True
-    depth: bool = True
-    transform_depth_to_color: bool = False
-    ir: bool = False
-    timestamps: bool = False
-
-
-@dataclass
-class CaptureResult:
-    """
-    Contains a capture's images and information
-    """
-    color: Union[np.array, None] = None
-    depth: Union[np.array, None] = None
-    ir: Union[np.array, None] = None
-    timestamp_device_color: Union[np.uint64, None] = None  # in microseconds
-    timestamp_device_depth: Union[np.uint64, None] = None  # in microseconds
-    timestamp_system_color: Union[np.uint64, None] = None  # in nanoseconds
-    timestamp_system_depth: Union[np.uint64, None] = None  # in nanoseconds
-
-
 class PyK4A:
     TIMEOUT_WAIT_INFINITE = -1
 
@@ -57,7 +31,6 @@ class PyK4A:
         self._config = config
         self._thread_safe = thread_safe
         self.is_running = False
-        self.capture = CaptureResult()
 
     def __del__(self):
         if self.is_running:
@@ -101,8 +74,8 @@ class PyK4A:
         res = k4a_module.device_stop_cameras(self._device_id)
         self._verify_error(res)
 
-    def get_capture(self, capture_request=CaptureRequest(), timeout=TIMEOUT_WAIT_INFINITE, ) -> CaptureResult:
-        r"""Fetch a capture from the device and return as CaptureResult containing the requested images as np.array
+    def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, ):
+        r"""Fetch a capture from the device and return a PyK4ACapture object. Images are lazily fetched.
 
         Arguments:
             :param capture_request: CaptureRequest containing requested images and information to be fetched if
@@ -117,32 +90,11 @@ class PyK4A:
         If using any ColorFormat other than ColorFormat.BGRA32, the color image must be decoded.
             See example/color_formats.py
         """
-
-        res = k4a_module.device_get_capture(self._device_id, timeout)
+        res, capture_capsule = k4a_module.device_get_capture(self._device_id, timeout)
         self._verify_error(res)
 
-        cap = CaptureResult()
-        if capture_request.color:
-            cap.color = self._get_capture_color()
-        if capture_request.depth:
-            cap.depth = self._get_capture_depth(transform_depth_to_color=capture_request.transform_depth_to_color)
-        if capture_request.ir:
-            cap.ir = self._get_capture_ir()
-
-        return cap
-
-    def _get_capture_color(self) -> Optional[np.ndarray]:
-        return k4a_module.device_get_color_image(self._device_id)
-
-    def _get_capture_ir(self) -> Optional[np.ndarray]:
-        return k4a_module.device_get_ir_image(self._device_id)
-
-    def _get_capture_depth(self, transform_depth_to_color: bool) -> Optional[np.ndarray]:
-        depth = k4a_module.device_get_depth_image(self._device_id)
-        if transform_depth_to_color:
-            depth = k4a_module.transformation_depth_image_to_color_camera(self._device_id, depth,
-                                                                          self._config.color_resolution)
-        return depth
+        capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
+        return capture
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
@@ -277,3 +229,40 @@ class PyK4A:
             raise K4AException()
         elif res == Result.Timeout:
             raise K4ATimeoutException()
+
+
+class PyK4ACapture:
+    @property
+    def color(self) -> Optional[np.ndarray]:
+        if self._color is None:
+            self._color = k4a_module.capture_get_color_image(self.device._device_id, self._cap)
+        return self._color
+
+    @property
+    def ir(self) -> Optional[np.ndarray]:
+        if self._ir is None:
+            self._ir = k4a_module.capture_get_ir_image(self.device._device_id, self._cap)
+        return self._ir
+
+    @property
+    def depth(self) -> Optional[np.ndarray]:
+        if self._depth is None:
+            self._depth = k4a_module.capture_get_depth_image(self.device._device_id, self._cap)
+        return self._depth
+
+    @property
+    def transformed_depth(self) -> Optional[np.ndarray]:
+        if self._transformed_depth is None and self.depth is not None:
+            self._transformed_depth = k4a_module.transformation_depth_image_to_color_camera(
+                self.device._device_id, self.depth, self.device._config.color_resolution, )
+        return self._transformed_depth
+
+    def __init__(self, device: PyK4A, capture_capsule: object):
+        # capture is a PyCapsule containing pointer to k4a_capture_t.
+        # use properties instead of attributes
+        self.device: PyK4A = device
+        self._color: Optional[np.ndarray] = None
+        self._depth: Optional[np.ndarray] = None
+        self._ir: Optional[np.ndarray] = None
+        self._transformed_depth: Optional[np.ndarray] = None
+        self._cap: object = capture_capsule  # built-in PyCapsule

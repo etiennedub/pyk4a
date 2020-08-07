@@ -1,5 +1,5 @@
 import pyk4a
-from pyk4a import Config, PyK4A, CaptureRequest
+from pyk4a import Config, PyK4A
 
 import cv2
 import numpy as np
@@ -17,9 +17,8 @@ def main():
     k4a.whitebalance = 4510
     assert k4a.whitebalance == 4510
 
-    capture_request = CaptureRequest(color=True, depth=True, transform_depth_to_color=True, ir=True)
     while 1:
-        capture = k4a.get_capture(capture_request)
+        capture = k4a.get_capture()
         if np.any(capture.depth):
             # scaling is usually required since depth is uint16 and values are in mm. We can't see anything without scaling.
             # the following sets the maximum (white in image) to 5 meters

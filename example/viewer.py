@@ -1,5 +1,5 @@
 import pyk4a
-from pyk4a import Config, PyK4A, CaptureRequest
+from pyk4a import Config, PyK4A
 
 import cv2
 import numpy as np
@@ -19,7 +19,6 @@ def main():
 
     while 1:
         capture = k4a.get_capture()
-
         if np.any(capture.color):
             cv2.imshow('k4a', capture.color[:, :, :3])
             key = cv2.waitKey(10)

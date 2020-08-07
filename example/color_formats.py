@@ -1,5 +1,5 @@
 import pyk4a
-from pyk4a import Config, PyK4A, CaptureRequest, ColorResolution
+from pyk4a import Config, PyK4A
 
 import cv2
 import numpy as np
@@ -10,10 +10,9 @@ def get_color_image_size(config, imshow=True):
         cv2.namedWindow("k4a")
     k4a = PyK4A(config)
     k4a.connect()
-    capture_request = CaptureRequest(color=True, depth=False)
     count = 0
     while count < 60:
-        capture = k4a.get_capture(capture_request=capture_request)
+        capture = k4a.get_capture()
         if np.any(capture.color):
             count += 1
             if imshow:
