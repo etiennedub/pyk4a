@@ -1,5 +1,5 @@
 import pyk4a
-from pyk4a import Config, PyK4A, ColorResolution
+from pyk4a import Config, PyK4A
 
 import cv2
 import numpy as np
@@ -12,15 +12,15 @@ def get_color_image_size(config, imshow=True):
     k4a.connect()
     count = 0
     while count < 60:
-        raw_img_color = k4a.get_capture(color_only=True)
-        if np.any(raw_img_color):
+        capture = k4a.get_capture()
+        if np.any(capture.color):
             count += 1
             if imshow:
-                cv2.imshow("k4a", convert_to_bgra_if_required(k4a, raw_img_color))
+                cv2.imshow("k4a", convert_to_bgra_if_required(k4a, capture.color))
                 key = cv2.waitKey(10)
     cv2.destroyAllWindows()
     k4a.disconnect()
-    return raw_img_color.nbytes
+    return capture.color.nbytes
 
 
 def convert_to_bgra_if_required(k4a, img_color):

@@ -2,7 +2,6 @@ import threading
 from time import sleep
 from typing import Tuple, Optional, List, Dict
 from math import sin
-import numpy as np
 from pyk4a import PyK4A
 
 
@@ -38,7 +37,7 @@ class CameraWorker(Worker):
         camera = PyK4A(device_id=self._device_id, thread_safe=self._thread_safe)
         camera.connect()
         while not self._halt:
-            camera.get_capture(transform_depth_to_color=True)
+            capture = camera.get_capture()
             self._count += 1
         sleep(0.1)
         camera.disconnect()
