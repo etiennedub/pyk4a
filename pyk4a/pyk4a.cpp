@@ -192,12 +192,12 @@ extern "C" {
         PyThreadState *thread_state;
         int32_t timeout;
         PyArg_ParseTuple(args, "II", &device_id, &timeout);
-        thread_state = _gil_release(device_id);
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
         k4a_capture_create(capture);
         PyObject* capsule_capture = PyCapsule_New(capture, NULL, capsule_cleanup_capture);
         total_capsules += 1;
         k4a_wait_result_t result;
+        thread_state = _gil_release(device_id);
         result = k4a_device_get_capture(devices[device_id].device, capture, timeout);
         _gil_restore(thread_state);
 
@@ -249,14 +249,13 @@ extern "C" {
         }
         uint8_t* data = (uint8_t*) malloc(data_size);
         result = k4a_device_get_raw_calibration(devices[device_id].device, data, &data_size);
+        _gil_restore(thread_state);
         if (result == K4A_BUFFER_RESULT_FAILED) {
-            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
 
         PyObject* res = Py_BuildValue("s", data);
         free(data);
-        _gil_restore(thread_state);
         return res;
     }
 
@@ -341,12 +340,11 @@ extern "C" {
         k4a_color_resolution_t color_resolution;
         PyArg_ParseTuple(args, "IO!I", &device_id, &PyArray_Type, &in_array, &color_resolution);
 
-        thread_state = _gil_release(device_id);
         k4a_image_t* depth_image_transformed = (k4a_image_t*) malloc(sizeof(k4a_image_t));
 
         k4a_image_t depth_image;
         res = numpy_to_k4a_image(in_array, &depth_image, K4A_IMAGE_FORMAT_DEPTH16);
-
+        thread_state = _gil_release(device_id);
         if (K4A_RESULT_SUCCEEDED == res) {
             res = k4a_image_create(
                     k4a_image_get_format(depth_image),
@@ -362,19 +360,17 @@ extern "C" {
                     depth_image, *depth_image_transformed);
             k4a_image_release(depth_image);
         }
-
+        _gil_restore(thread_state);
         PyArrayObject* np_depth_image;
         if (K4A_RESULT_SUCCEEDED == res) {
             res = k4a_image_to_numpy(depth_image_transformed, &np_depth_image);
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            _gil_restore(thread_state);
             return PyArray_Return(np_depth_image);
         }
         else {
             free(depth_image_transformed);
-            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
     }
@@ -386,23 +382,23 @@ extern "C" {
         k4a_capture_t *capture;
         k4a_result_t res;
         PyArg_ParseTuple(args, "IO", &device_id, &capsule_capture);
-        thread_state = _gil_release(device_id);
+
 
         capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, NULL);
         k4a_image_t* color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        thread_state = _gil_release(device_id);
         *color_image = k4a_capture_get_color_image(*capture);
+        _gil_restore(thread_state);
         PyArrayObject* np_color_image;
         if (color_image) {
             res = k4a_image_to_numpy(color_image, &np_color_image);
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            _gil_restore(thread_state);
             return PyArray_Return(np_color_image);
         }
         else {
             free(color_image);
-            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
     }
@@ -414,23 +410,21 @@ extern "C" {
         k4a_capture_t *capture;
         k4a_result_t res;
         PyArg_ParseTuple(args, "IO", &device_id, &capsule_capture);
-        thread_state = _gil_release(device_id);
 
         capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, NULL);
+        thread_state = _gil_release(device_id);
         k4a_image_t* depth_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         *depth_image = k4a_capture_get_depth_image(*capture);
+        _gil_restore(thread_state);
         PyArrayObject* np_depth_image;
         if (depth_image) {
             res = k4a_image_to_numpy(depth_image, &np_depth_image);
         }
-
         if (K4A_RESULT_SUCCEEDED == res) {
-            _gil_restore(thread_state);
             return PyArray_Return(np_depth_image);
         }
         else {
             free(depth_image);
-            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
     }
@@ -442,8 +436,9 @@ extern "C" {
         k4a_capture_t *capture;
         k4a_result_t res;
         PyArg_ParseTuple(args, "IO", &device_id, &capsule_capture);
-        thread_state = _gil_release(device_id);
+
         capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, NULL);
+        thread_state = _gil_release(device_id);
         k4a_image_t* ir_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         *ir_image = k4a_capture_get_ir_image(*capture);
 
@@ -453,12 +448,10 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            _gil_restore(thread_state);
             return PyArray_Return(np_ir_image);
         }
         else {
             free(ir_image);
-            _gil_restore(thread_state);
             return Py_BuildValue("");
         }
     }
