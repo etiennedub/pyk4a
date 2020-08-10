@@ -45,8 +45,9 @@ from pyk4a import PyK4A
 k4a = PyK4A()
 k4a.connect()
 
-# Get the next color frame without the depth (blocking function)
-img_color = k4a.get_capture(color_only=True)
+# Get the next capture (blocking function)
+capture = k4a.get_capture()
+img_color = capture.color
 
 # Display with pyplot
 from matplotlib import pyplot as plt
@@ -76,4 +77,4 @@ Bug reports are also appreciated. Please include as much details as possible.
 ### TODO:
 
 - Support for all sensors (other than color and depth)
-- get_capture in MJPG
+- Get timestamps for each images in a capture
