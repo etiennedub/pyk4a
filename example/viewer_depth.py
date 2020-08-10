@@ -19,8 +19,14 @@ def main():
 
     while 1:
         capture = k4a.get_capture()
-        if np.any(capture.color):
-            cv2.imshow('k4a', capture.color[:, :, :3])
+        if np.any(capture.depth):
+            # scaling is usually required since depth is uint16 and values are in mm. We can't see anything without scaling.
+            # the following sets the maximum (white in image) to 5 meters
+            scaled_depth = capture.depth.clip(0, 5000) / 5000
+
+            cv2.imshow('k4a', scaled_depth)
+            # cv2.imshow('k4a', capture.ir)
+            # cv2.imshow('k4a', capture.color)
             key = cv2.waitKey(10)
             if key != -1:
                 cv2.destroyAllWindows()

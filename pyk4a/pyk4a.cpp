@@ -7,7 +7,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+    // to debug, use fprintf(stdout, "debug msg\n") or fprintf(stderr, "debug msg\n");;
 
     // Simple way to map k4a_color_resolution_t to dimensions
     const int RESOLUTION_TO_DIMS[][2] = {{0, 0}, {1280, 720},
@@ -15,7 +15,6 @@ extern "C" {
                                     {2048, 1536}, {3840, 2160},
                                     {4096, 3072}};
     typedef struct device_container {
-        k4a_capture_t capture;
         k4a_transformation_t transformation_handle;
         k4a_calibration_t calibration_handle;
         k4a_device_t device;
@@ -23,6 +22,8 @@ extern "C" {
     } device_container;
     #define MAX_DEVICES 32
     device_container devices[MAX_DEVICES];
+
+    int total_capsules = 0;
 
     static PyThreadState* _gil_release(uint32_t device_id) {
         PyThreadState *thread_state = NULL;
@@ -36,6 +37,18 @@ extern "C" {
         if (thread_state != NULL) {
             PyEval_RestoreThread(thread_state);
         }
+    }
+
+    static void capsule_cleanup_image(PyObject *capsule) {
+        k4a_image_t *image = (k4a_image_t*)PyCapsule_GetContext(capsule);
+        k4a_image_release(*image);
+        free(image);
+    }
+
+    static void capsule_cleanup_capture(PyObject *capsule) {
+        total_capsules -= 1;
+        k4a_capture_t *capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule, NULL);
+        k4a_capture_release(*capture);
     }
 
     static PyObject* device_open(PyObject* self, PyObject* args){
@@ -168,10 +181,8 @@ extern "C" {
         if (devices[device_id].transformation_handle) {
             k4a_transformation_destroy(devices[device_id].transformation_handle);
         }
-        if (devices[device_id].capture) {
-            k4a_capture_release(devices[device_id].capture);
-        }
         k4a_device_stop_cameras(devices[device_id].device);
+
         _gil_restore(thread_state);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
@@ -182,14 +193,15 @@ extern "C" {
         int32_t timeout;
         PyArg_ParseTuple(args, "II", &device_id, &timeout);
         thread_state = _gil_release(device_id);
-        if (devices[device_id].capture) {
-            k4a_capture_release(devices[device_id].capture);
-        }
-        k4a_capture_create(&devices[device_id].capture);
+        k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
+        k4a_capture_create(capture);
+        PyObject* capsule_capture = PyCapsule_New(capture, NULL, capsule_cleanup_capture);
+        total_capsules += 1;
         k4a_wait_result_t result;
-        result = k4a_device_get_capture(devices[device_id].device, &devices[device_id].capture, timeout);
+        result = k4a_device_get_capture(devices[device_id].device, capture, timeout);
         _gil_restore(thread_state);
-        return Py_BuildValue("I", result);
+
+        return Py_BuildValue("IN", result, capsule_capture);
     }
 
     static PyObject* calibration_set_from_raw(PyObject* self, PyObject* args){
@@ -248,26 +260,39 @@ extern "C" {
         return res;
     }
 
-    static void capsule_cleanup(PyObject *capsule) {
-        k4a_image_t *image = (k4a_image_t*)PyCapsule_GetContext(capsule);
-        k4a_image_release(*image);
-        free(image);
-    }
-
     k4a_result_t k4a_image_to_numpy(k4a_image_t* img_src, PyArrayObject** img_dst){
         uint8_t* buffer = k4a_image_get_buffer(*img_src);
         npy_intp dims[3];
-        dims[0] = k4a_image_get_height_pixels(*img_src);
-        dims[1] = k4a_image_get_width_pixels(*img_src);
 
         k4a_image_format_t format = k4a_image_get_format(*img_src);
         switch (format){
             case K4A_IMAGE_FORMAT_COLOR_BGRA32:
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[1] = k4a_image_get_width_pixels(*img_src);
                 dims[2] = 4;
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
+                break;
+            case K4A_IMAGE_FORMAT_COLOR_MJPG:
+                dims[0] = k4a_image_get_size(*img_src);
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(1, dims, NPY_UINT8, buffer);
+                break;
+            case K4A_IMAGE_FORMAT_COLOR_YUY2:
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[1] = k4a_image_get_width_pixels(*img_src);
+                dims[2] = 2;
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
+                break;
+            case K4A_IMAGE_FORMAT_COLOR_NV12:
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[0] += dims[0] /2;
+                dims[1] = k4a_image_get_width_pixels(*img_src);
+                dims[2] = 1;
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
                 break;
             case K4A_IMAGE_FORMAT_DEPTH16:
             case K4A_IMAGE_FORMAT_IR16:
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[1] = k4a_image_get_width_pixels(*img_src);
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(2, dims, NPY_UINT16, buffer);
                 break;
             default:
@@ -275,7 +300,7 @@ extern "C" {
                 return K4A_RESULT_FAILED;
         }
 
-        PyObject *capsule = PyCapsule_New(buffer, NULL, capsule_cleanup);
+        PyObject *capsule = PyCapsule_New(buffer, NULL, capsule_cleanup_image);
         PyCapsule_SetContext(capsule, img_src);
         PyArray_SetBaseObject((PyArrayObject *) *img_dst, capsule);
 
@@ -354,14 +379,18 @@ extern "C" {
         }
     }
 
-    static PyObject* device_get_color_image(PyObject* self, PyObject* args){
+    static PyObject* capture_get_color_image(PyObject* self, PyObject* args){
         uint32_t device_id;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "I", &device_id);
+        PyObject *capsule_capture;
+        k4a_capture_t *capture;
         k4a_result_t res;
+        PyArg_ParseTuple(args, "IO", &device_id, &capsule_capture);
         thread_state = _gil_release(device_id);
+
+        capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, NULL);
         k4a_image_t* color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
-        *color_image = k4a_capture_get_color_image(devices[device_id].capture);
+        *color_image = k4a_capture_get_color_image(*capture);
         PyArrayObject* np_color_image;
         if (color_image) {
             res = k4a_image_to_numpy(color_image, &np_color_image);
@@ -378,16 +407,18 @@ extern "C" {
         }
     }
 
-    static PyObject* device_get_depth_image(PyObject* self, PyObject* args){
-        k4a_result_t res;
+    static PyObject* capture_get_depth_image(PyObject* self, PyObject* args){
         uint32_t device_id;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "I", &device_id);
-
+        PyObject *capsule_capture;
+        k4a_capture_t *capture;
+        k4a_result_t res;
+        PyArg_ParseTuple(args, "IO", &device_id, &capsule_capture);
         thread_state = _gil_release(device_id);
-        k4a_image_t* depth_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
-        *depth_image = k4a_capture_get_depth_image(devices[device_id].capture);
 
+        capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, NULL);
+        k4a_image_t* depth_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        *depth_image = k4a_capture_get_depth_image(*capture);
         PyArrayObject* np_depth_image;
         if (depth_image) {
             res = k4a_image_to_numpy(depth_image, &np_depth_image);
@@ -404,15 +435,17 @@ extern "C" {
         }
     }
 
-    static PyObject* device_get_ir_image(PyObject* self, PyObject* args){
-        k4a_result_t res;
+    static PyObject* capture_get_ir_image(PyObject* self, PyObject* args){
         uint32_t device_id;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "I", &device_id);
-
+        PyObject *capsule_capture;
+        k4a_capture_t *capture;
+        k4a_result_t res;
+        PyArg_ParseTuple(args, "IO", &device_id, &capsule_capture);
         thread_state = _gil_release(device_id);
+        capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, NULL);
         k4a_image_t* ir_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
-        *ir_image = k4a_capture_get_ir_image(devices[device_id].capture);
+        *ir_image = k4a_capture_get_ir_image(*capture);
 
         PyArrayObject* np_ir_image;
         if (ir_image) {
@@ -531,9 +564,9 @@ extern "C" {
         {"device_start_cameras", device_start_cameras, METH_VARARGS, "Starts color and depth camera capture"},
         {"device_stop_cameras", device_stop_cameras, METH_VARARGS, "Stops the color and depth camera capture"},
         {"device_get_capture", device_get_capture, METH_VARARGS, "Reads a sensor capture"},
-        {"device_get_color_image", device_get_color_image, METH_VARARGS, "Get the color image associated with the given capture"},
-        {"device_get_depth_image", device_get_depth_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
-        {"device_get_ir_image", device_get_ir_image, METH_VARARGS, "Set or add a IR image to the associated capture"},
+        {"capture_get_color_image", capture_get_color_image, METH_VARARGS, "Get the color image associated with the given capture"},
+        {"capture_get_depth_image", capture_get_depth_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
+        {"capture_get_ir_image", capture_get_ir_image, METH_VARARGS, "Set or add a IR image to the associated capture"},
         {"device_close", device_close, METH_VARARGS, "Close an Azure Kinect device"},
         {"device_get_sync_jack", device_get_sync_jack, METH_VARARGS, "Get the device jack status for the synchronization in and synchronization out connectors."},
         {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
