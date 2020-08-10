@@ -441,7 +441,7 @@ extern "C" {
         thread_state = _gil_release(device_id);
         k4a_image_t* ir_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         *ir_image = k4a_capture_get_ir_image(*capture);
-
+        _gil_restore(thread_state);
         PyArrayObject* np_ir_image;
         if (ir_image) {
             res = k4a_image_to_numpy(ir_image, &np_ir_image);
