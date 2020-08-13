@@ -382,7 +382,6 @@ static PyObject* transformation_color_image_to_depth_camera(
     k4a_result_t res;
     PyArrayObject *in_depth_array;
     PyArrayObject *in_color_array;
-    k4a_color_resolution_t color_resolution;
     PyArg_ParseTuple(args, "IO!O!", &device_id, &PyArray_Type, &in_depth_array, &PyArray_Type, &in_color_array);
 
     k4a_image_t* transformed_color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
@@ -413,7 +412,7 @@ static PyObject* transformation_color_image_to_depth_camera(
     _gil_restore(thread_state);
     PyArrayObject* np_color_image;
     if (K4A_RESULT_SUCCEEDED == res) {
-        res = k4a_image_to_numpy(transformed_color_image, &np_depth_image);
+        res = k4a_image_to_numpy(transformed_color_image, &np_color_image);
     }
 
     if (K4A_RESULT_SUCCEEDED == res) {
