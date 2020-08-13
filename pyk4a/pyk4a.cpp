@@ -172,6 +172,16 @@ extern "C" {
         _gil_restore(thread_state);
         return Py_BuildValue("I", result);
     }
+    
+    static PyObject* device_start_imu(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        k4a_result_t result;
+        thread_state = _gil_release(device_id);
+        result = k4a_device_start_imu(devices[device_id].device);
+        _gil_restore(thread_state);
+        return Py_BuildValue("I", result);
+    }
 
     static PyObject* device_stop_cameras(PyObject* self, PyObject* args){
         uint32_t device_id;
@@ -182,6 +192,17 @@ extern "C" {
             k4a_transformation_destroy(devices[device_id].transformation_handle);
         }
         k4a_device_stop_cameras(devices[device_id].device);
+
+        _gil_restore(thread_state);
+        return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
+    }
+    
+    static PyObject* device_stop_imu(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        PyArg_ParseTuple(args, "I", &device_id);
+        thread_state = _gil_release(device_id);
+        k4a_device_stop_imu(devices[device_id].device);
 
         _gil_restore(thread_state);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
@@ -202,6 +223,26 @@ extern "C" {
         _gil_restore(thread_state);
 
         return Py_BuildValue("IN", result, capsule_capture);
+    }
+    
+    static PyObject* device_get_imu_sample(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        int32_t timeout;
+        PyArg_ParseTuple(args, "II", &device_id, &timeout);
+        
+        k4a_imu_sample_t imu_sample;
+        k4a_wait_result_t result;
+        
+        thread_state = _gil_release(device_id);
+        result = k4a_device_get_imu_sample(devices[device_id].device, &imu_sample, timeout);
+        
+        _gil_restore(thread_state);
+        if (K4A_WAIT_RESULT_SUCCEEDED == result) {
+            return Py_BuildValue("If(fff)L(fff)L", result, imu_sample.temperature, imu_sample.acc_sample.XYZ.X, imu_sample.acc_sample.XYZ.Y, imu_sample.acc_sample.XYZ.Z, imu_sample.acc_timestamp_usec, imu_sample.gyro_sample.XYZ.X, imu_sample.gyro_sample.XYZ.Y, imu_sample.gyro_sample.XYZ.Z, imu_sample.gyro_timestamp_usec);
+        }
+
+        return Py_BuildValue("I", result);
     }
 
     static PyObject* calibration_set_from_raw(PyObject* self, PyObject* args){
