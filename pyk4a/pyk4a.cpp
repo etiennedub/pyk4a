@@ -416,7 +416,7 @@ static PyObject* transformation_color_image_to_depth_camera(
     }
 
     if (K4A_RESULT_SUCCEEDED == res) {
-        return PyArray_Return(np_depth_image);
+        return PyArray_Return(np_color_image);
     }
     else {
         free(transformed_color_image);
