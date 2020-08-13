@@ -69,9 +69,17 @@ class PyK4A:
     def _start_cameras(self):
         res = k4a_module.device_start_cameras(self._device_id, *self._config.unpack())
         self._verify_error(res)
+        
+    def _start_imu(self):
+        res = k4a_module.device_start_imu(self._device_id)
+        self._verify_error(res)
 
     def _stop_cameras(self):
         res = k4a_module.device_stop_cameras(self._device_id)
+        self._verify_error(res)
+        
+    def _stop_imu(self):
+        res = k4a_module.device_stop_imu(self._device_id)
         self._verify_error(res)
 
     def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, ):
@@ -95,6 +103,18 @@ class PyK4A:
 
         capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
         return capture
+        
+    def get_imu_sample(self, timeout=TIMEOUT_WAIT_INFINITE):
+        res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, PyK4A.TIMEOUT_WAIT_INFINITE)
+        self._verify_error(res)
+        (temperature, acc_sample, acc_timestamp, gyro_sample, gyro_timestamp) = imu_sample
+        return {
+            "temperature": temperature,
+            "acc_sample": acc_sample,
+            "acc_timestamp": acc_timestamp,
+            "gyro_sample": gyro_sample,
+            "gyro_timestamp": gyro_timestamp
+        }
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
