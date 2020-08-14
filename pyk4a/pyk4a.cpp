@@ -172,6 +172,16 @@ extern "C" {
         _gil_restore(thread_state);
         return Py_BuildValue("I", result);
     }
+    
+    static PyObject* device_start_imu(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        k4a_result_t result;
+        thread_state = _gil_release(device_id);
+        result = k4a_device_start_imu(devices[device_id].device);
+        _gil_restore(thread_state);
+        return Py_BuildValue("I", result);
+    }
 
     static PyObject* device_stop_cameras(PyObject* self, PyObject* args){
         uint32_t device_id;
@@ -182,6 +192,17 @@ extern "C" {
             k4a_transformation_destroy(devices[device_id].transformation_handle);
         }
         k4a_device_stop_cameras(devices[device_id].device);
+
+        _gil_restore(thread_state);
+        return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
+    }
+    
+    static PyObject* device_stop_imu(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        PyArg_ParseTuple(args, "I", &device_id);
+        thread_state = _gil_release(device_id);
+        k4a_device_stop_imu(devices[device_id].device);
 
         _gil_restore(thread_state);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
@@ -202,6 +223,26 @@ extern "C" {
         _gil_restore(thread_state);
 
         return Py_BuildValue("IN", result, capsule_capture);
+    }
+    
+    static PyObject* device_get_imu_sample(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        int32_t timeout;
+        PyArg_ParseTuple(args, "II", &device_id, &timeout);
+        
+        k4a_imu_sample_t imu_sample;
+        k4a_wait_result_t result;
+        
+        thread_state = _gil_release(device_id);
+        result = k4a_device_get_imu_sample(devices[device_id].device, &imu_sample, timeout);
+        
+        _gil_restore(thread_state);
+        if (K4A_WAIT_RESULT_SUCCEEDED == result) {
+            return Py_BuildValue("I(f(fff)L(fff)L)", result, imu_sample.temperature, imu_sample.acc_sample.xyz.x, imu_sample.acc_sample.xyz.y, imu_sample.acc_sample.xyz.z, imu_sample.acc_timestamp_usec, imu_sample.gyro_sample.xyz.x, imu_sample.gyro_sample.xyz.y, imu_sample.gyro_sample.xyz.z, imu_sample.gyro_timestamp_usec);
+        }
+
+        return Py_BuildValue("I(0)", result, Py_None);
     }
 
     static PyObject* calibration_set_from_raw(PyObject* self, PyObject* args){
@@ -317,6 +358,9 @@ extern "C" {
             case K4A_IMAGE_FORMAT_DEPTH16:
                 pixel_size = (int)sizeof(uint16_t);
                 break;
+            case K4A_IMAGE_FORMAT_COLOR_BGRA32:
+                pixel_size = (int)sizeof(uint32_t);
+                break;
             default:
                 // Not supported
                 return K4A_RESULT_FAILED;
@@ -375,11 +419,11 @@ extern "C" {
         }
     }
 
-    static PyObject* transformation_depth_image_to_point_cloud(
-            PyObject* self, PyObject* args){
+  static PyObject* transformation_depth_image_to_point_cloud(PyObject* self, PyObject* args){
         uint32_t device_id;
         PyThreadState *thread_state;
         k4a_result_t res;
+  
         PyArrayObject *depth_in_array;
         bool k4a_calibration_type_depth;
         PyArg_ParseTuple(args, "IO!p", &device_id, &PyArray_Type, &depth_in_array, &k4a_calibration_type_depth);
@@ -429,6 +473,53 @@ extern "C" {
         }
         else {
             free(xyz_image);
+            return Py_BuildValue("");
+        }
+
+  static PyObject* transformation_color_image_to_depth_camera(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        k4a_result_t res;
+        PyArrayObject *in_depth_array;
+        PyArrayObject *in_color_array;
+        PyArg_ParseTuple(args, "IO!O!", &device_id, &PyArray_Type, &in_depth_array, &PyArray_Type, &in_color_array);
+
+        k4a_image_t* transformed_color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+
+        k4a_image_t depth_image;
+        k4a_image_t color_image;
+        res = numpy_to_k4a_image(in_depth_array, &depth_image, K4A_IMAGE_FORMAT_DEPTH16);
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = numpy_to_k4a_image(in_color_array, &color_image, K4A_IMAGE_FORMAT_COLOR_BGRA32);
+            if (K4A_RESULT_SUCCEEDED == res) {
+                res = k4a_image_create(
+                        K4A_IMAGE_FORMAT_COLOR_BGRA32,
+                        k4a_image_get_width_pixels(depth_image),
+                        k4a_image_get_height_pixels(depth_image),
+                        k4a_image_get_width_pixels(depth_image) * (int) sizeof(uint32_t),
+                        transformed_color_image);
+            }
+        }
+
+        thread_state = _gil_release(device_id);
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = k4a_transformation_color_image_to_depth_camera(
+                    devices[device_id].transformation_handle,
+                    depth_image, color_image, *transformed_color_image);
+            k4a_image_release(depth_image);
+            k4a_image_release(color_image);
+        }
+        _gil_restore(thread_state);
+        PyArrayObject* np_color_image;
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = k4a_image_to_numpy(transformed_color_image, &np_color_image);
+        }
+
+        if (K4A_RESULT_SUCCEEDED == res) {
+            return PyArray_Return(np_color_image);
+        }
+        else {
+            free(transformed_color_image);
             return Py_BuildValue("");
         }
     }
@@ -614,10 +705,13 @@ extern "C" {
         {"device_open", device_open, METH_VARARGS, "Open an Azure Kinect device"},
         {"device_start_cameras", device_start_cameras, METH_VARARGS, "Starts color and depth camera capture"},
         {"device_stop_cameras", device_stop_cameras, METH_VARARGS, "Stops the color and depth camera capture"},
+        {"device_start_imu", device_start_imu, METH_VARARGS, "Starts imu sernsors"},
+        {"device_stop_imu", device_stop_imu, METH_VARARGS, "Stops imu sernsors"},
         {"device_get_capture", device_get_capture, METH_VARARGS, "Reads a sensor capture"},
         {"capture_get_color_image", capture_get_color_image, METH_VARARGS, "Get the color image associated with the given capture"},
         {"capture_get_depth_image", capture_get_depth_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
         {"capture_get_ir_image", capture_get_ir_image, METH_VARARGS, "Set or add a IR image to the associated capture"},
+        {"device_get_imu_sample", device_get_imu_sample, METH_VARARGS, "Reads an imu sample"},
         {"device_close", device_close, METH_VARARGS, "Close an Azure Kinect device"},
         {"device_get_sync_jack", device_get_sync_jack, METH_VARARGS, "Get the device jack status for the synchronization in and synchronization out connectors."},
         {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
@@ -627,6 +721,7 @@ extern "C" {
         {"calibration_set_from_raw", calibration_set_from_raw, METH_VARARGS, "Temporary set the calibration from a json format. Must be called after device_start_cameras."},
         {"transformation_depth_image_to_color_camera", transformation_depth_image_to_color_camera, METH_VARARGS, "Transforms the depth map into the geometry of the color camera."},
         {"transformation_depth_image_to_point_cloud", transformation_depth_image_to_point_cloud, METH_VARARGS, "Transforms the depth map to a point cloud."},
+        {"transformation_color_image_to_depth_camera", transformation_color_image_to_depth_camera, METH_VARARGS, "Transforms the color image into the geometry of the depth camera."},
         {"calibration_3d_to_3d", calibration_3d_to_3d, METH_VARARGS, "Transforms the coordinates between 2 3D systems"},
         {"calibration_2d_to_3d", calibration_2d_to_3d, METH_VARARGS, "Transforms the coordinates between a pixel and a 3D system"},
         {NULL, NULL, 0, NULL}

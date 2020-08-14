@@ -5,7 +5,7 @@ import numpy as np
 from dataclasses import dataclass
 from typing import Union
 
-from pyk4a.config import Config, ColorControlMode, ColorControlCommand
+from pyk4a.config import Config, ColorControlMode, ColorControlCommand, ColorFormat
 
 
 # k4a_wait_result_t
@@ -69,9 +69,17 @@ class PyK4A:
     def _start_cameras(self):
         res = k4a_module.device_start_cameras(self._device_id, *self._config.unpack())
         self._verify_error(res)
+        
+    def _start_imu(self):
+        res = k4a_module.device_start_imu(self._device_id)
+        self._verify_error(res)
 
     def _stop_cameras(self):
         res = k4a_module.device_stop_cameras(self._device_id)
+        self._verify_error(res)
+        
+    def _stop_imu(self):
+        res = k4a_module.device_stop_imu(self._device_id)
         self._verify_error(res)
 
     def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, ):
@@ -95,6 +103,18 @@ class PyK4A:
 
         capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
         return capture
+        
+    def get_imu_sample(self, timeout=TIMEOUT_WAIT_INFINITE):
+        res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, PyK4A.TIMEOUT_WAIT_INFINITE)
+        self._verify_error(res)
+        (temperature, acc_sample, acc_timestamp, gyro_sample, gyro_timestamp) = imu_sample
+        return {
+            "temperature": temperature,
+            "acc_sample": acc_sample,
+            "acc_timestamp": acc_timestamp,
+            "gyro_sample": gyro_sample,
+            "gyro_timestamp": gyro_timestamp
+        }
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
@@ -270,6 +290,18 @@ class PyK4ACapture:
             self._transformed_depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
                 self.device._device_id, self.transformed_depth, False)
         return self._transformed_depth_point_cloud
+      
+    @property
+    def transformed_color(self) -> Optional[np.ndarray]:
+        if self._transformed_color is None and self.depth is not None and self.color is not None:
+            if self.device._config.color_format != ColorFormat.BGRA32:
+                raise RuntimeError("color image must be of format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
+                                   "transformation_color_image_to_depth_camera")
+            self._transformed_color = k4a_module.transformation_color_image_to_depth_camera(
+                self.device._device_id, self.depth, self.color
+            )
+        return self._transformed_color
+
 
     def __init__(self, device: PyK4A, capture_capsule: object):
         # capture is a PyCapsule containing pointer to k4a_capture_t.
@@ -281,4 +313,5 @@ class PyK4ACapture:
         self._transformed_depth: Optional[np.ndarray] = None
         self._depth_point_cloud: Optional[np.ndarray] = None
         self._transformed_depth_point_cloud: Optional[np.ndarray] = None
+        self._transformed_color: Optional[np.ndarray] = None
         self._cap: object = capture_capsule  # built-in PyCapsule
