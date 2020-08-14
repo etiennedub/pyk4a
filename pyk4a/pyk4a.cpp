@@ -423,6 +423,7 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
+            fprintf(stdout, "k4a_image_to_numpy ok\n");
             return PyArray_Return(np_color_image);
         }
         else {
