@@ -393,10 +393,8 @@ extern "C" {
         k4a_image_t color_image;
         res = numpy_to_k4a_image(in_depth_array, &depth_image, K4A_IMAGE_FORMAT_DEPTH16);
         if (K4A_RESULT_SUCCEEDED == res) {
-            fprintf(stdout, "depth image ok\n");
             res = numpy_to_k4a_image(in_color_array, &color_image, K4A_IMAGE_FORMAT_COLOR_BGRA32);
             if (K4A_RESULT_SUCCEEDED == res) {
-                fprintf(stdout, "color image ok\n");
                 res = k4a_image_create(
                         K4A_IMAGE_FORMAT_COLOR_BGRA32,
                         k4a_image_get_width_pixels(depth_image),
@@ -408,7 +406,6 @@ extern "C" {
 
         thread_state = _gil_release(device_id);
         if (K4A_RESULT_SUCCEEDED == res) {
-            fprintf(stdout, "k4a_image_create ok\n");
             res = k4a_transformation_color_image_to_depth_camera(
                     devices[device_id].transformation_handle,
                     depth_image, color_image, *transformed_color_image);
@@ -418,12 +415,10 @@ extern "C" {
         _gil_restore(thread_state);
         PyArrayObject* np_color_image;
         if (K4A_RESULT_SUCCEEDED == res) {
-            fprintf(stdout, "k4a_transformation_color_image_to_depth_camera ok\n");
             res = k4a_image_to_numpy(transformed_color_image, &np_color_image);
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            fprintf(stdout, "k4a_image_to_numpy ok\n");
             return PyArray_Return(np_color_image);
         }
         else {
