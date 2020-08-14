@@ -387,10 +387,8 @@ extern "C" {
         k4a_calibration_type_t camera;
         if (k4a_calibration_type_depth) {
             camera = K4A_CALIBRATION_TYPE_DEPTH;
-            fprintf(stdout, "calibration type depth\n");
         } else {
             camera = K4A_CALIBRATION_TYPE_COLOR;
-            fprintf(stdout, "calibration type color\n");
         }
         k4a_image_t* xyz_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
 
@@ -398,7 +396,6 @@ extern "C" {
         res = numpy_to_k4a_image(depth_in_array, &depth_image, K4A_IMAGE_FORMAT_DEPTH16);
         thread_state = _gil_release(device_id);
         if (K4A_RESULT_SUCCEEDED == res) {
-            fprintf(stdout, "numpy_to_k4a_image depth ok\n");
             res = k4a_image_create(
                     K4A_IMAGE_FORMAT_CUSTOM,
                     k4a_image_get_width_pixels(depth_image),
@@ -408,7 +405,6 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            fprintf(stdout, "k4a_image_create ok\n");
             res = k4a_transformation_depth_image_to_point_cloud(
                     devices[device_id].transformation_handle,
                     depth_image, camera, *xyz_image);
@@ -417,7 +413,6 @@ extern "C" {
         _gil_restore(thread_state);
         PyArrayObject* np_xyz_image;
         if (K4A_RESULT_SUCCEEDED == res) {
-            fprintf(stdout, "k4a_transformation_depth_image_to_point_cloud ok\n");
             // convert manually because of custom format
             uint8_t* buffer = k4a_image_get_buffer(*xyz_image);
             npy_intp dims[3];
@@ -429,8 +424,6 @@ extern "C" {
             PyObject *capsule = PyCapsule_New(buffer, NULL, capsule_cleanup_image);
             PyCapsule_SetContext(capsule, xyz_image);
             PyArray_SetBaseObject((PyArrayObject *) np_xyz_image, capsule);
-
-            fprintf(stdout, "k4a_image to numpy ok\n");
 
             return PyArray_Return(np_xyz_image);
         }
