@@ -395,7 +395,7 @@ extern "C" {
         k4a_image_t* xyz_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
 
         k4a_image_t depth_image;
-        res = numpy_to_k4a_image(in_array, &depth_image, K4A_IMAGE_FORMAT_DEPTH16);
+        res = numpy_to_k4a_image(depth_in_array, &depth_image, K4A_IMAGE_FORMAT_DEPTH16);
         thread_state = _gil_release(device_id);
         if (K4A_RESULT_SUCCEEDED == res) {
             fprintf(stdout, "numpy_to_k4a_image depth ok\n");
