@@ -5,7 +5,7 @@ import numpy as np
 from dataclasses import dataclass
 from typing import Union
 
-from pyk4a.config import Config, ColorControlMode, ColorControlCommand
+from pyk4a.config import Config, ColorControlMode, ColorControlCommand, ColorFormat
 
 
 # k4a_wait_result_t
@@ -259,7 +259,8 @@ class PyK4ACapture:
 
     @property
     def transformed_color(self) -> Optional[np.ndarray]:
-        if self._transformed_color is None and self.depth is not None and self.color:
+        if self._transformed_color is None and self.depth is not None and self.color is not None:
+            assert self._config.color_format == ColorFormat.BGRA32
             self._transformed_color = k4a_module.transformation_color_image_to_depth_camera(
                 self.device._device_id, self.depth, self.color
             )
