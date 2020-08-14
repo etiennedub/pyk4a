@@ -264,7 +264,7 @@ class PyK4ACapture:
             self._transformed_color = k4a_module.transformation_color_image_to_depth_camera(
                 self.device._device_id, self.depth, self.color
             )
-        return self._transformed_depth
+        return self._transformed_color
 
     def __init__(self, device: PyK4A, capture_capsule: object):
         # capture is a PyCapsule containing pointer to k4a_capture_t.
