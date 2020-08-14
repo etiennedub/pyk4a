@@ -419,11 +419,11 @@ extern "C" {
         }
     }
 
-  static PyObject* transformation_depth_image_to_point_cloud(PyObject* self, PyObject* args){
+    static PyObject* transformation_depth_image_to_point_cloud(PyObject* self, PyObject* args) {
         uint32_t device_id;
         PyThreadState *thread_state;
         k4a_result_t res;
-  
+
         PyArrayObject *depth_in_array;
         bool k4a_calibration_type_depth;
         PyArg_ParseTuple(args, "IO!p", &device_id, &PyArray_Type, &depth_in_array, &k4a_calibration_type_depth);
@@ -434,7 +434,7 @@ extern "C" {
         } else {
             camera = K4A_CALIBRATION_TYPE_COLOR;
         }
-        k4a_image_t* xyz_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        k4a_image_t *xyz_image = (k4a_image_t *) malloc(sizeof(k4a_image_t));
 
         k4a_image_t depth_image;
         res = numpy_to_k4a_image(depth_in_array, &depth_image, K4A_IMAGE_FORMAT_DEPTH16);
@@ -444,7 +444,7 @@ extern "C" {
                     K4A_IMAGE_FORMAT_CUSTOM,
                     k4a_image_get_width_pixels(depth_image),
                     k4a_image_get_height_pixels(depth_image),
-                    k4a_image_get_width_pixels(depth_image) * 3 * (int)sizeof(int16_t),
+                    k4a_image_get_width_pixels(depth_image) * 3 * (int) sizeof(int16_t),
                     xyz_image);
         }
 
@@ -455,28 +455,28 @@ extern "C" {
             k4a_image_release(depth_image);
         }
         _gil_restore(thread_state);
-        PyArrayObject* np_xyz_image;
+        PyArrayObject *np_xyz_image;
         if (K4A_RESULT_SUCCEEDED == res) {
             // convert manually because of custom format
-            uint8_t* buffer = k4a_image_get_buffer(*xyz_image);
+            uint8_t *buffer = k4a_image_get_buffer(*xyz_image);
             npy_intp dims[3];
             dims[0] = k4a_image_get_height_pixels(*xyz_image);
             dims[1] = k4a_image_get_width_pixels(*xyz_image);
             dims[2] = 3;
-            np_xyz_image = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_INT16, buffer);
+            np_xyz_image = (PyArrayObject *) PyArray_SimpleNewFromData(3, dims, NPY_INT16, buffer);
 
             PyObject *capsule = PyCapsule_New(buffer, NULL, capsule_cleanup_image);
             PyCapsule_SetContext(capsule, xyz_image);
             PyArray_SetBaseObject((PyArrayObject *) np_xyz_image, capsule);
 
             return PyArray_Return(np_xyz_image);
-        }
-        else {
+        } else {
             free(xyz_image);
             return Py_BuildValue("");
         }
+    }
 
-  static PyObject* transformation_color_image_to_depth_camera(PyObject* self, PyObject* args){
+    static PyObject* transformation_color_image_to_depth_camera(PyObject* self, PyObject* args){
         uint32_t device_id;
         PyThreadState *thread_state;
         k4a_result_t res;
