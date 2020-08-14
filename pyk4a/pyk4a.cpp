@@ -172,6 +172,16 @@ extern "C" {
         _gil_restore(thread_state);
         return Py_BuildValue("I", result);
     }
+    
+    static PyObject* device_start_imu(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        k4a_result_t result;
+        thread_state = _gil_release(device_id);
+        result = k4a_device_start_imu(devices[device_id].device);
+        _gil_restore(thread_state);
+        return Py_BuildValue("I", result);
+    }
 
     static PyObject* device_stop_cameras(PyObject* self, PyObject* args){
         uint32_t device_id;
@@ -182,6 +192,17 @@ extern "C" {
             k4a_transformation_destroy(devices[device_id].transformation_handle);
         }
         k4a_device_stop_cameras(devices[device_id].device);
+
+        _gil_restore(thread_state);
+        return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
+    }
+    
+    static PyObject* device_stop_imu(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        PyArg_ParseTuple(args, "I", &device_id);
+        thread_state = _gil_release(device_id);
+        k4a_device_stop_imu(devices[device_id].device);
 
         _gil_restore(thread_state);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
@@ -202,6 +223,26 @@ extern "C" {
         _gil_restore(thread_state);
 
         return Py_BuildValue("IN", result, capsule_capture);
+    }
+    
+    static PyObject* device_get_imu_sample(PyObject* self, PyObject* args){
+        uint32_t device_id;
+        PyThreadState *thread_state;
+        int32_t timeout;
+        PyArg_ParseTuple(args, "II", &device_id, &timeout);
+        
+        k4a_imu_sample_t imu_sample;
+        k4a_wait_result_t result;
+        
+        thread_state = _gil_release(device_id);
+        result = k4a_device_get_imu_sample(devices[device_id].device, &imu_sample, timeout);
+        
+        _gil_restore(thread_state);
+        if (K4A_WAIT_RESULT_SUCCEEDED == result) {
+            return Py_BuildValue("I(f(fff)L(fff)L)", result, imu_sample.temperature, imu_sample.acc_sample.xyz.x, imu_sample.acc_sample.xyz.y, imu_sample.acc_sample.xyz.z, imu_sample.acc_timestamp_usec, imu_sample.gyro_sample.xyz.x, imu_sample.gyro_sample.xyz.y, imu_sample.gyro_sample.xyz.z, imu_sample.gyro_timestamp_usec);
+        }
+
+        return Py_BuildValue("I(0)", result, Py_None);
     }
 
     static PyObject* calibration_set_from_raw(PyObject* self, PyObject* args){
@@ -556,10 +597,13 @@ extern "C" {
         {"device_open", device_open, METH_VARARGS, "Open an Azure Kinect device"},
         {"device_start_cameras", device_start_cameras, METH_VARARGS, "Starts color and depth camera capture"},
         {"device_stop_cameras", device_stop_cameras, METH_VARARGS, "Stops the color and depth camera capture"},
+        {"device_start_imu", device_start_imu, METH_VARARGS, "Starts imu sernsors"},
+        {"device_stop_imu", device_stop_imu, METH_VARARGS, "Stops imu sernsors"},
         {"device_get_capture", device_get_capture, METH_VARARGS, "Reads a sensor capture"},
         {"capture_get_color_image", capture_get_color_image, METH_VARARGS, "Get the color image associated with the given capture"},
         {"capture_get_depth_image", capture_get_depth_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
         {"capture_get_ir_image", capture_get_ir_image, METH_VARARGS, "Set or add a IR image to the associated capture"},
+        {"device_get_imu_sample", device_get_imu_sample, METH_VARARGS, "Reads an imu sample"},
         {"device_close", device_close, METH_VARARGS, "Close an Azure Kinect device"},
         {"device_get_sync_jack", device_get_sync_jack, METH_VARARGS, "Get the device jack status for the synchronization in and synchronization out connectors."},
         {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
