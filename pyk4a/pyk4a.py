@@ -5,7 +5,7 @@ import numpy as np
 from dataclasses import dataclass
 from typing import Union
 
-from pyk4a.config import Config, ColorControlMode, ColorControlCommand
+from pyk4a.config import Config, ColorControlMode, ColorControlCommand, ColorFormat
 
 
 # k4a_wait_result_t
@@ -257,6 +257,17 @@ class PyK4ACapture:
                 self.device._device_id, self.depth, self.device._config.color_resolution, )
         return self._transformed_depth
 
+    @property
+    def transformed_color(self) -> Optional[np.ndarray]:
+        if self._transformed_color is None and self.depth is not None and self.color is not None:
+            if self.device._config.color_format != ColorFormat.BGRA32:
+                raise RuntimeError("color image must be of format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
+                                   "transformation_color_image_to_depth_camera")
+            self._transformed_color = k4a_module.transformation_color_image_to_depth_camera(
+                self.device._device_id, self.depth, self.color
+            )
+        return self._transformed_color
+
     def __init__(self, device: PyK4A, capture_capsule: object):
         # capture is a PyCapsule containing pointer to k4a_capture_t.
         # use properties instead of attributes
@@ -265,4 +276,5 @@ class PyK4ACapture:
         self._depth: Optional[np.ndarray] = None
         self._ir: Optional[np.ndarray] = None
         self._transformed_depth: Optional[np.ndarray] = None
+        self._transformed_color: Optional[np.ndarray] = None
         self._cap: object = capture_capsule  # built-in PyCapsule
