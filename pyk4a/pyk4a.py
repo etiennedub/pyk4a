@@ -42,6 +42,7 @@ class PyK4A:
         self.is_running = True
 
     def disconnect(self):
+        self._stop_imu()
         self._stop_cameras()
         self._device_close()
         self.is_running = False
