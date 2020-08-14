@@ -42,6 +42,7 @@ class PyK4A:
         self.is_running = True
 
     def disconnect(self):
+        self._stop_imu()
         self._stop_cameras()
         self._device_close()
         self.is_running = False
@@ -74,10 +75,18 @@ class PyK4A:
         res = k4a_module.device_start_imu(self._device_id)
         self._verify_error(res)
 
+    def _start_imu(self):
+        res = k4a_module.device_start_imu(self._device_id)
+        self._verify_error(res)
+
     def _stop_cameras(self):
         res = k4a_module.device_stop_cameras(self._device_id)
         self._verify_error(res)
         
+    def _stop_imu(self):
+        res = k4a_module.device_stop_imu(self._device_id)
+        self._verify_error(res)
+
     def _stop_imu(self):
         res = k4a_module.device_stop_imu(self._device_id)
         self._verify_error(res)
@@ -104,6 +113,18 @@ class PyK4A:
         capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
         return capture
         
+    def get_imu_sample(self, timeout=TIMEOUT_WAIT_INFINITE):
+        res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, PyK4A.TIMEOUT_WAIT_INFINITE)
+        self._verify_error(res)
+        (temperature, acc_sample, acc_timestamp, gyro_sample, gyro_timestamp) = imu_sample
+        return {
+            "temperature": temperature,
+            "acc_sample": acc_sample,
+            "acc_timestamp": acc_timestamp,
+            "gyro_sample": gyro_sample,
+            "gyro_timestamp": gyro_timestamp
+        }
+
     def get_imu_sample(self, timeout=TIMEOUT_WAIT_INFINITE):
         res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, PyK4A.TIMEOUT_WAIT_INFINITE)
         self._verify_error(res)
@@ -302,7 +323,6 @@ class PyK4ACapture:
             )
         return self._transformed_color
 
-
     def __init__(self, device: PyK4A, capture_capsule: object):
         # capture is a PyCapsule containing pointer to k4a_capture_t.
         # use properties instead of attributes
@@ -310,8 +330,8 @@ class PyK4ACapture:
         self._color: Optional[np.ndarray] = None
         self._depth: Optional[np.ndarray] = None
         self._ir: Optional[np.ndarray] = None
-        self._transformed_depth: Optional[np.ndarray] = None
         self._depth_point_cloud: Optional[np.ndarray] = None
-        self._transformed_depth_point_cloud: Optional[np.ndarray] = None
         self._transformed_color: Optional[np.ndarray] = None
+        self._transformed_depth: Optional[np.ndarray] = None
+        self._transformed_depth_point_cloud: Optional[np.ndarray] = None
         self._cap: object = capture_capsule  # built-in PyCapsule
