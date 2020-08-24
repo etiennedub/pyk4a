@@ -29,7 +29,7 @@ class PyK4A:
     def __init__(self, config=None, device_id=0, thread_safe: bool = True):
         self._device_id = device_id
         self._config = config if (config is not None) else Config()
-        self._thread_safe = thread_safe
+        self._thread_safe = 1 if thread_safe else 0
         self.is_running = False
 
     def __del__(self):
@@ -38,7 +38,7 @@ class PyK4A:
 
     @property
     def thread_safe(self) -> bool:
-        return self._thread_safe
+        return self._thread_safe == 1
 
     def connect(self):
         self._device_open()
@@ -63,7 +63,6 @@ class PyK4A:
         self._verify_error(res)
 
     def _device_open(self):
-        thread_safe = 1 if self._thread_safe else 0
         res = k4a_module.device_open(self._device_id, self._thread_safe)
         self._verify_error(res)
 

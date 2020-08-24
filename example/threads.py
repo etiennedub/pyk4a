@@ -38,6 +38,7 @@ class CameraWorker(Worker):
         camera.connect()
         while not self._halt:
             capture = camera.get_capture()
+            image = capture.depth
             self._count += 1
         sleep(0.1)
         camera.disconnect()

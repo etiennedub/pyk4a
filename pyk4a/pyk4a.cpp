@@ -27,7 +27,7 @@ extern "C" {
 
     static PyThreadState* _gil_release(short thread_safe) {
         PyThreadState *thread_state = NULL;
-        if (thread_state == NON_THREAD_SAFE) {
+        if (thread_safe == NON_THREAD_SAFE) {
             thread_state = PyEval_SaveThread();
         }
         return thread_state;
