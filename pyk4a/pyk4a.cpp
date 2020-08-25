@@ -25,7 +25,7 @@ extern "C" {
 
     int total_capsules = 0;
 
-    static PyThreadState* _gil_release(short thread_safe) {
+    static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
         if (thread_safe == NON_THREAD_SAFE) {
             thread_state = PyEval_SaveThread();
@@ -53,9 +53,9 @@ extern "C" {
 
     static PyObject* device_open(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "IH", &device_id, &thread_safe);
+        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
 
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_open(device_id, &devices[device_id].device);
@@ -65,9 +65,9 @@ extern "C" {
 
     static PyObject* device_close(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "IH", &device_id, &thread_safe);
+        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
         
         thread_state = _gil_release(thread_safe);
         k4a_device_close(devices[device_id].device);
@@ -78,11 +78,11 @@ extern "C" {
 
     static PyObject* device_get_sync_jack(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         bool in_jack = 0;
         bool out_jack = 0;
-        PyArg_ParseTuple(args, "IH", &device_id, &thread_safe);
+        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
         
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_get_sync_jack(devices[device_id].device, &in_jack, &out_jack);
@@ -93,12 +93,12 @@ extern "C" {
 
     static PyObject* device_get_color_control(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         k4a_color_control_command_t command;
         k4a_color_control_mode_t mode;
         int32_t value = 0;
-        PyArg_ParseTuple(args, "IHI", &device_id, &thread_safe, &command);
+        PyArg_ParseTuple(args, "IpI", &device_id, &thread_safe, &command);
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_get_color_control(devices[device_id].device, command, &mode, &value);
         _gil_restore(thread_state);
@@ -110,12 +110,12 @@ extern "C" {
 
     static PyObject* device_set_color_control(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         k4a_color_control_command_t command = K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE;
         k4a_color_control_mode_t mode = K4A_COLOR_CONTROL_MODE_MANUAL;
         int32_t value = 0;
-        PyArg_ParseTuple(args, "IHIII", &device_id, &thread_safe, &command, &mode, &value);
+        PyArg_ParseTuple(args, "IpIII", &device_id, &thread_safe, &command, &mode, &value);
 
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_set_color_control(devices[device_id].device, command, mode, value);
@@ -128,7 +128,7 @@ extern "C" {
 
     static PyObject* device_get_color_control_capabilities(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         k4a_color_control_command_t command;
         bool supports_auto;
@@ -137,7 +137,7 @@ extern "C" {
         int32_t step_value;
         int32_t default_value;
         k4a_color_control_mode_t default_mode;
-        PyArg_ParseTuple(args, "IHI", &device_id, &thread_safe, &command);
+        PyArg_ParseTuple(args, "IpI", &device_id, &thread_safe, &command);
 
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_get_color_control_capabilities(devices[device_id].device, command, &supports_auto, &min_value, &max_value, &step_value, &default_value, &default_mode);
@@ -150,10 +150,10 @@ extern "C" {
 
     static PyObject* device_start_cameras(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-        PyArg_ParseTuple(args, "IHIIIIIIIII", &device_id, &thread_safe,
+        PyArg_ParseTuple(args, "IpIIIIIIIII", &device_id, &thread_safe,
                 &config.color_format,
                 &config.color_resolution, &config.depth_mode,
                 &config.camera_fps, &config.synchronized_images_only,
@@ -180,10 +180,10 @@ extern "C" {
     
     static PyObject* device_start_imu(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         k4a_result_t result;
-        PyArg_ParseTuple(args, "IH", &device_id, &thread_safe);
+        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
         thread_state = _gil_release(thread_safe);
         result = k4a_device_start_imu(devices[device_id].device);
         _gil_restore(thread_state);
@@ -192,9 +192,9 @@ extern "C" {
 
     static PyObject* device_stop_cameras(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "IH", &device_id, &thread_safe);
+        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
         thread_state = _gil_release(thread_safe);
         if (devices[device_id].transformation_handle) {
             k4a_transformation_destroy(devices[device_id].transformation_handle);
@@ -207,9 +207,9 @@ extern "C" {
     
     static PyObject* device_stop_imu(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "IH", &device_id, &thread_safe);
+        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
         thread_state = _gil_release(thread_safe);
         k4a_device_stop_imu(devices[device_id].device);
 
@@ -219,10 +219,10 @@ extern "C" {
 
     static PyObject* device_get_capture(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         int32_t timeout;
-        PyArg_ParseTuple(args, "IHI", &device_id, &thread_safe, &timeout);
+        PyArg_ParseTuple(args, "IpI", &device_id, &thread_safe, &timeout);
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
         k4a_capture_create(capture);
         PyObject* capsule_capture = PyCapsule_New(capture, NULL, capsule_cleanup_capture);
@@ -237,10 +237,10 @@ extern "C" {
     
     static PyObject* device_get_imu_sample(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         int32_t timeout;
-        PyArg_ParseTuple(args, "IHI", &device_id, &thread_safe, &timeout);
+        PyArg_ParseTuple(args, "IpI", &device_id, &thread_safe, &timeout);
         
         k4a_imu_sample_t imu_sample;
         k4a_wait_result_t result;
@@ -258,11 +258,11 @@ extern "C" {
 
     static PyObject* calibration_set_from_raw(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         char * raw_calibration;
         k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-        PyArg_ParseTuple(args, "IHsIIIIIIIII", &device_id, &thread_safe,
+        PyArg_ParseTuple(args, "IpsIIIIIIIII", &device_id, &thread_safe,
                 &raw_calibration, &config.color_format,
                 &config.color_resolution, &config.depth_mode,
                 &config.camera_fps, &config.synchronized_images_only,
@@ -290,11 +290,11 @@ extern "C" {
 
     static PyObject* device_get_calibration(PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         k4a_buffer_result_t result;
         size_t data_size;
-        PyArg_ParseTuple(args, "IH", &device_id, &thread_safe);
+        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
         thread_state = _gil_release(thread_safe);
         result = k4a_device_get_raw_calibration(devices[device_id].device, NULL, &data_size);
         if (result == K4A_BUFFER_RESULT_FAILED) {
@@ -391,12 +391,12 @@ extern "C" {
     static PyObject* transformation_depth_image_to_color_camera(
             PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         k4a_result_t res;
         PyArrayObject *in_array;
         k4a_color_resolution_t color_resolution;
-        PyArg_ParseTuple(args, "HO!I", &device_id, &thread_safe, &PyArray_Type, &in_array, &color_resolution);
+        PyArg_ParseTuple(args, "IpO!I", &device_id, &thread_safe, &PyArray_Type, &in_array, &color_resolution);
 
         k4a_image_t* depth_image_transformed = (k4a_image_t*) malloc(sizeof(k4a_image_t));
 
@@ -436,12 +436,12 @@ extern "C" {
     static PyObject* transformation_color_image_to_depth_camera(
             PyObject* self, PyObject* args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         k4a_result_t res;
         PyArrayObject *in_depth_array;
         PyArrayObject *in_color_array;
-        PyArg_ParseTuple(args, "IHO!O!", &device_id, &thread_safe, &PyArray_Type, &in_depth_array, &PyArray_Type, &in_color_array);
+        PyArg_ParseTuple(args, "IpO!O!", &device_id, &thread_safe, &PyArray_Type, &in_depth_array, &PyArray_Type, &in_color_array);
 
         k4a_image_t* transformed_color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
 
@@ -484,12 +484,12 @@ extern "C" {
     }
 
     static PyObject* capture_get_color_image(PyObject* self, PyObject* args){
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         PyObject *capsule_capture;
         k4a_capture_t *capture;
         k4a_result_t res;
-        PyArg_ParseTuple(args, "HO", &thread_safe, &capsule_capture);
+        PyArg_ParseTuple(args, "pO", &thread_safe, &capsule_capture);
 
 
         capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, NULL);
@@ -512,12 +512,12 @@ extern "C" {
     }
 
     static PyObject* capture_get_depth_image(PyObject* self, PyObject* args){
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         PyObject *capsule_capture;
         k4a_capture_t *capture;
         k4a_result_t res;
-        PyArg_ParseTuple(args, "HO", &thread_safe, &capsule_capture);
+        PyArg_ParseTuple(args, "pO", &thread_safe, &capsule_capture);
 
         capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, NULL);
         thread_state = _gil_release(thread_safe);
@@ -538,12 +538,12 @@ extern "C" {
     }
 
     static PyObject* capture_get_ir_image(PyObject* self, PyObject* args){
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         PyObject *capsule_capture;
         k4a_capture_t *capture;
         k4a_result_t res;
-        PyArg_ParseTuple(args, "HO", &thread_safe, &capsule_capture);
+        PyArg_ParseTuple(args, "pO", &thread_safe, &capsule_capture);
 
         capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, NULL);
         thread_state = _gil_release(thread_safe);
@@ -566,7 +566,7 @@ extern "C" {
 
     static PyObject* calibration_3d_to_3d(PyObject* self, PyObject *args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         k4a_result_t res;
         k4a_float3_t source_point3d_mm;
@@ -577,7 +577,7 @@ extern "C" {
         int source_point_y;
         int source_point_z;
 
-        PyArg_ParseTuple(args, "IHIIIII",
+        PyArg_ParseTuple(args, "IpIIIII",
                 &device_id,
                 &thread_safe,
                 &source_point_x,
@@ -607,7 +607,7 @@ extern "C" {
 
     static PyObject* calibration_2d_to_3d(PyObject* self, PyObject *args){
         uint32_t device_id;
-        short thread_safe;
+        int thread_safe;
         PyThreadState *thread_state;
         int source_point_x;
         int source_point_y;
@@ -619,7 +619,7 @@ extern "C" {
         k4a_float2_t source_point2d;
         k4a_float3_t target_point3d_mm;
         
-        PyArg_ParseTuple(args, "IHIIfII",
+        PyArg_ParseTuple(args, "IpIIfII",
                 &device_id,
                 &thread_safe,
                 &source_point_x,

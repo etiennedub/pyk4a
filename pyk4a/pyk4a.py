@@ -29,16 +29,12 @@ class PyK4A:
     def __init__(self, config=None, device_id=0, thread_safe: bool = True):
         self._device_id = device_id
         self._config = config if (config is not None) else Config()
-        self._thread_safe = 1 if thread_safe else 0
+        self.thread_safe = thread_safe
         self.is_running = False
 
     def __del__(self):
         if self.is_running:
             self.disconnect()
-
-    @property
-    def thread_safe(self) -> bool:
-        return self._thread_safe == 1
 
     def connect(self):
         self._device_open()
@@ -52,38 +48,38 @@ class PyK4A:
         self.is_running = False
 
     def save_calibration_json(self, path):
-        calibration = k4a_module.device_get_calibration(self._device_id, self._thread_safe)
+        calibration = k4a_module.device_get_calibration(self._device_id, self.thread_safe)
         with open(path, 'w') as f:
             f.write(calibration)
 
     def load_calibration_json(self, path):
         with open(path, 'r') as f:
             calibration = f.read()
-        res = k4a_module.calibration_set_from_raw(self._device_id, self._thread_safe, calibration, *self._config.unpack())
+        res = k4a_module.calibration_set_from_raw(self._device_id, self.thread_safe, calibration, *self._config.unpack())
         self._verify_error(res)
 
     def _device_open(self):
-        res = k4a_module.device_open(self._device_id, self._thread_safe)
+        res = k4a_module.device_open(self._device_id, self.thread_safe)
         self._verify_error(res)
 
     def _device_close(self):
-        res = k4a_module.device_close(self._device_id, self._thread_safe)
+        res = k4a_module.device_close(self._device_id, self.thread_safe)
         self._verify_error(res)
 
     def _start_cameras(self):
-        res = k4a_module.device_start_cameras(self._device_id, self._thread_safe, *self._config.unpack())
+        res = k4a_module.device_start_cameras(self._device_id, self.thread_safe, *self._config.unpack())
         self._verify_error(res)
 
     def _start_imu(self):
-        res = k4a_module.device_start_imu(self._device_id, self._thread_safe)
+        res = k4a_module.device_start_imu(self._device_id, self.thread_safe)
         self._verify_error(res)
 
     def _stop_cameras(self):
-        res = k4a_module.device_stop_cameras(self._device_id, self._thread_safe)
+        res = k4a_module.device_stop_cameras(self._device_id, self.thread_safe)
         self._verify_error(res)
 
     def _stop_imu(self):
-        res = k4a_module.device_stop_imu(self._device_id, self._thread_safe)
+        res = k4a_module.device_stop_imu(self._device_id, self.thread_safe)
         self._verify_error(res)
 
     def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, ):
@@ -102,14 +98,14 @@ class PyK4A:
         If using any ColorFormat other than ColorFormat.BGRA32, the color image must be decoded.
             See example/color_formats.py
         """
-        res, capture_capsule = k4a_module.device_get_capture(self._device_id, self._thread_safe, timeout)
+        res, capture_capsule = k4a_module.device_get_capture(self._device_id, self.thread_safe, timeout)
         self._verify_error(res)
 
         capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
         return capture
 
     def get_imu_sample(self, timeout=TIMEOUT_WAIT_INFINITE):
-        res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, self._thread_safe, PyK4A.TIMEOUT_WAIT_INFINITE)
+        res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, self.thread_safe, PyK4A.TIMEOUT_WAIT_INFINITE)
         self._verify_error(res)
         (temperature, acc_sample, acc_timestamp, gyro_sample, gyro_timestamp) = imu_sample
         return {
@@ -122,17 +118,17 @@ class PyK4A:
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
-        res, jack_in, jack_out = k4a_module.device_get_sync_jack(self._device_id, self._thread_safe)
+        res, jack_in, jack_out = k4a_module.device_get_sync_jack(self._device_id, self.thread_safe)
         self._verify_error(res)
         return jack_in == 1, jack_out == 1
 
     def _get_color_control(self, cmd: ColorControlCommand) -> Tuple[int, ColorControlMode]:
-        res, mode, value = k4a_module.device_get_color_control(self._device_id, self._thread_safe, cmd)
+        res, mode, value = k4a_module.device_get_color_control(self._device_id, self.thread_safe, cmd)
         self._verify_error(res)
         return value, ColorControlMode(mode)
 
     def _set_color_control(self, cmd: ColorControlCommand, value: int, mode=ColorControlMode.MANUAL):
-        res = k4a_module.device_set_color_control(self._device_id, self._thread_safe, cmd, mode, value)
+        res = k4a_module.device_set_color_control(self._device_id, self.thread_safe, cmd, mode, value)
         self._verify_error(res)
 
     @property
@@ -228,7 +224,7 @@ class PyK4A:
         self._set_color_control(ColorControlCommand.WHITEBALANCE, value=value, mode=mode)
 
     def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> (bool, int, int, int, int, int):
-        ret = k4a_module.device_get_color_control_capabilities(self._device_id, self._thread_safe, cmd)
+        ret = k4a_module.device_get_color_control_capabilities(self._device_id, self.thread_safe, cmd)
         (res, supports_auto, min_value, max_value, step_value, default_value, default_mode) = ret
         self._verify_error(res)
         return {
