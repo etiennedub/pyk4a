@@ -1,7 +1,8 @@
 import threading
-from time import sleep
-from typing import Tuple, Optional, List, Dict
 from math import sin
+from time import sleep
+from typing import Dict, List
+
 from pyk4a import PyK4A
 
 
@@ -38,7 +39,7 @@ class CameraWorker(Worker):
         camera.connect()
         while not self._halt:
             capture = camera.get_capture()
-            image = capture.depth
+            assert capture.depth is not None
             self._count += 1
         sleep(0.1)
         camera.disconnect()
@@ -46,7 +47,9 @@ class CameraWorker(Worker):
         print("Stop run")
 
 
-def bench(camera_workers: List[CameraWorker], cpu_workers: List[CpuWorker], duration: float) -> int:
+def bench(
+    camera_workers: List[CameraWorker], cpu_workers: List[CpuWorker], duration: float
+) -> int:
     # start cameras
     for camera_worker in camera_workers:
         camera_worker.start()
@@ -67,8 +70,9 @@ def bench(camera_workers: List[CameraWorker], cpu_workers: List[CpuWorker], dura
         camera_worker.halt()
 
     # wait while all workers stop
+    workers: List[Worker] = [*camera_workers, *cpu_workers]
     while True:
-        for worker in camera_workers + cpu_workers:
+        for worker in workers:
             if worker.is_alive():
                 sleep(0.05)
                 break
@@ -135,7 +139,8 @@ for cpu_workers_count in range(1, MAX_CPU_WORKERS_COUNT + 1):
             camera_workers=camera_workers, cpu_workers=cpu_workers, duration=DURATION
         )
         print(
-            f"Bench result: cpu_workers={cpu_workers_count}, thread_safe={thread_safe}, operations={operations}"
+            f"Bench result: cpu_workers={cpu_workers_count}, "
+            f"thread_safe={thread_safe}, operations={operations}"
         )
         result[thread_safe] = operations
 

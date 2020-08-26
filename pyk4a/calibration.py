@@ -1,37 +1,45 @@
 from enum import IntEnum
-from typing import List, Tuple
+from typing import List, Optional, Tuple
+
 import k4a_module
-from .pyk4a import Result, K4AException, K4ATimeoutException, PyK4A
 from pyk4a.config import Config
+
+from .pyk4a import K4AException, K4ATimeoutException, PyK4A, Result
 
 
 class CalibrationType(IntEnum):
-    UNKNOWN = -1       # Unknown
-    DEPTH = 0          # Depth Camera
-    COLOR = 1          # Color Sensor
-    GYRO = 2           # Gyroscope
-    ACCEL = 3          # Accelerometer
-    NUM = 4            # Number of types excluding unknown type
+    UNKNOWN = -1  # Unknown
+    DEPTH = 0  # Depth Camera
+    COLOR = 1  # Color Sensor
+    GYRO = 2  # Gyroscope
+    ACCEL = 3  # Accelerometer
+    NUM = 4  # Number of types excluding unknown type
 
 
 class Calibration:
-    def __init__(self, device: PyK4A,
-                 config: Config,
-                 source_calibration: CalibrationType,
-                 target_calibration: CalibrationType):
+    def __init__(
+        self,
+        device: PyK4A,
+        config: Config,
+        source_calibration: CalibrationType,
+        target_calibration: CalibrationType,
+    ):
         if isinstance(device, PyK4A):
             self.device = device
         else:
-            raise K4AException(f'Calibration instance created without '
-                               f'a device of the proper class')
+            raise K4AException(
+                "Calibration instance created without a device of the proper class"
+            )
         self.source_calibration = source_calibration
         self.target_calibration = target_calibration
         self.config = config
 
-    def convert_3d_to_3d(self,
-                         source_point_3d: List,
-                         source_camera=None,
-                         target_camera=None) -> Tuple[int, List]:
+    def convert_3d_to_3d(
+        self,
+        source_point_3d: List[int],
+        source_camera: Optional[CalibrationType] = None,
+        target_camera: Optional[CalibrationType] = None,
+    ) -> List[float]:
         """
         Transform a 3d point of a source coordinate system into a 3d
         point of the target coordinate system.
@@ -48,19 +56,23 @@ class Calibration:
                 source_point_3d[1],
                 source_point_3d[2],
                 source_camera,
-                target_camera)
+                target_camera,
+            )
 
             self._verify_error(res)
             return [x, y, z]
         else:
-            raise K4AException(f'Device not running. Please connect '
-                               f'to the device (device.connect())')
+            raise K4AException(
+                "Device not running. Please connect to the device (device.connect())"
+            )
 
-    def convert_2d_to_3d(self,
-                         source_pixel_2d: List,
-                         depth: float,
-                         source_camera=None,
-                         target_camera=None) -> Tuple[int, List]:
+    def convert_2d_to_3d(
+        self,
+        source_pixel_2d: List[int],
+        depth: float,
+        source_camera: Optional[CalibrationType] = None,
+        target_camera: Optional[CalibrationType] = None,
+    ) -> Tuple[int, List[float]]:
         """
         Transform a 2d pixel to a 3d point of the target coordinate system.
         """
@@ -76,15 +88,17 @@ class Calibration:
                 source_pixel_2d[1],
                 depth,
                 source_camera,
-                target_camera)
+                target_camera,
+            )
             self._verify_error(res)
             return valid, [x, y, z]
         else:
-            raise K4AException(f'Device not running. Please connect '
-                               f'to the device (device.connect())')
+            raise K4AException(
+                "Device not running. Please connect to the device (device.connect())"
+            )
 
     @staticmethod
-    def _verify_error(res):
+    def _verify_error(res) -> None:
         res = Result(res)
         if res == Result.Failed:
             raise K4AException()
