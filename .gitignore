@@ -78,3 +78,6 @@ docs/_build/
 
 # JetBrains
 .idea
+
+# mypy cache
+.mypy_cache
