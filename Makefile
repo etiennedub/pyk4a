@@ -1,4 +1,5 @@
 SOURCES=pyk4a example
+TESTS=tests
 
 .PHONY: setup fmt lint
 
@@ -13,3 +14,6 @@ lint:
 	black --check $(SOURCES)
 	flake8 $(SOURCES)
 	mypy $(SOURCES)
+
+test:
+	pytest --cov=pyk4a $(TESTS)

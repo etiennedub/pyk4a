@@ -78,8 +78,15 @@ Feel free to send pull requests.
 
 Bug reports are also appreciated. Please include as much details as possible.
 
-Please format and check code quality before creating pull requst via: `make fmt lint`
+Please format and check code quality before creating pull requst via: 
+```shell script
+make fmt lint
+```
 
+Do not forget to run tests too: 
+```shell script
+make test
+```
 ### TODO:
 
 - Support for all sensors (other than color and depth)

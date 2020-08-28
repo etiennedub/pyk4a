@@ -21,7 +21,7 @@ class StreamResult(IntEnum):
     EOF = 2
 
 
-class PlaybackSeekOrigin(IntEnum):
+class SeekOrigin(IntEnum):
     BEGIN = 0
     END = 1
     DEVICE_TIME = 2
@@ -69,7 +69,7 @@ class PyK4APlayback:
                 self._handle, self._thread_safe
             )
             typed_result = BufferResult(result)
-            if typed_result != BufferResult.Success:
+            if typed_result != BufferResult.Success:  # pragma: no cover
                 raise K4AException(f"Cannot read calibration from file: {typed_result}")
         return self._calibration_json
 
@@ -91,9 +91,7 @@ class PyK4APlayback:
         k4a_module.playback_close(self._handle, self._thread_safe)
         self._handle = None
 
-    def seek(
-        self, offset: int, origin: PlaybackSeekOrigin = PlaybackSeekOrigin.BEGIN
-    ) -> None:
+    def seek(self, offset: int, origin: SeekOrigin = SeekOrigin.BEGIN) -> None:
         """
             Seek playback pointer to specified offset
         """
