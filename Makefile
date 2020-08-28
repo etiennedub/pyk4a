@@ -1,4 +1,4 @@
-SOURCES=pyk4a example
+SOURCES=pyk4a example tests
 TESTS=tests
 
 .PHONY: setup fmt lint
