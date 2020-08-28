@@ -2,6 +2,7 @@
 #include <numpy/arrayobject.h>
 
 #include <k4a/k4a.h>
+#include <k4arecord/playback.h>
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -25,6 +26,8 @@ extern "C" {
 
     int total_capsules = 0;
 
+    const char* capsule_playback_name = "pyk4a playback handle";
+
     static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
         if (thread_safe == NON_THREAD_SAFE) {
@@ -32,7 +35,7 @@ extern "C" {
         }
         return thread_state;
     }
-    
+
     static void _gil_restore(PyThreadState *thread_state) {
         if (thread_state != NULL) {
             PyEval_RestoreThread(thread_state);
@@ -49,6 +52,16 @@ extern "C" {
         total_capsules -= 1;
         k4a_capture_t *capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule, NULL);
         k4a_capture_release(*capture);
+    }
+
+    static void capsule_cleanup_playback(PyObject *capsule) {
+        k4a_playback_t* playback_handle;
+
+        total_capsules -= 1;
+
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+        free(playback_handle);
+        fprintf(stdout, "Cleanup!");
     }
 
     static PyObject* device_open(PyObject* self, PyObject* args){
@@ -68,11 +81,11 @@ extern "C" {
         int thread_safe;
         PyThreadState *thread_state;
         PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
-        
+
         thread_state = _gil_release(thread_safe);
         k4a_device_close(devices[device_id].device);
         _gil_restore(thread_state);
-        
+
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 
@@ -83,7 +96,7 @@ extern "C" {
         bool in_jack = 0;
         bool out_jack = 0;
         PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
-        
+
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_get_sync_jack(devices[device_id].device, &in_jack, &out_jack);
         _gil_restore(thread_state);
@@ -177,7 +190,7 @@ extern "C" {
         _gil_restore(thread_state);
         return Py_BuildValue("I", result);
     }
-    
+
     static PyObject* device_start_imu(PyObject* self, PyObject* args){
         uint32_t device_id;
         int thread_safe;
@@ -204,7 +217,7 @@ extern "C" {
         _gil_restore(thread_state);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
-    
+
     static PyObject* device_stop_imu(PyObject* self, PyObject* args){
         uint32_t device_id;
         int thread_safe;
@@ -234,20 +247,20 @@ extern "C" {
 
         return Py_BuildValue("IN", result, capsule_capture);
     }
-    
+
     static PyObject* device_get_imu_sample(PyObject* self, PyObject* args){
         uint32_t device_id;
         int thread_safe;
         PyThreadState *thread_state;
         int32_t timeout;
         PyArg_ParseTuple(args, "IpI", &device_id, &thread_safe, &timeout);
-        
+
         k4a_imu_sample_t imu_sample;
         k4a_wait_result_t result;
-        
+
         thread_state = _gil_release(thread_safe);
         result = k4a_device_get_imu_sample(devices[device_id].device, &imu_sample, timeout);
-        
+
         _gil_restore(thread_state);
         if (K4A_WAIT_RESULT_SUCCEEDED == result) {
             return Py_BuildValue("I(f(fff)L(fff)L)", result, imu_sample.temperature, imu_sample.acc_sample.xyz.x, imu_sample.acc_sample.xyz.y, imu_sample.acc_sample.xyz.z, imu_sample.acc_timestamp_usec, imu_sample.gyro_sample.xyz.x, imu_sample.gyro_sample.xyz.y, imu_sample.gyro_sample.xyz.z, imu_sample.gyro_timestamp_usec);
@@ -594,7 +607,7 @@ extern "C" {
 
         res = k4a_calibration_3d_to_3d (&devices[device_id].calibration_handle,
                                         &source_point3d_mm,
-                                        source_camera, 
+                                        source_camera,
                                         target_camera,
                                         &target_point3d_mm);
        _gil_restore(thread_state);
@@ -618,7 +631,7 @@ extern "C" {
         k4a_result_t res;
         k4a_float2_t source_point2d;
         k4a_float3_t target_point3d_mm;
-        
+
         PyArg_ParseTuple(args, "IpIIfII",
                 &device_id,
                 &thread_safe,
@@ -636,7 +649,7 @@ extern "C" {
         res = k4a_calibration_2d_to_3d (&devices[device_id].calibration_handle,
                                         &source_point2d,
                                         source_depth_mm,
-                                        source_camera, 
+                                        source_camera,
                                         target_camera,
                                         &target_point3d_mm,
                                         &valid);
@@ -647,6 +660,157 @@ extern "C" {
         // Return object...
         return Py_BuildValue("IIfff", res, valid, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
+
+    static PyObject* playback_open(PyObject* self, PyObject *args) {
+        int thread_safe;
+        PyThreadState *thread_state;
+        k4a_result_t result;
+        const char* file_name;
+        k4a_playback_t* playback_handle = (k4a_playback_t*) malloc(sizeof(k4a_playback_t));
+
+        if (playback_handle == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("Is", K4A_RESULT_FAILED, capsule_playback_name);
+        }
+
+        PyArg_ParseTuple(args, "sp", &file_name, &thread_safe);
+
+        thread_state = _gil_release(thread_safe);
+        result = k4a_playback_open(file_name, playback_handle);
+        _gil_restore(thread_state);
+
+        if (result == K4A_RESULT_FAILED ) {
+            free(playback_handle);
+            return Py_BuildValue("Is", result, NULL);
+        }
+
+        PyObject *capsule = PyCapsule_New(playback_handle, capsule_playback_name, capsule_cleanup_playback);
+        total_capsules += 1;
+        return Py_BuildValue("IN", result, capsule);
+    }
+
+    static PyObject* playback_close(PyObject* self, PyObject *args) {
+        int thread_safe;
+        PyThreadState *thread_state;
+        PyObject *capsule;
+        k4a_playback_t* playback_handle;
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+
+        thread_state = _gil_release(thread_safe);
+        k4a_playback_close(*playback_handle);
+        _gil_restore(thread_state);
+
+        return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
+    }
+
+    static PyObject* playback_get_recording_length_usec(PyObject* self, PyObject *args) {
+
+        int thread_safe;
+        PyThreadState *thread_state;
+        PyObject *capsule;
+        k4a_playback_t* playback_handle;
+        uint64_t recording_length;
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+
+        thread_state = _gil_release(thread_safe);
+        recording_length = k4a_playback_get_recording_length_usec(*playback_handle);
+        _gil_restore(thread_state);
+
+        return Py_BuildValue("K", recording_length);
+    }
+
+
+    static PyObject* playback_get_calibration(PyObject* self, PyObject* args){
+        int thread_safe;
+        PyThreadState *thread_state;
+        PyObject *capsule;
+        k4a_playback_t* playback_handle;
+        k4a_buffer_result_t result;
+        size_t data_size;
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+
+        thread_state = _gil_release(thread_safe);
+        result = k4a_playback_get_raw_calibration(*playback_handle, NULL, &data_size);
+        if (result == K4A_BUFFER_RESULT_FAILED) {
+            _gil_restore(thread_state);
+            return Py_BuildValue("Is", result, NULL);
+        }
+        uint8_t* data = (uint8_t*) malloc(data_size);
+        result = k4a_playback_get_raw_calibration(*playback_handle, data, &data_size);
+        _gil_restore(thread_state);
+        if (result != K4A_BUFFER_RESULT_SUCCEEDED) {
+            free(data);
+            return Py_BuildValue("Is", result, NULL);
+        }
+        PyObject* res = Py_BuildValue("Is", result, data);
+        free(data);
+        return res;
+    }
+
+    static PyObject* playback_seek_timestamp(PyObject* self, PyObject *args) {
+        int thread_safe;
+        PyThreadState *thread_state;
+        PyObject *capsule;
+        k4a_playback_t* playback_handle;
+        uint64_t offset;
+        k4a_playback_seek_origin_t origin;
+        k4a_result_t result;
+
+        PyArg_ParseTuple(args, "OKIp", &capsule, &offset, &origin, &thread_safe);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+
+        thread_state = _gil_release(thread_safe);
+        result = k4a_playback_seek_timestamp(*playback_handle, offset, origin);
+        _gil_restore(thread_state);
+
+        return Py_BuildValue("I", result);
+    }
+
+//    static PyObject* playback_get_next_capture(PyObject* self, PyObject* args){
+//        PyObject *capsule_playback;
+//        playback_container *playback;
+//        k4a_capture_t *capture;
+//        k4a_stream_result_t result;
+//
+//        PyArg_ParseTuple(args, "O", &capsule_playback);
+//        playback = (playback_container*)PyCapsule_GetPointer(capsule_playback, "Playback handle");
+//
+//        capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
+//        k4a_capture_create(capture);
+//
+//        PyObject* capsule_capture = PyCapsule_New(capture, "Capture handle", capsule_cleanup_capture);
+//        total_capsules += 1;
+//
+//        result = k4a_playback_get_next_capture((*playback).handle, capture);
+//
+//        return Py_BuildValue("IN", result, capsule_capture);
+//    }
+//
+//    static PyObject* playback_get_previous_capture(PyObject* self, PyObject* args){
+//        PyObject *capsule_playback;
+//        playback_container *playback;
+//        k4a_capture_t *capture;
+//        k4a_stream_result_t result;
+//
+//        PyArg_ParseTuple(args, "O", &capsule_playback);
+//        playback = (playback_container*)PyCapsule_GetPointer(capsule_playback, "Playback handle");
+//
+//        capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
+//        k4a_capture_create(capture);
+//
+//        PyObject* capsule_capture = PyCapsule_New(capture, "Capture handle", capsule_cleanup_capture);
+//        total_capsules += 1;
+//
+//        result = k4a_playback_get_next_capture((*playback).handle, capture);
+//
+//        return Py_BuildValue("IN", result, capsule_capture);
+//    }
 
     // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp
     //###################
@@ -686,6 +850,13 @@ extern "C" {
         {"transformation_color_image_to_depth_camera", transformation_color_image_to_depth_camera, METH_VARARGS, "Transforms the color image into the geometry of the depth camera."},
         {"calibration_3d_to_3d", calibration_3d_to_3d, METH_VARARGS, "Transforms the coordinates between 2 3D systems"},
         {"calibration_2d_to_3d", calibration_2d_to_3d, METH_VARARGS, "Transforms the coordinates between a pixel and a 3D system"},
+        {"playback_open", playback_open, METH_VARARGS, "Open file for playback"},
+        {"playback_close", playback_close, METH_VARARGS, "Close opened playback"},
+        {"playback_get_recording_length_usec", playback_get_recording_length_usec, METH_VARARGS, "Return recording length"},
+        {"playback_get_calibration", playback_get_calibration, METH_VARARGS, "Extract calibration from recording"},
+        {"playback_seek_timestamp", playback_seek_timestamp, METH_VARARGS, "Extract calibration from recording"},
+//        {"playback_get_next_capture", playback_get_next_capture, METH_VARARGS, "Read next capture from recording"},
+//        {"playback_get_previous_capture", playback_get_previous_capture, METH_VARARGS, "Read previous capture from recording"},
         {NULL, NULL, 0, NULL}
     };
 
