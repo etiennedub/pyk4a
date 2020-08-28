@@ -772,46 +772,6 @@ extern "C" {
         return Py_BuildValue("I", result);
     }
 
-//    static PyObject* playback_get_next_capture(PyObject* self, PyObject* args){
-//        PyObject *capsule_playback;
-//        playback_container *playback;
-//        k4a_capture_t *capture;
-//        k4a_stream_result_t result;
-//
-//        PyArg_ParseTuple(args, "O", &capsule_playback);
-//        playback = (playback_container*)PyCapsule_GetPointer(capsule_playback, "Playback handle");
-//
-//        capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
-//        k4a_capture_create(capture);
-//
-//        PyObject* capsule_capture = PyCapsule_New(capture, "Capture handle", capsule_cleanup_capture);
-//        total_capsules += 1;
-//
-//        result = k4a_playback_get_next_capture((*playback).handle, capture);
-//
-//        return Py_BuildValue("IN", result, capsule_capture);
-//    }
-//
-//    static PyObject* playback_get_previous_capture(PyObject* self, PyObject* args){
-//        PyObject *capsule_playback;
-//        playback_container *playback;
-//        k4a_capture_t *capture;
-//        k4a_stream_result_t result;
-//
-//        PyArg_ParseTuple(args, "O", &capsule_playback);
-//        playback = (playback_container*)PyCapsule_GetPointer(capsule_playback, "Playback handle");
-//
-//        capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
-//        k4a_capture_create(capture);
-//
-//        PyObject* capsule_capture = PyCapsule_New(capture, "Capture handle", capsule_cleanup_capture);
-//        total_capsules += 1;
-//
-//        result = k4a_playback_get_next_capture((*playback).handle, capture);
-//
-//        return Py_BuildValue("IN", result, capsule_capture);
-//    }
-
     // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp
     //###################
     //Module initialisation
@@ -855,8 +815,6 @@ extern "C" {
         {"playback_get_recording_length_usec", playback_get_recording_length_usec, METH_VARARGS, "Return recording length"},
         {"playback_get_calibration", playback_get_calibration, METH_VARARGS, "Extract calibration from recording"},
         {"playback_seek_timestamp", playback_seek_timestamp, METH_VARARGS, "Extract calibration from recording"},
-//        {"playback_get_next_capture", playback_get_next_capture, METH_VARARGS, "Read next capture from recording"},
-//        {"playback_get_previous_capture", playback_get_previous_capture, METH_VARARGS, "Read previous capture from recording"},
         {NULL, NULL, 0, NULL}
     };
 
