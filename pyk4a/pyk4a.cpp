@@ -762,7 +762,7 @@ extern "C" {
         k4a_playback_seek_origin_t origin;
         k4a_result_t result;
 
-        PyArg_ParseTuple(args, "OKIp", &capsule, &offset, &origin, &thread_safe);
+        PyArg_ParseTuple(args, "OpKI", &capsule, &thread_safe, &offset, &origin);
         playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
 
         thread_state = _gil_release(thread_safe);

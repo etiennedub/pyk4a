@@ -16,16 +16,26 @@ def info(playback: PyK4APlayback):
 def main() -> None:
     parser = ArgumentParser(description="pyk4a player")
     parser.add_argument(
+        "--seek",
+        type=float,
+        help="Seek file to specified offset in seconds",
+        default=0.0,
+    )
+    parser.add_argument(
         "FILE", type=str, help="Path to MKV file written by k4arecorder"
     )
 
     args = parser.parse_args()
     filename: str = args.FILE
+    offset: float = args.seek
 
     playback = PyK4APlayback(filename)
     playback.open()
 
     info(playback)
+
+    if offset != 0.0:
+        playback.seek(int(offset * 1000000))
 
     playback.close()
 
