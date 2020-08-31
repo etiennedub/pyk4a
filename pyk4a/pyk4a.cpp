@@ -670,7 +670,7 @@ extern "C" {
 
         if (playback_handle == NULL) {
             fprintf(stderr, "Cannot allocate memory");
-            return Py_BuildValue("Is", K4A_RESULT_FAILED, capsule_playback_name);
+            return Py_BuildValue("Is", K4A_RESULT_FAILED, NULL);
         }
 
         PyArg_ParseTuple(args, "sp", &file_name, &thread_safe);

@@ -53,9 +53,7 @@ class PyK4APlayback:
         """
         if self._length is None:
             self._validate_is_open()
-            self._length = k4a_module.playback_get_recording_length_usec(
-                self._handle, self._thread_safe
-            )
+            self._length = k4a_module.playback_get_recording_length_usec(self._handle, self._thread_safe)
         return self._length
 
     @property
@@ -65,9 +63,7 @@ class PyK4APlayback:
         """
         if self._calibration_json is None:
             self._validate_is_open()
-            result, self._calibration_json = k4a_module.playback_get_calibration(
-                self._handle, self._thread_safe
-            )
+            result, self._calibration_json = k4a_module.playback_get_calibration(self._handle, self._thread_safe)
             typed_result = BufferResult(result)
             if typed_result != BufferResult.Success:  # pragma: no cover
                 raise K4AException(f"Cannot read calibration from file: {typed_result}")
@@ -96,9 +92,7 @@ class PyK4APlayback:
             Seek playback pointer to specified offset
         """
         self._validate_is_open()
-        result = k4a_module.playback_seek_timestamp(
-            self._handle, self._thread_safe, offset, int(origin)
-        )
+        result = k4a_module.playback_seek_timestamp(self._handle, self._thread_safe, offset, int(origin))
         typed_result = StreamResult(result)
         if typed_result != StreamResult.Success:
             raise K4AException(f"Cannot seek to specified position: {typed_result}")
