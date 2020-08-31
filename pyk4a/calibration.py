@@ -18,18 +18,12 @@ class CalibrationType(IntEnum):
 
 class Calibration:
     def __init__(
-        self,
-        device: PyK4A,
-        config: Config,
-        source_calibration: CalibrationType,
-        target_calibration: CalibrationType,
+        self, device: PyK4A, config: Config, source_calibration: CalibrationType, target_calibration: CalibrationType,
     ):
         if isinstance(device, PyK4A):
             self.device = device
         else:
-            raise K4AException(
-                "Calibration instance created without a device of the proper class"
-            )
+            raise K4AException("Calibration instance created without a device of the proper class")
         self.source_calibration = source_calibration
         self.target_calibration = target_calibration
         self.config = config
@@ -62,9 +56,7 @@ class Calibration:
             self._verify_error(res)
             return [x, y, z]
         else:
-            raise K4AException(
-                "Device not running. Please connect to the device (device.connect())"
-            )
+            raise K4AException("Device not running. Please connect to the device (device.connect())")
 
     def convert_2d_to_3d(
         self,
@@ -83,19 +75,12 @@ class Calibration:
             if target_camera is None:
                 target_camera = self.target_calibration
             res, valid, x, y, z = k4a_module.calibration_2d_to_3d(
-                self.device._device_id,
-                source_pixel_2d[0],
-                source_pixel_2d[1],
-                depth,
-                source_camera,
-                target_camera,
+                self.device._device_id, source_pixel_2d[0], source_pixel_2d[1], depth, source_camera, target_camera,
             )
             self._verify_error(res)
             return valid, [x, y, z]
         else:
-            raise K4AException(
-                "Device not running. Please connect to the device (device.connect())"
-            )
+            raise K4AException("Device not running. Please connect to the device (device.connect())")
 
     @staticmethod
     def _verify_error(res) -> None:

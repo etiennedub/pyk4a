@@ -47,9 +47,7 @@ class CameraWorker(Worker):
         print("Stop run")
 
 
-def bench(
-    camera_workers: List[CameraWorker], cpu_workers: List[CpuWorker], duration: float
-) -> int:
+def bench(camera_workers: List[CameraWorker], cpu_workers: List[CpuWorker], duration: float) -> int:
     # start cameras
     for camera_worker in camera_workers:
         camera_worker.start()
@@ -95,16 +93,10 @@ def draw(results: Dict[int, Dict[bool, int]]):
     plt.ylabel("Operations Count")
     plt.xlabel("CPU Workers count")
     plt.plot(
-        results.keys(),
-        [result[True] for result in results.values()],
-        "r",
-        label="Thread safe",
+        results.keys(), [result[True] for result in results.values()], "r", label="Thread safe",
     )
     plt.plot(
-        results.keys(),
-        [result[False] for result in results.values()],
-        "g",
-        label="Non thread safe",
+        results.keys(), [result[False] for result in results.values()], "g", label="Non thread safe",
     )
     plt.legend()
 
@@ -113,11 +105,7 @@ def draw(results: Dict[int, Dict[bool, int]]):
     plt.ylabel("Difference, %")
     plt.xlabel("CPU Workers count")
     plt.plot(
-        results.keys(),
-        [
-            float(result[False] - result[True]) / result[True] * 100
-            for result in results.values()
-        ],
+        results.keys(), [float(result[False] - result[True]) / result[True] * 100 for result in results.values()],
     )
     xmin, xmax, ymin, ymax = plt.axis()
     if ymin > 0:
@@ -135,13 +123,8 @@ for cpu_workers_count in range(1, MAX_CPU_WORKERS_COUNT + 1):
     for thread_safe in (True, False):
         camera_workers = [CameraWorker(thread_safe=thread_safe)]
         cpu_workers = [CpuWorker() for i in range(cpu_workers_count)]
-        operations = bench(
-            camera_workers=camera_workers, cpu_workers=cpu_workers, duration=DURATION
-        )
-        print(
-            f"Bench result: cpu_workers={cpu_workers_count}, "
-            f"thread_safe={thread_safe}, operations={operations}"
-        )
+        operations = bench(camera_workers=camera_workers, cpu_workers=cpu_workers, duration=DURATION)
+        print(f"Bench result: cpu_workers={cpu_workers_count}, " f"thread_safe={thread_safe}, operations={operations}")
         result[thread_safe] = operations
 
     percent = float(result[False] - result[True]) / result[True] * 100

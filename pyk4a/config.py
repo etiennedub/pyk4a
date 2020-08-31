@@ -91,15 +91,7 @@ class Config:
     def unpack(
         self,
     ) -> Tuple[
-        ColorFormat,
-        ColorResolution,
-        DepthMode,
-        FPS,
-        bool,
-        int,
-        WiredSyncMode,
-        int,
-        bool,
+        ColorFormat, ColorResolution, DepthMode, FPS, bool, int, WiredSyncMode, int, bool,
     ]:
         return (
             self.color_format,

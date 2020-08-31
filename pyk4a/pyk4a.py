@@ -26,10 +26,7 @@ class PyK4A:
     TIMEOUT_WAIT_INFINITE = -1
 
     def __init__(
-        self,
-        config: Optional[Config] = None,
-        device_id: int = 0,
-        thread_safe: bool = True,
+        self, config: Optional[Config] = None, device_id: int = 0, thread_safe: bool = True,
     ):
         self._device_id = device_id
         self._config: Config = config if (config is not None) else Config()
@@ -52,9 +49,7 @@ class PyK4A:
         self.is_running = False
 
     def save_calibration_json(self, path: Any):
-        calibration = k4a_module.device_get_calibration(
-            self._device_id, self.thread_safe
-        )
+        calibration = k4a_module.device_get_calibration(self._device_id, self.thread_safe)
         with open(path, "w") as f:
             f.write(calibration)
 
@@ -75,9 +70,7 @@ class PyK4A:
         self._verify_error(res)
 
     def _start_cameras(self):
-        res = k4a_module.device_start_cameras(
-            self._device_id, self.thread_safe, *self._config.unpack()
-        )
+        res = k4a_module.device_start_cameras(self._device_id, self.thread_safe, *self._config.unpack())
         self._verify_error(res)
 
     def _start_imu(self):
@@ -108,26 +101,16 @@ class PyK4A:
         If using any ColorFormat other than ColorFormat.BGRA32, the color image must be
         decoded. See example/color_formats.py
         """
-        res, capture_capsule = k4a_module.device_get_capture(
-            self._device_id, self.thread_safe, timeout
-        )
+        res, capture_capsule = k4a_module.device_get_capture(self._device_id, self.thread_safe, timeout)
         self._verify_error(res)
 
         capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
         return capture
 
     def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Mapping[str, Any]:
-        res, imu_sample = k4a_module.device_get_imu_sample(
-            self._device_id, self.thread_safe, timeout
-        )
+        res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, self.thread_safe, timeout)
         self._verify_error(res)
-        (
-            temperature,
-            acc_sample,
-            acc_timestamp,
-            gyro_sample,
-            gyro_timestamp,
-        ) = imu_sample
+        (temperature, acc_sample, acc_timestamp, gyro_sample, gyro_timestamp,) = imu_sample
         return {
             "temperature": temperature,
             "acc_sample": acc_sample,
@@ -138,27 +121,17 @@ class PyK4A:
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
-        res, jack_in, jack_out = k4a_module.device_get_sync_jack(
-            self._device_id, self.thread_safe
-        )
+        res, jack_in, jack_out = k4a_module.device_get_sync_jack(self._device_id, self.thread_safe)
         self._verify_error(res)
         return jack_in == 1, jack_out == 1
 
-    def _get_color_control(
-        self, cmd: ColorControlCommand
-    ) -> Tuple[int, ColorControlMode]:
-        res, mode, value = k4a_module.device_get_color_control(
-            self._device_id, self.thread_safe, cmd
-        )
+    def _get_color_control(self, cmd: ColorControlCommand) -> Tuple[int, ColorControlMode]:
+        res, mode, value = k4a_module.device_get_color_control(self._device_id, self.thread_safe, cmd)
         self._verify_error(res)
         return value, ColorControlMode(mode)
 
-    def _set_color_control(
-        self, cmd: ColorControlCommand, value: int, mode=ColorControlMode.MANUAL
-    ):
-        res = k4a_module.device_set_color_control(
-            self._device_id, self.thread_safe, cmd, mode, value
-        )
+    def _set_color_control(self, cmd: ColorControlCommand, value: int, mode=ColorControlMode.MANUAL):
+        res = k4a_module.device_set_color_control(self._device_id, self.thread_safe, cmd, mode, value)
         self._verify_error(res)
 
     @property
@@ -228,17 +201,12 @@ class PyK4A:
 
     @property
     def exposure_mode_auto(self) -> bool:
-        return (
-            self._get_color_control(ColorControlCommand.EXPOSURE_TIME_ABSOLUTE)[1]
-            == ColorControlMode.AUTO
-        )
+        return self._get_color_control(ColorControlCommand.EXPOSURE_TIME_ABSOLUTE)[1] == ColorControlMode.AUTO
 
     @exposure_mode_auto.setter
     def exposure_mode_auto(self, mode_auto: bool, value: int = 2500):
         mode = ColorControlMode.AUTO if mode_auto else ColorControlMode.MANUAL
-        self._set_color_control(
-            ColorControlCommand.EXPOSURE_TIME_ABSOLUTE, value=value, mode=mode
-        )
+        self._set_color_control(ColorControlCommand.EXPOSURE_TIME_ABSOLUTE, value=value, mode=mode)
 
     @property
     def whitebalance(self) -> int:
@@ -251,33 +219,16 @@ class PyK4A:
 
     @property
     def whitebalance_mode_auto(self) -> bool:
-        return (
-            self._get_color_control(ColorControlCommand.WHITEBALANCE)[1]
-            == ColorControlMode.AUTO
-        )
+        return self._get_color_control(ColorControlCommand.WHITEBALANCE)[1] == ColorControlMode.AUTO
 
     @whitebalance_mode_auto.setter
     def whitebalance_mode_auto(self, mode_auto: bool, value: int = 2500):
         mode = ColorControlMode.AUTO if mode_auto else ColorControlMode.MANUAL
-        self._set_color_control(
-            ColorControlCommand.WHITEBALANCE, value=value, mode=mode
-        )
+        self._set_color_control(ColorControlCommand.WHITEBALANCE, value=value, mode=mode)
 
-    def _get_color_control_capabilities(
-        self, cmd: ColorControlCommand
-    ) -> Mapping[str, Any]:
-        ret = k4a_module.device_get_color_control_capabilities(
-            self._device_id, self.thread_safe, cmd
-        )
-        (
-            res,
-            supports_auto,
-            min_value,
-            max_value,
-            step_value,
-            default_value,
-            default_mode,
-        ) = ret
+    def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> Mapping[str, Any]:
+        ret = k4a_module.device_get_color_control_capabilities(self._device_id, self.thread_safe, cmd)
+        (res, supports_auto, min_value, max_value, step_value, default_value, default_mode,) = ret
         self._verify_error(res)
         return {
             "color_control_command": cmd,
@@ -292,9 +243,7 @@ class PyK4A:
     def reset_color_control_to_default(self):
         for cmd in ColorControlCommand:
             capability = self._get_color_control_capabilities(cmd)
-            self._set_color_control(
-                cmd, capability["default_value"], capability["default_mode"]
-            )
+            self._set_color_control(cmd, capability["default_value"], capability["default_mode"])
 
     @staticmethod
     def _verify_error(res):
@@ -320,51 +269,38 @@ class PyK4ACapture:
     @property
     def color(self) -> Optional[np.ndarray]:
         if self._color is None:
-            self._color = k4a_module.capture_get_color_image(
-                self.device.thread_safe, self._cap
-            )
+            self._color = k4a_module.capture_get_color_image(self.device.thread_safe, self._cap)
         return self._color
 
     @property
     def ir(self) -> Optional[np.ndarray]:
         if self._ir is None:
-            self._ir = k4a_module.capture_get_ir_image(
-                self.device.thread_safe, self._cap
-            )
+            self._ir = k4a_module.capture_get_ir_image(self.device.thread_safe, self._cap)
         return self._ir
 
     @property
     def depth(self) -> Optional[np.ndarray]:
         if self._depth is None:
-            self._depth = k4a_module.capture_get_depth_image(
-                self.device.thread_safe, self._cap
-            )
+            self._depth = k4a_module.capture_get_depth_image(self.device.thread_safe, self._cap)
         return self._depth
 
     @property
     def transformed_depth(self) -> Optional[np.ndarray]:
         if self._transformed_depth is None and self.depth is not None:
-            self._transformed_depth = k4a_module.transformation_depth_image_to_color_camera(  # noqa: E501
-                self.device._device_id,
-                self.device.thread_safe,
-                self.depth,
-                self.device._config.color_resolution,
+            self._transformed_depth = k4a_module.transformation_depth_image_to_color_camera(
+                self.device._device_id, self.device.thread_safe, self.depth, self.device._config.color_resolution,
             )
         return self._transformed_depth
 
     @property
     def transformed_color(self) -> Optional[np.ndarray]:
-        if (
-            self._transformed_color is None
-            and self.depth is not None
-            and self.color is not None
-        ):
+        if self._transformed_color is None and self.depth is not None and self.color is not None:
             if self.device._config.color_format != ColorFormat.BGRA32:
                 raise RuntimeError(
                     "color image must be of format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
                     "transformation_color_image_to_depth_camera"
                 )
-            self._transformed_color = k4a_module.transformation_color_image_to_depth_camera(  # noqa: E501
+            self._transformed_color = k4a_module.transformation_color_image_to_depth_camera(
                 self.device._device_id, self.device.thread_safe, self.depth, self.color
             )
         return self._transformed_color

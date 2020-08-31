@@ -27,9 +27,7 @@ def main():
             # Clip 5000 mm(5 meters)
             clipped_depth = capture.depth.clip(None, 5000)
             # normalize and convert to 8bit
-            normalized_depth = cv2.normalize(
-                clipped_depth, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
-            )
+            normalized_depth = cv2.normalize(clipped_depth, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
             # coloring image by choosed color map
             colored_depth = cv2.applyColorMap(normalized_depth, cv2.COLORMAP_HSV)
             cv2.imshow("k4a", colored_depth)
