@@ -61,7 +61,6 @@ extern "C" {
 
         playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
         free(playback_handle);
-        fprintf(stdout, "Cleanup!");
     }
 
     static PyObject* device_open(PyObject* self, PyObject* args){
