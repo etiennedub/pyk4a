@@ -68,11 +68,17 @@ python viewer.py
 No documentation is available but most methods are used in the example. You can follow it as reference.
 You can also check directly the code of the main class [PyK4A](https://github.com/etiennedub/pyk4a/blob/master/pyk4a/pyk4a.py).
 
+## Module Development
+
+* Install required packages: `make setup`
+
 ## Contribution
 
 Feel free to send pull requests.
 
 Bug reports are also appreciated. Please include as much details as possible.
+
+Please format and check code quality before creating pull requst via: `make fmt lint`
 
 ### TODO:
 
