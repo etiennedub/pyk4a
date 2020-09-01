@@ -23,7 +23,7 @@ extern "C" {
     #define MAX_DEVICES 32
     device_container devices[MAX_DEVICES];
 
-    int total_capsules = 0;
+    static PyThreadState* _gil_release(int32_t thread_safe) {
 
     static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
@@ -46,7 +46,6 @@ extern "C" {
     }
 
     static void capsule_cleanup_capture(PyObject *capsule) {
-        total_capsules -= 1;
         k4a_capture_t *capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule, NULL);
         k4a_capture_release(*capture);
     }
@@ -226,7 +225,6 @@ extern "C" {
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
         k4a_capture_create(capture);
         PyObject* capsule_capture = PyCapsule_New(capture, NULL, capsule_cleanup_capture);
-        total_capsules += 1;
         k4a_wait_result_t result;
         thread_state = _gil_release(thread_safe);
         result = k4a_device_get_capture(devices[device_id].device, capture, timeout);
