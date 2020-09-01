@@ -102,9 +102,9 @@ extern "C" {
         k4a_result_t result = k4a_device_get_color_control(devices[device_id].device, command, &mode, &value);
         _gil_restore(thread_state);
         if (result == K4A_RESULT_FAILED) {
-            return Py_BuildValue("III", 0, 0, 0);
+            return Py_BuildValue("IIi", 0, 0, 0);
         }
-        return Py_BuildValue("III", result, mode, value);
+        return Py_BuildValue("IIi", result, mode, value);
     }
 
     static PyObject* device_set_color_control(PyObject* self, PyObject* args){
@@ -142,9 +142,9 @@ extern "C" {
         k4a_result_t result = k4a_device_get_color_control_capabilities(devices[device_id].device, command, &supports_auto, &min_value, &max_value, &step_value, &default_value, &default_mode);
         _gil_restore(thread_state);
         if (result == K4A_RESULT_FAILED) {
-            return Py_BuildValue("IIIIIII", 0, 0, 0, 0, 0, 0, 0);
+            return Py_BuildValue("IIiiiiI", result, 0, 0, 0, 0, 0, 0);
         }
-        return Py_BuildValue("IIIIIII", result, supports_auto, min_value, max_value, step_value, default_value, default_mode);
+        return Py_BuildValue("IIiiiiI", result, supports_auto, min_value, max_value, step_value, default_value, default_mode);
     }
 
     static PyObject* device_start_cameras(PyObject* self, PyObject* args){
@@ -598,7 +598,6 @@ extern "C" {
         if (res == K4A_RESULT_FAILED ) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }
-        // Return object...
         return Py_BuildValue("Ifff", res, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
 
