@@ -1,14 +1,18 @@
-import pyk4a
-from pyk4a import Config, PyK4A
-
 import cv2
 import numpy as np
 
+import pyk4a
+from pyk4a import Config, PyK4A
+
 
 def main():
-    k4a = PyK4A(Config(color_resolution=pyk4a.ColorResolution.RES_720P,
-                       depth_mode=pyk4a.DepthMode.NFOV_UNBINNED,
-                       synchronized_images_only=True, ))
+    k4a = PyK4A(
+        Config(
+            color_resolution=pyk4a.ColorResolution.RES_720P,
+            depth_mode=pyk4a.DepthMode.NFOV_UNBINNED,
+            synchronized_images_only=True,
+        )
+    )
     k4a.connect()
 
     # getters and setters directly get and set on device
@@ -26,7 +30,7 @@ def main():
             normalized_depth = cv2.normalize(clipped_depth, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
             # coloring image by choosed color map
             colored_depth = cv2.applyColorMap(normalized_depth, cv2.COLORMAP_HSV)
-            cv2.imshow('k4a', colored_depth)
+            cv2.imshow("k4a", colored_depth)
             # cv2.imshow('k4a', capture.ir)
             # cv2.imshow('k4a', capture.color)
             key = cv2.waitKey(10)
