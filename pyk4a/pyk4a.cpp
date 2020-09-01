@@ -386,8 +386,7 @@ extern "C" {
                 NULL, NULL, img_dst);
     }
 
-    static PyObject* transformation_depth_image_to_color_camera(
-            PyObject* self, PyObject* args){
+    static PyObject* transformation_depth_image_to_color_camera(PyObject* self, PyObject* args){
         uint32_t device_id;
         int thread_safe;
         PyThreadState *thread_state;
@@ -575,7 +574,7 @@ extern "C" {
         int source_point_y;
         int source_point_z;
 
-        PyArg_ParseTuple(args, "IpIIIII",
+        PyArg_ParseTuple(args, "IpiiiII",
                 &device_id,
                 &thread_safe,
                 &source_point_x,
@@ -617,7 +616,7 @@ extern "C" {
         k4a_float2_t source_point2d;
         k4a_float3_t target_point3d_mm;
         
-        PyArg_ParseTuple(args, "IpIIfII",
+        PyArg_ParseTuple(args, "IpiifII",
                 &device_id,
                 &thread_safe,
                 &source_point_x,
