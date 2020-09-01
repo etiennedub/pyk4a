@@ -43,6 +43,15 @@ extern "C" {
         }
     }
 
+    static void capsule_cleanup_device(PyObject *capsule) {
+        k4a_device_t* device_handle;
+
+        total_capsules -= 1;
+
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        free(playback_handle);
+    }
+
     static void capsule_cleanup_image(PyObject *capsule) {
         k4a_image_t *image = (k4a_image_t*)PyCapsule_GetContext(capsule);
         k4a_image_release(*image);
@@ -66,24 +75,38 @@ extern "C" {
         int thread_safe;
         PyThreadState *thread_state;
         PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
-        k4a_playback_t* playback_handle = (k4a_playback_t*) malloc(sizeof(k4a_playback_t));
+        k4a_device_t* device_handle = (k4a_device_t*) malloc(sizeof(k4a_device_t));
 
+        if (device_handle == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("Is", K4A_RESULT_FAILED, NULL);
+        }
 
 
         thread_state = _gil_release(thread_safe);
-        k4a_result_t result = k4a_device_open(device_id, &devices[device_id].device);
+        k4a_result_t result = k4a_device_open(device_id, device_handle);
         _gil_restore(thread_state);
-        return Py_BuildValue("I", result);
+
+        if (result == K4A_RESULT_FAILED ) {
+            free(device_handle);
+            return Py_BuildValue("Is", result, NULL);
+        }
+
+        PyObject *capsule = PyCapsule_New(device_handle, capsule_device_name, capsule_cleanup_device);
+        total_capsules += 1;
+        return Py_BuildValue("IN", result, capsule);
     }
 
     static PyObject* device_close(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
         int thread_safe;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
 
         thread_state = _gil_release(thread_safe);
-        k4a_device_close(devices[device_id].device);
+        k4a_device_close(*device_handle);
         _gil_restore(thread_state);
 
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
