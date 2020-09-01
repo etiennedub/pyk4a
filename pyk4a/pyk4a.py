@@ -41,13 +41,48 @@ class PyK4A:
     def __del__(self):
         if self.is_running:
             self.disconnect()
+        elif self.opened:
+            self.close()
+
+    @property
+    def opened(self) -> bool:
+        return self._handle is not None
+
+    def open(self):
+        """
+        Open device
+        You must open device before querying any information
+        """
+        if self.opened:
+            raise K4AException("Device already opened")
+        self._device_open()
+
+    def close(self):
+        """
+        Close device
+        """
+        if not self.opened:
+            raise K4AException("Device is not opened")
+        self._device_close()
+
 
     def connect(self):
-        self._device_open()
+        """
+        Open device if device not opened, then start cameras and IMU
+        All-in-one function
+        :return:
+        """
+        if not self.opened:
+            self.open()
+        self._start_imu()
         self._start_cameras()
         self.is_running = True
 
     def disconnect(self):
+        """
+        Stop cameras, IMU, ... and close device
+        :return:
+        """
         self._stop_imu()
         self._stop_cameras()
         self._device_close()
@@ -67,12 +102,14 @@ class PyK4A:
         self._verify_error(res)
 
     def _device_open(self):
-        res = k4a_module.device_open(self._device_id, self.thread_safe)
+        res, handle = k4a_module.device_open(self._device_id, self.thread_safe)
         self._verify_error(res)
+        self._handle = handle
 
     def _device_close(self):
-        res = k4a_module.device_close(self._device_id, self.thread_safe)
+        res = k4a_module.device_close(self._handle, self.thread_safe)
         self._verify_error(res)
+        self._handle = None
 
     def _start_cameras(self):
         res = k4a_module.device_start_cameras(self._device_id, self.thread_safe, *self._config.unpack())

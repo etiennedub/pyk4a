@@ -104,3 +104,4 @@ def recording_bad_file(patch_module_playback: Any) -> str:
 @pytest.fixture()
 def recording_not_exists_file(patch_module_playback: Any) -> str:
     return "not_exists.mkv"
+
