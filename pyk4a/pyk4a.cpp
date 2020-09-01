@@ -49,7 +49,7 @@ extern "C" {
         total_capsules -= 1;
 
         device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
-        free(playback_handle);
+        free(device_handle);
     }
 
     static void capsule_cleanup_image(PyObject *capsule) {
@@ -99,6 +99,7 @@ extern "C" {
 
     static PyObject* device_close(PyObject* self, PyObject* args){
         k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
 
