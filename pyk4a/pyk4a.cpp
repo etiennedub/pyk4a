@@ -114,7 +114,7 @@ extern "C" {
         k4a_color_control_command_t command = K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE;
         k4a_color_control_mode_t mode = K4A_COLOR_CONTROL_MODE_MANUAL;
         int32_t value = 0;
-        PyArg_ParseTuple(args, "IpIII", &device_id, &thread_safe, &command, &mode, &value);
+        PyArg_ParseTuple(args, "IpIIi", &device_id, &thread_safe, &command, &mode, &value);
 
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_set_color_control(devices[device_id].device, command, mode, value);
@@ -152,7 +152,7 @@ extern "C" {
         int thread_safe;
         PyThreadState *thread_state;
         k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-        PyArg_ParseTuple(args, "IpIIIIIIIII", &device_id, &thread_safe,
+        PyArg_ParseTuple(args, "IpIIIIpiIIp", &device_id, &thread_safe,
                 &config.color_format,
                 &config.color_resolution, &config.depth_mode,
                 &config.camera_fps, &config.synchronized_images_only,
