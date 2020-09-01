@@ -65,7 +65,6 @@ class PyK4A:
             raise K4AException("Device is not opened")
         self._device_close()
 
-
     def connect(self):
         """
         Open device if device not opened, then start cameras and IMU

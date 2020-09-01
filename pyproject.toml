@@ -6,3 +6,6 @@ line-length = 120
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+        "device: Tests require connected real device"
+]

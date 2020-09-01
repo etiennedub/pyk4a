@@ -9,7 +9,9 @@ help:
 		"- build: Build and install pyk4a package\n" \
 		"- fmt: Format all code\n" \
 		"- lint: Lint code syntax and formatting\n" \
-		"- test: Run tests"
+		"- test: Run tests\n"\
+		"- test-no-hardware: Run tests without connected kinect"
+
 
 setup:
 	pip install -r requirements-dev.txt
@@ -28,3 +30,6 @@ lint:
 
 test:
 	pytest --cov=pyk4a
+
+test-no-hardware:
+	pytest --cov=pyk4a  -m "not device"
