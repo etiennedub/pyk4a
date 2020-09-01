@@ -25,9 +25,7 @@ class K4ATimeoutException(K4AException):
 class PyK4A:
     TIMEOUT_WAIT_INFINITE = -1
 
-    def __init__(
-        self, config: Optional[Config] = None, device_id: int = 0, thread_safe: bool = True,
-    ):
+    def __init__(self, config: Optional[Config] = None, device_id: int = 0, thread_safe: bool = True):
         self._device_id = device_id
         self._config: Config = config if (config is not None) else Config()
         self.thread_safe = thread_safe
