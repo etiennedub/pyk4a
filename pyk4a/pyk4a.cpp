@@ -23,8 +23,6 @@ extern "C" {
     #define MAX_DEVICES 32
     device_container devices[MAX_DEVICES];
 
-    static PyThreadState* _gil_release(int32_t thread_safe) {
-
     static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
         if (thread_safe == NON_THREAD_SAFE) {
