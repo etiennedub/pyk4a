@@ -44,6 +44,14 @@ class TestInit:
             playback.open()
 
 
+class TestOpen:
+    @staticmethod
+    def test_double_open(playback: PyK4APlayback):
+        playback.open()
+        with pytest.raises(K4AException, match=r"Playback already opened"):
+            playback.open()
+
+
 class TestPropertyLength:
     @staticmethod
     def test_validate_if_record_opened(playback: PyK4APlayback):

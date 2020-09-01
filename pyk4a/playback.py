@@ -73,6 +73,8 @@ class PyK4APlayback:
         """
             Open record file
         """
+        if self._handle:
+            raise K4AException("Playback already opened")
         result, handle = k4a_module.playback_open(str(self._path), self._thread_safe)
         if Result(result) != Result.Success:
             raise K4AException(f"Cannot open file {self._path}")
