@@ -14,7 +14,7 @@ class PlaybackMeta:
     calibration_json_str: Optional[str] = None
 
 
-PLAYBACK_METAS: Mapping = {
+PLAYBACK_METAS: Mapping[str, PlaybackMeta] = {
     "file1.mkv": PlaybackMeta(
         filename="file1.mkv",
         length=1234,
