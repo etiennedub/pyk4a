@@ -25,9 +25,7 @@ class K4ATimeoutException(K4AException):
 class PyK4A:
     TIMEOUT_WAIT_INFINITE = -1
 
-    def __init__(
-        self, config: Optional[Config] = None, device_id: int = 0, thread_safe: bool = True,
-    ):
+    def __init__(self, config: Optional[Config] = None, device_id: int = 0, thread_safe: bool = True):
         self._device_id = device_id
         self._config: Config = config if (config is not None) else Config()
         self.thread_safe = thread_safe
@@ -110,6 +108,11 @@ class PyK4A:
     def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Mapping[str, Any]:
         res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, self.thread_safe, timeout)
         self._verify_error(res)
+        temperature: float
+        acc_sample: Tuple[float, float, float]
+        acc_timestamp: int
+        gyro_sample: Tuple[float, float, float]
+        gyro_timestamp: int
         (temperature, acc_sample, acc_timestamp, gyro_sample, gyro_timestamp,) = imu_sample
         return {
             "temperature": temperature,
