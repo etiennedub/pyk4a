@@ -25,6 +25,9 @@ extern "C" {
     device_container devices[MAX_DEVICES];
 
     const char* capsule_playback_name = "pyk4a playback handle";
+    const char* capsule_device_name = "pyk4a device handle";
+    const char* capsule_calibration_name = "pyk4a calibration handle";
+    const char* capsule_transformation_name = "pyk4a transformation handle";
 
     static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
@@ -63,6 +66,9 @@ extern "C" {
         int thread_safe;
         PyThreadState *thread_state;
         PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
+        k4a_playback_t* playback_handle = (k4a_playback_t*) malloc(sizeof(k4a_playback_t));
+
+
 
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_open(device_id, &devices[device_id].device);
