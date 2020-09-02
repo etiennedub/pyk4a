@@ -45,8 +45,9 @@ from pyk4a import PyK4A
 k4a = PyK4A()
 k4a.connect()
 
-# Get the next color frame without the depth (blocking function)
-img_color = k4a.get_capture(color_only=True)
+# Get the next capture (blocking function)
+capture = k4a.get_capture()
+img_color = capture.color
 
 # Display with pyplot
 from matplotlib import pyplot as plt
@@ -67,13 +68,14 @@ python viewer.py
 No documentation is available but most methods are used in the example. You can follow it as reference.
 You can also check directly the code of the main class [PyK4A](https://github.com/etiennedub/pyk4a/blob/master/pyk4a/pyk4a.py).
 
+## Module Development
+
+* Install required packages: `make setup`
+
 ## Contribution
 
-Feel free to send pull requests.
+Feel free to send pull requests. The develop branch should be used.
 
 Bug reports are also appreciated. Please include as much details as possible.
 
-### TODO:
-
-- Support for all sensors (other than color and depth)
-- get_capture in MJPG
+Please format and check code quality before creating pull requst via: `make fmt lint`
