@@ -89,11 +89,7 @@ class Config:
         self.disable_streaming_indicator = disable_streaming_indicator
         assert self.subordinate_delay_off_master_usec >= 0
 
-    def unpack(
-        self,
-    ) -> Tuple[
-        ColorFormat, ColorResolution, DepthMode, FPS, bool, int, WiredSyncMode, int, bool,
-    ]:
+    def unpack(self) -> Tuple[ColorFormat, ColorResolution, DepthMode, FPS, bool, int, WiredSyncMode, int, bool]:
         return (
             self.color_format,
             self.color_resolution,
