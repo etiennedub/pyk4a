@@ -218,8 +218,8 @@ extern "C" {
         uint32_t device_id;
         int thread_safe;
         PyThreadState *thread_state;
-        int32_t timeout;
-        PyArg_ParseTuple(args, "IpI", &device_id, &thread_safe, &timeout);
+        long long timeout;
+        PyArg_ParseTuple(args, "IpL", &device_id, &thread_safe, &timeout);
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
         k4a_capture_create(capture);
         PyObject* capsule_capture = PyCapsule_New(capture, NULL, capsule_cleanup_capture);
@@ -235,8 +235,8 @@ extern "C" {
         uint32_t device_id;
         int thread_safe;
         PyThreadState *thread_state;
-        int32_t timeout;
-        PyArg_ParseTuple(args, "IpI", &device_id, &thread_safe, &timeout);
+        long long timeout;
+        PyArg_ParseTuple(args, "IpL", &device_id, &thread_safe, &timeout);
         
         k4a_imu_sample_t imu_sample;
         k4a_wait_result_t result;
