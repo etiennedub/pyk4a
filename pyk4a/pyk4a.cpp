@@ -30,7 +30,7 @@ extern "C" {
         }
         return thread_state;
     }
-    
+
     static void _gil_restore(PyThreadState *thread_state) {
         if (thread_state != NULL) {
             PyEval_RestoreThread(thread_state);
@@ -65,11 +65,11 @@ extern "C" {
         int thread_safe;
         PyThreadState *thread_state;
         PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
-        
+
         thread_state = _gil_release(thread_safe);
         k4a_device_close(devices[device_id].device);
         _gil_restore(thread_state);
-        
+
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 
@@ -80,7 +80,7 @@ extern "C" {
         bool in_jack = 0;
         bool out_jack = 0;
         PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
-        
+
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_get_sync_jack(devices[device_id].device, &in_jack, &out_jack);
         _gil_restore(thread_state);
@@ -181,7 +181,7 @@ extern "C" {
         _gil_restore(thread_state);
         return Py_BuildValue("I", result);
     }
-    
+
     static PyObject* device_start_imu(PyObject* self, PyObject* args){
         uint32_t device_id;
         int thread_safe;
@@ -208,7 +208,7 @@ extern "C" {
         _gil_restore(thread_state);
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
-    
+
     static PyObject* device_stop_imu(PyObject* self, PyObject* args){
         uint32_t device_id;
         int thread_safe;
@@ -237,20 +237,20 @@ extern "C" {
 
         return Py_BuildValue("IN", result, capsule_capture);
     }
-    
+
     static PyObject* device_get_imu_sample(PyObject* self, PyObject* args){
         uint32_t device_id;
         int thread_safe;
         PyThreadState *thread_state;
         long long timeout;
         PyArg_ParseTuple(args, "IpL", &device_id, &thread_safe, &timeout);
-        
+
         k4a_imu_sample_t imu_sample;
         k4a_wait_result_t result;
-        
+
         thread_state = _gil_release(thread_safe);
         result = k4a_device_get_imu_sample(devices[device_id].device, &imu_sample, timeout);
-        
+
         _gil_restore(thread_state);
         if (K4A_WAIT_RESULT_SUCCEEDED == result) {
             return Py_BuildValue("I{s:f,s:(fff),s:L,s:(fff),s:L}", result,
@@ -356,6 +356,13 @@ extern "C" {
                 dims[1] = k4a_image_get_width_pixels(*img_src);
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(2, dims, NPY_UINT16, buffer);
                 break;
+            case K4A_IMAGE_FORMAT_CUSTOM:
+                // xyz in uint16 format
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[1] = k4a_image_get_width_pixels(*img_src);
+                dims[2] = 3;
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_INT16, buffer);
+                break;
             default:
                 // Not supported
                 return K4A_RESULT_FAILED;
@@ -436,6 +443,57 @@ extern "C" {
         }
         else {
             free(depth_image_transformed);
+            return Py_BuildValue("");
+        }
+    }
+
+    static PyObject* transformation_depth_image_to_point_cloud(PyObject* self, PyObject* args) {
+        uint32_t device_id;
+        int thread_safe;
+        PyThreadState *thread_state;
+        k4a_result_t res;
+
+        PyArrayObject *depth_in_array;
+        int calibration_type_depth;
+        PyArg_ParseTuple(args, "IpO!p", &device_id, &thread_safe, &PyArray_Type, &depth_in_array, &calibration_type_depth);
+
+        k4a_calibration_type_t camera;
+        if (calibration_type_depth == 1) {
+            camera = K4A_CALIBRATION_TYPE_DEPTH;
+        } else {
+            camera = K4A_CALIBRATION_TYPE_COLOR;
+        }
+        k4a_image_t *xyz_image = (k4a_image_t *) malloc(sizeof(k4a_image_t));
+
+        k4a_image_t depth_image;
+        res = numpy_to_k4a_image(depth_in_array, &depth_image, K4A_IMAGE_FORMAT_DEPTH16);
+        thread_state = _gil_release(thread_safe);
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = k4a_image_create(
+                    K4A_IMAGE_FORMAT_CUSTOM,
+                    k4a_image_get_width_pixels(depth_image),
+                    k4a_image_get_height_pixels(depth_image),
+                    k4a_image_get_width_pixels(depth_image) * 3 * (int) sizeof(int16_t),
+                    xyz_image);
+        }
+
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = k4a_transformation_depth_image_to_point_cloud(
+                    devices[device_id].transformation_handle,
+                    depth_image, camera, *xyz_image);
+            k4a_image_release(depth_image);
+        }
+        _gil_restore(thread_state);
+
+        PyArrayObject* np_xyz_image;
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = k4a_image_to_numpy(xyz_image, &np_xyz_image);
+        }
+
+        if (K4A_RESULT_SUCCEEDED == res) {
+            return PyArray_Return(np_xyz_image);
+        } else {
+            free(xyz_image);
             return Py_BuildValue("");
         }
     }
@@ -601,7 +659,7 @@ extern "C" {
 
         res = k4a_calibration_3d_to_3d (&devices[device_id].calibration_handle,
                                         &source_point3d_mm,
-                                        source_camera, 
+                                        source_camera,
                                         target_camera,
                                         &target_point3d_mm);
        _gil_restore(thread_state);
@@ -624,7 +682,7 @@ extern "C" {
         k4a_result_t res;
         k4a_float2_t source_point2d;
         k4a_float3_t target_point3d_mm;
-        
+
         PyArg_ParseTuple(args, "IpiifII",
                 &device_id,
                 &thread_safe,
@@ -642,7 +700,7 @@ extern "C" {
         res = k4a_calibration_2d_to_3d (&devices[device_id].calibration_handle,
                                         &source_point2d,
                                         source_depth_mm,
-                                        source_camera, 
+                                        source_camera,
                                         target_camera,
                                         &target_point3d_mm,
                                         &valid);
@@ -680,6 +738,7 @@ extern "C" {
         {"calibration_set_from_raw", calibration_set_from_raw, METH_VARARGS, "Temporary set the calibration from a json format. Must be called after device_start_cameras."},
         {"transformation_depth_image_to_color_camera", transformation_depth_image_to_color_camera, METH_VARARGS, "Transforms the depth map into the geometry of the color camera."},
         {"transformation_color_image_to_depth_camera", transformation_color_image_to_depth_camera, METH_VARARGS, "Transforms the color image into the geometry of the depth camera."},
+        {"transformation_depth_image_to_point_cloud", transformation_depth_image_to_point_cloud, METH_VARARGS, "Transforms the depth map to a point cloud."},
         {"calibration_3d_to_3d", calibration_3d_to_3d, METH_VARARGS, "Transforms the coordinates between 2 3D systems"},
         {"calibration_2d_to_3d", calibration_2d_to_3d, METH_VARARGS, "Transforms the coordinates between a pixel and a 3D system"},
         {NULL, NULL, 0, NULL}
