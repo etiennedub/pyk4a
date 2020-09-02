@@ -35,4 +35,5 @@ jobs:
         path: requirements-dev.txt
     - name: Run linters
       run: |
+        pip freeze
         make lint
