@@ -257,7 +257,6 @@ extern "C" {
         
         _gil_restore(thread_state);
         if (K4A_WAIT_RESULT_SUCCEEDED == result) {
-            // return Py_BuildValue("I(f(fff)L(fff)L)", result, imu_sample.temperature, imu_sample.acc_sample.xyz.x, imu_sample.acc_sample.xyz.y, imu_sample.acc_sample.xyz.z, imu_sample.acc_timestamp_usec, imu_sample.gyro_sample.xyz.x, imu_sample.gyro_sample.xyz.y, imu_sample.gyro_sample.xyz.z, imu_sample.gyro_timestamp_usec);
             return Py_BuildValue("I{s:f,s:(fff),s:L,s:(fff),s:L}", result,
                     "temperature", imu_sample.temperature,
                     "acc_sample", imu_sample.acc_sample.xyz.x, imu_sample.acc_sample.xyz.y, imu_sample.acc_sample.xyz.z,
