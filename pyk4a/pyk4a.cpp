@@ -132,10 +132,10 @@ extern "C" {
         PyThreadState *thread_state;
         k4a_color_control_command_t command;
         bool supports_auto;
-        int32_t min_value;
-        int32_t max_value;
-        int32_t step_value;
-        int32_t default_value;
+        int min_value;
+        int max_value;
+        int step_value;
+        int default_value;
         k4a_color_control_mode_t default_mode;
         PyArg_ParseTuple(args, "IpI", &device_id, &thread_safe, &command);
 
@@ -143,9 +143,16 @@ extern "C" {
         k4a_result_t result = k4a_device_get_color_control_capabilities(devices[device_id].device, command, &supports_auto, &min_value, &max_value, &step_value, &default_value, &default_mode);
         _gil_restore(thread_state);
         if (result == K4A_RESULT_FAILED) {
-            return Py_BuildValue("IIIIIII", 0, 0, 0, 0, 0, 0, 0);
+            return Py_BuildValue("I(0)", result, Py_None);
         }
-        return Py_BuildValue("IIIIIII", result, supports_auto, min_value, max_value, step_value, default_value, default_mode);
+        return Py_BuildValue("I{s:I,s:I,s:O,s:i,s:i,s:i,s:I}", result,
+                "color_control_command", command,
+                "supports_auto", supports_auto ? Py_True: Py_False,
+                "min_value", min_value,
+                "max_value", max_value,
+                "step_value", step_value,
+                "default_value", default_value,
+                "default_mode", default_mode);
     }
 
     static PyObject* device_start_cameras(PyObject* self, PyObject* args){
@@ -250,7 +257,12 @@ extern "C" {
         
         _gil_restore(thread_state);
         if (K4A_WAIT_RESULT_SUCCEEDED == result) {
-            return Py_BuildValue("I(f(fff)L(fff)L)", result, imu_sample.temperature, imu_sample.acc_sample.xyz.x, imu_sample.acc_sample.xyz.y, imu_sample.acc_sample.xyz.z, imu_sample.acc_timestamp_usec, imu_sample.gyro_sample.xyz.x, imu_sample.gyro_sample.xyz.y, imu_sample.gyro_sample.xyz.z, imu_sample.gyro_timestamp_usec);
+            return Py_BuildValue("I{s:f,s:(fff),s:L,s:(fff),s:L}", result,
+                    "temperature", imu_sample.temperature,
+                    "acc_sample", imu_sample.acc_sample.xyz.x, imu_sample.acc_sample.xyz.y, imu_sample.acc_sample.xyz.z,
+                    "acc_timestamp", imu_sample.acc_timestamp_usec,
+                    "gyro_sample", imu_sample.gyro_sample.xyz.x, imu_sample.gyro_sample.xyz.y, imu_sample.gyro_sample.xyz.z,
+                    "gyro_timestamp", imu_sample.gyro_timestamp_usec);
         }
 
         return Py_BuildValue("I(0)", result, Py_None);
@@ -648,22 +660,12 @@ extern "C" {
         return Py_BuildValue("IIfff", res, valid, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
 
-    // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp
-    //###################
-    //Module initialisation
-    //###################
-
     struct module_state
     {
         PyObject *error;
     };
 
 #define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
-
-
-    //#####################
-    // Methods
-    //#####################
     static PyMethodDef Pyk4aMethods[] = {
         {"device_open", device_open, METH_VARARGS, "Open an Azure Kinect device"},
         {"device_start_cameras", device_start_cameras, METH_VARARGS, "Starts color and depth camera capture"},
@@ -714,11 +716,6 @@ extern "C" {
         NULL
     };
 #define INITERROR return NULL
-
-
-    //########################
-    // Module init function
-    //########################
     PyMODINIT_FUNC PyInit_k4a_module(void) {
         import_array();
         PyObject *module = PyModule_Create(&moduledef);
