@@ -455,7 +455,7 @@ extern "C" {
 
         PyArrayObject *depth_in_array;
         int calibration_type_depth;
-        PyArg_ParseTuple(args, "IO!pp", &device_id, &PyArray_Type, &depth_in_array, &calibration_type_depth, &thread_safe);
+        PyArg_ParseTuple(args, "IpO!p", &device_id, &thread_safe, &PyArray_Type, &depth_in_array, &calibration_type_depth);
 
         k4a_calibration_type_t camera;
         if (calibration_type_depth == 1) {
