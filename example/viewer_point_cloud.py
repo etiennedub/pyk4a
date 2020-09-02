@@ -1,6 +1,6 @@
-from matplotlib import pyplot as plt
-from mpl_toolkits import mplot3d
 import numpy as np
+from matplotlib import pyplot as plt
+from mpl_toolkits import mplot3d  # noqa: F401
 
 import pyk4a
 from pyk4a import Config, PyK4A
@@ -35,8 +35,10 @@ def main():
     colors = capture.transformed_color[..., (2, 1, 0)].reshape((-1, 3))
 
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(points[:, 0], points[:, 1], points[:, 2],  s=1, c=colors/255,)
+    ax = fig.add_subplot(111, projection="3d")
+    ax.scatter(
+        points[:, 0], points[:, 1], points[:, 2], s=1, c=colors / 255,
+    )
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
@@ -47,7 +49,6 @@ def main():
     plt.show()
 
     k4a.disconnect()
-
 
 
 if __name__ == "__main__":
