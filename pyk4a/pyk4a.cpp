@@ -605,7 +605,7 @@ extern "C" {
                                         &target_point3d_mm);
        _gil_restore(thread_state);
         if (res == K4A_RESULT_FAILED ) {
-            return Py_BuildValue("II(0)", res, valid, Py_None);
+            return Py_BuildValue("I(0)", res, Py_None);
         }
         return Py_BuildValue("I(fff)", res, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
