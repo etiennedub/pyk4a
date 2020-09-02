@@ -8,7 +8,7 @@ import k4a_module
 from pyk4a.config import ColorControlCommand, ColorControlMode, ColorFormat, Config
 
 
-if sys.version_info >= (3, 8):
+if sys.version_info < (3, 8):
     from typing_extensions import TypedDict
 else:
     from typing import TypedDict
