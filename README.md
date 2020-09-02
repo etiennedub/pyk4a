@@ -74,13 +74,8 @@ You can also check directly the code of the main class [PyK4A](https://github.co
 
 ## Contribution
 
-Feel free to send pull requests.
+Feel free to send pull requests. The develop branch should be used.
 
 Bug reports are also appreciated. Please include as much details as possible.
 
 Please format and check code quality before creating pull requst via: `make fmt lint`
-
-### TODO:
-
-- Support for all sensors (other than color and depth)
-- Get timestamps for each images in a capture
