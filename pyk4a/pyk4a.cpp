@@ -583,7 +583,6 @@ extern "C" {
         int source_point_x;
         int source_point_y;
         int source_point_z;
-
         PyArg_ParseTuple(args, "Ip(fff)II",
                 &device_id,
                 &thread_safe,
@@ -624,8 +623,8 @@ extern "C" {
         k4a_result_t res;
         k4a_float2_t source_point2d;
         k4a_float3_t target_point3d_mm;
-        
         PyArg_ParseTuple(args, "Ip(ff)fII",
+
                 &device_id,
                 &thread_safe,
                 &source_point_x,
