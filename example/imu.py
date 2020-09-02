@@ -62,14 +62,13 @@ def main():
         if i == 0:
             set_default_data(data)
 
-        for k in ("temperature", "acc_x", "acc_y", "acc_z", "gyro_x", "gyro_y", "gyro_z"):
+        for k in ("acc_x", "acc_y", "acc_z", "gyro_x", "gyro_y", "gyro_z"):
             lines[k].set_data(range(MAX_SAMPLES), data[k])
 
         acc_y = data["acc_x"] + data["acc_y"] + data["acc_z"]
         gyro_y = data["gyro_x"] + data["gyro_y"] + data["gyro_z"]
         lines["acc_x"].axes.set_ylim(min(acc_y), max(acc_y))
         lines["gyro_x"].axes.set_ylim(min(gyro_y), max(gyro_y))
-        lines["temperature"].axes.set_ylim(min(data["temperature"][0 : i + 1]), max(data["temperature"][0 : i + 1]))
 
         fig.canvas.draw()
         fig.canvas.flush_events()
