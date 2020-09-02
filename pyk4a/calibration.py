@@ -30,10 +30,10 @@ class Calibration:
 
     def convert_3d_to_3d(
         self,
-        source_point_3d: List[int],
+        source_point_3d: List[float, float, float],
         source_camera: Optional[CalibrationType] = None,
         target_camera: Optional[CalibrationType] = None,
-    ) -> List[float]:
+    ) -> List[float, float, float]:
         """
         Transform a 3d point of a source coordinate system into a 3d
         point of the target coordinate system.
@@ -44,27 +44,26 @@ class Calibration:
                 source_camera = self.source_calibration
             if target_camera is None:
                 target_camera = self.target_calibration
-            res, x, y, z = k4a_module.calibration_3d_to_3d(
+            res, target_point_3d = k4a_module.calibration_3d_to_3d(
                 self.device._device_id,
-                source_point_3d[0],
-                source_point_3d[1],
-                source_point_3d[2],
+                self.device.thread_safe,
+                source_point_3d,
                 source_camera,
                 target_camera,
             )
 
             self._verify_error(res)
-            return [x, y, z]
+            return target_point_3d
         else:
             raise K4AException("Device not running. Please connect to the device (device.connect())")
 
     def convert_2d_to_3d(
         self,
-        source_pixel_2d: List[int],
+        source_pixel_2d: List[float, float, float],
         depth: float,
         source_camera: Optional[CalibrationType] = None,
         target_camera: Optional[CalibrationType] = None,
-    ) -> Tuple[int, List[float]]:
+    ) -> Tuple[int, List[float, float, float]]:
         """
         Transform a 2d pixel to a 3d point of the target coordinate system.
         """
@@ -74,11 +73,16 @@ class Calibration:
                 source_camera = self.source_calibration
             if target_camera is None:
                 target_camera = self.target_calibration
-            res, valid, x, y, z = k4a_module.calibration_2d_to_3d(
-                self.device._device_id, source_pixel_2d[0], source_pixel_2d[1], depth, source_camera, target_camera,
+            res, valid, target_point_3d = k4a_module.calibration_2d_to_3d(
+                self.device._device_id,
+                self.device.thread_safe,
+                source_pixel_2d,
+                depth,
+                source_camera,
+                target_camera,
             )
             self._verify_error(res)
-            return valid, [x, y, z]
+            return valid, target_point_3d
         else:
             raise K4AException("Device not running. Please connect to the device (device.connect())")
 
