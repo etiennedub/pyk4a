@@ -87,6 +87,7 @@ class Config:
         self.wired_sync_mode = wired_sync_mode
         self.subordinate_delay_off_master_usec = subordinate_delay_off_master_usec
         self.disable_streaming_indicator = disable_streaming_indicator
+        assert self.subordinate_delay_off_master_usec >= 0
 
     def unpack(self) -> Tuple[ColorFormat, ColorResolution, DepthMode, FPS, bool, int, WiredSyncMode, int, bool]:
         return (
