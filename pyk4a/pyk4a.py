@@ -1,3 +1,4 @@
+import sys
 from enum import Enum
 from typing import Any, Mapping, Optional, Tuple
 
@@ -5,6 +6,12 @@ import numpy as np
 
 import k4a_module
 from pyk4a.config import ColorControlCommand, ColorControlMode, ColorFormat, Config
+
+
+if sys.version_info >= (3, 8):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
 
 
 # k4a_wait_result_t
@@ -105,22 +112,10 @@ class PyK4A:
         capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
         return capture
 
-    def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Mapping[str, Any]:
+    def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Optional["PyK4AImuSample"]:
         res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, self.thread_safe, timeout)
         self._verify_error(res)
-        temperature: float
-        acc_sample: Tuple[float, float, float]
-        acc_timestamp: int
-        gyro_sample: Tuple[float, float, float]
-        gyro_timestamp: int
-        (temperature, acc_sample, acc_timestamp, gyro_sample, gyro_timestamp,) = imu_sample
-        return {
-            "temperature": temperature,
-            "acc_sample": acc_sample,
-            "acc_timestamp": acc_timestamp,
-            "gyro_sample": gyro_sample,
-            "gyro_timestamp": gyro_timestamp,
-        }
+        return imu_sample
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
@@ -307,3 +302,11 @@ class PyK4ACapture:
                 self.device._device_id, self.device.thread_safe, self.depth, self.color
             )
         return self._transformed_color
+
+
+class PyK4AImuSample(TypedDict):
+    temperature: float
+    acc_sample: Tuple[float, float, float]
+    acc_timestamp: int
+    gyro_sample: Tuple[float, float, float]
+    gyro_timestamp: int
