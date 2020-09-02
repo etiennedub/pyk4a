@@ -70,6 +70,7 @@ def main():
         lines["acc_x"].axes.set_ylim(min(acc_y), max(acc_y))
         lines["gyro_x"].axes.set_ylim(min(gyro_y), max(gyro_y))
         lines["temperature"].axes.set_ylim(min(data["temperature"][0 : i + 1]), max(data["temperature"][0 : i + 1]))
+
         fig.canvas.draw()
         fig.canvas.flush_events()
 
