@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Any, Mapping, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import numpy as np
 
@@ -112,7 +112,7 @@ class PyK4A:
         capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
         return capture
 
-    def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Optional["PyK4AImuSample"]:
+    def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Optional["ImuSample"]:
         res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, self.thread_safe, timeout)
         self._verify_error(res)
         return imu_sample
@@ -224,19 +224,10 @@ class PyK4A:
         mode = ColorControlMode.AUTO if mode_auto else ColorControlMode.MANUAL
         self._set_color_control(ColorControlCommand.WHITEBALANCE, value=value, mode=mode)
 
-    def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> Mapping[str, Any]:
-        ret = k4a_module.device_get_color_control_capabilities(self._device_id, self.thread_safe, cmd)
-        (res, supports_auto, min_value, max_value, step_value, default_value, default_mode,) = ret
+    def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> Optional["ColorControlCapabilities"]:
+        res, capabilities = k4a_module.device_get_color_control_capabilities(self._device_id, self.thread_safe, cmd)
         self._verify_error(res)
-        return {
-            "color_control_command": cmd,
-            "supports_auto": supports_auto == 1,
-            "min_value": min_value,
-            "max_value": max_value,
-            "step_value": step_value,
-            "default_value": default_value,
-            "default_mode": default_mode,
-        }
+        return capabilities
 
     def reset_color_control_to_default(self):
         for cmd in ColorControlCommand:
@@ -304,9 +295,19 @@ class PyK4ACapture:
         return self._transformed_color
 
 
-class PyK4AImuSample(TypedDict):
+class ImuSample(TypedDict):
     temperature: float
     acc_sample: Tuple[float, float, float]
     acc_timestamp: int
     gyro_sample: Tuple[float, float, float]
     gyro_timestamp: int
+
+
+class ColorControlCapabilities(TypedDict):
+    color_control_command: ColorControlCommand
+    supports_auto: bool
+    min_value: int
+    max_value: int
+    step_value: int
+    default_value: int
+    default_mode: ColorControlMode
