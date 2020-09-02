@@ -614,7 +614,7 @@ extern "C" {
             return Py_BuildValue("II(0)", res, valid, Py_None);
         }
         // Return object...
-        return Py_BuildValue("I[f,f,f]", res, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
+        return Py_BuildValue("I(fff)", res, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
 
     static PyObject* calibration_2d_to_3d(PyObject* self, PyObject *args){
@@ -657,7 +657,7 @@ extern "C" {
             return Py_BuildValue("II(0)", res, valid, Py_None);
         }
         // Return object...
-        return Py_BuildValue("II[f,f,f]", res, valid, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
+        return Py_BuildValue("II(fff)", res, valid, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
 
     struct module_state

@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import k4a_module
 from pyk4a.config import Config
@@ -30,10 +30,10 @@ class Calibration:
 
     def convert_3d_to_3d(
         self,
-        source_point_3d: List[float, float, float],
+        source_point_3d: Tuple[float, float, float],
         source_camera: Optional[CalibrationType] = None,
         target_camera: Optional[CalibrationType] = None,
-    ) -> List[float, float, float]:
+    ) -> Tuple[float, float, float]:
         """
         Transform a 3d point of a source coordinate system into a 3d
         point of the target coordinate system.
@@ -45,11 +45,7 @@ class Calibration:
             if target_camera is None:
                 target_camera = self.target_calibration
             res, target_point_3d = k4a_module.calibration_3d_to_3d(
-                self.device._device_id,
-                self.device.thread_safe,
-                source_point_3d,
-                source_camera,
-                target_camera,
+                self.device._device_id, self.device.thread_safe, source_point_3d, source_camera, target_camera,
             )
 
             self._verify_error(res)
@@ -59,11 +55,11 @@ class Calibration:
 
     def convert_2d_to_3d(
         self,
-        source_pixel_2d: List[float, float, float],
+        source_pixel_2d: Tuple[float, float, float],
         depth: float,
         source_camera: Optional[CalibrationType] = None,
         target_camera: Optional[CalibrationType] = None,
-    ) -> Tuple[int, List[float, float, float]]:
+    ) -> Tuple[int, Tuple[float, float, float]]:
         """
         Transform a 2d pixel to a 3d point of the target coordinate system.
         """
@@ -74,12 +70,7 @@ class Calibration:
             if target_camera is None:
                 target_camera = self.target_calibration
             res, valid, target_point_3d = k4a_module.calibration_2d_to_3d(
-                self.device._device_id,
-                self.device.thread_safe,
-                source_pixel_2d,
-                depth,
-                source_camera,
-                target_camera,
+                self.device._device_id, self.device.thread_safe, source_pixel_2d, depth, source_camera, target_camera,
             )
             self._verify_error(res)
             return valid, target_point_3d
