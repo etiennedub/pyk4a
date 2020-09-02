@@ -31,7 +31,6 @@ def main():
         if np.any(capture.depth) and np.any(capture.color):
             break
     points = capture.depth_point_cloud.reshape((-1, 3))
-    print(capture.transformed_color.shape)
     colors = capture.transformed_color[..., (2, 1, 0)].reshape((-1, 3))
 
     fig = plt.figure()
