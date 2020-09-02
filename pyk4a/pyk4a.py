@@ -61,8 +61,7 @@ class PyK4A:
         """
         Close device
         """
-        if not self.opened:
-            raise K4AException("Device is not opened")
+        self._validate_is_opened()
         self._device_close()
 
     def connect(self):
@@ -155,17 +154,20 @@ class PyK4A:
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
-        res, jack_in, jack_out = k4a_module.device_get_sync_jack(self._device_id, self.thread_safe)
+        self._validate_is_opened()
+        res, jack_in, jack_out = k4a_module.device_get_sync_jack(self._handle, self.thread_safe)
         self._verify_error(res)
         return jack_in == 1, jack_out == 1
 
     def _get_color_control(self, cmd: ColorControlCommand) -> Tuple[int, ColorControlMode]:
-        res, mode, value = k4a_module.device_get_color_control(self._device_id, self.thread_safe, cmd)
+        self._validate_is_opened()
+        res, mode, value = k4a_module.device_get_color_control(self._handle, self.thread_safe, cmd)
         self._verify_error(res)
         return value, ColorControlMode(mode)
 
     def _set_color_control(self, cmd: ColorControlCommand, value: int, mode=ColorControlMode.MANUAL):
-        res = k4a_module.device_set_color_control(self._device_id, self.thread_safe, cmd, mode, value)
+        self._validate_is_opened()
+        res = k4a_module.device_set_color_control(self._handle, self.thread_safe, cmd, mode, value)
         self._verify_error(res)
 
     @property
@@ -277,6 +279,10 @@ class PyK4A:
             raise K4AException()
         elif res == Result.Timeout:
             raise K4ATimeoutException()
+
+    def _validate_is_opened(self):
+        if not self.opened:
+            raise K4AException("Device is not opened")
 
 
 class PyK4ACapture:

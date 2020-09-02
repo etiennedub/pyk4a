@@ -114,31 +114,39 @@ extern "C" {
     }
 
     static PyObject* device_get_sync_jack(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         bool in_jack = 0;
         bool out_jack = 0;
-        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
 
         thread_state = _gil_release(thread_safe);
-        k4a_result_t result = k4a_device_get_sync_jack(devices[device_id].device, &in_jack, &out_jack);
+        k4a_result_t result = k4a_device_get_sync_jack(*device_handle, &in_jack, &out_jack);
         _gil_restore(thread_state);
 
         return Py_BuildValue("III", result, in_jack, out_jack);
     }
 
     static PyObject* device_get_color_control(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_color_control_command_t command;
         k4a_color_control_mode_t mode;
         int32_t value = 0;
-        PyArg_ParseTuple(args, "IpI", &device_id, &thread_safe, &command);
+
+        PyArg_ParseTuple(args, "OpI", &capsule, &thread_safe, &command);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+
         thread_state = _gil_release(thread_safe);
-        k4a_result_t result = k4a_device_get_color_control(devices[device_id].device, command, &mode, &value);
+        k4a_result_t result = k4a_device_get_color_control(*device_handle, command, &mode, &value);
         _gil_restore(thread_state);
+
         if (result == K4A_RESULT_FAILED) {
             return Py_BuildValue("IIi", 0, 0, 0);
         }
@@ -146,17 +154,21 @@ extern "C" {
     }
 
     static PyObject* device_set_color_control(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_color_control_command_t command = K4A_COLOR_CONTROL_EXPOSURE_TIME_ABSOLUTE;
         k4a_color_control_mode_t mode = K4A_COLOR_CONTROL_MODE_MANUAL;
         int32_t value = 0;
-        PyArg_ParseTuple(args, "IpIIi", &device_id, &thread_safe, &command, &mode, &value);
+
+        PyArg_ParseTuple(args, "OpIIi", &capsule, &thread_safe, &command, &mode, &value);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
 
         thread_state = _gil_release(thread_safe);
-        k4a_result_t result = k4a_device_set_color_control(devices[device_id].device, command, mode, value);
+        k4a_result_t result = k4a_device_set_color_control(*device_handle, command, mode, value);
         _gil_restore(thread_state);
+
         if (result == K4A_RESULT_FAILED) {
             return Py_BuildValue("I", K4A_RESULT_FAILED);
         }

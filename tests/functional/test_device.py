@@ -30,3 +30,29 @@ class TestOpenClose:
         device = PyK4A(device_id=device_id)
         device.open()
         device.close()
+
+
+class TestProperties:
+    @staticmethod
+    @pytest.mark.device
+    def test_sync_jack_status(device_id: int):
+        device = PyK4A(device_id=device_id)
+        device.open()
+        jack_in, jack_out = device.sync_jack_status
+        assert isinstance(jack_in, bool)
+        assert isinstance(jack_out, bool)
+
+    @staticmethod
+    @pytest.mark.device
+    def test_get_color_control(device_id: int):
+        device = PyK4A(device_id=device_id)
+        device.open()
+        brightness = device.brightness
+        assert isinstance(brightness, int)
+
+    @staticmethod
+    @pytest.mark.device
+    def test_set_color_control(device_id: int):
+        device = PyK4A(device_id=device_id)
+        device.open()
+        device.brightness = 123

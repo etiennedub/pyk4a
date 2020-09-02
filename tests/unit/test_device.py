@@ -46,5 +46,40 @@ class TestOpenClose:
     @staticmethod
     def test_open_twice(device: PyK4A):
         device.open()
-        with pytest.raises(K4AException, match=r"Device already opened"):
+        with pytest.raises(K4AException, match="Device already opened"):
             device.open()
+
+
+class TestProperties:
+    @staticmethod
+    def test_sync_jack_status_on_closed_device(device: PyK4A):
+        with pytest.raises(K4AException, match="Device is not opened"):
+            device.sync_jack_status
+
+    @staticmethod
+    def test_sync_jack_status(device: PyK4A):
+        device.open()
+        jack_in, jack_out = device.sync_jack_status
+        assert isinstance(jack_in, bool)
+        assert isinstance(jack_out, bool)
+
+    @staticmethod
+    def test_brightness_on_closed_device(device: PyK4A):
+        with pytest.raises(K4AException, match="Device is not opened"):
+            device.brightness
+
+    @staticmethod
+    def test_brightness(device: PyK4A):
+        device.open()
+        brightness = device.brightness
+        assert brightness == 123
+
+    @staticmethod
+    def test_brightness_setter_on_closed_device(device: PyK4A):
+        with pytest.raises(K4AException, match="Device is not opened"):
+            device.brightness = 123
+
+    @staticmethod
+    def test_brightness_setter(device: PyK4A):
+        device.open()
+        device.brightness = 123
