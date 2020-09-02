@@ -361,7 +361,7 @@ extern "C" {
                 dims[0] = k4a_image_get_height_pixels(*img_src);
                 dims[1] = k4a_image_get_width_pixels(*img_src);
                 dims[2] = 3;
-                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT16, buffer);
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_INT16, buffer);
                 break;
             default:
                 // Not supported
