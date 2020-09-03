@@ -39,7 +39,7 @@ jobs:
     steps:
       - name: Prepare Environment
         run: |
-          sudo apt install -q -y curl install software-properties-common build-essential
+          sudo apt install -q -y curl software-properties-common build-essential
           curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
           sudo apt-add-repository https://packages.microsoft.com/ubuntu/18.04/prod
           env DEBIAN_FRONTEND=noninteractive ACCEPT_EULA=Y sudo apt install -q -y  libk4a1.4-dev
