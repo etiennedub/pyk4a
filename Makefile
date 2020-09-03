@@ -5,7 +5,7 @@ SOURCES=pyk4a example tests
 help:
 	echo  \
 		"Available targets: \n" \
-		"- setup: Install requireded for development packages\n" \
+		"- setup: Install required for development packages\n" \
 		"- build: Build and install pyk4a package\n" \
 		"- fmt: Format all code\n" \
 		"- lint: Lint code syntax and formatting\n" \
