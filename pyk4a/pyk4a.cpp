@@ -24,8 +24,6 @@ extern "C" {
     #define MAX_DEVICES 32
     device_container devices[MAX_DEVICES];
 
-    int total_capsules = 0;
-
     const char* capsule_playback_name = "pyk4a playback handle";
 
     static PyThreadState* _gil_release(int thread_safe) {
@@ -748,7 +746,6 @@ extern "C" {
         }
 
         PyObject *capsule = PyCapsule_New(playback_handle, capsule_playback_name, capsule_cleanup_playback);
-        total_capsules += 1;
         return Py_BuildValue("IN", result, capsule);
     }
 

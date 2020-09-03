@@ -1,6 +1,6 @@
 SOURCES=pyk4a example tests
 
-.PHONY: setup fmt lint test help
+.PHONY: setup fmt lint test help build
 .SILENT: help
 help:
 	echo  \
