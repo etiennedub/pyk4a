@@ -251,7 +251,9 @@ class PyK4ACapture:
         self._color: Optional[np.ndarray] = None
         self._depth: Optional[np.ndarray] = None
         self._ir: Optional[np.ndarray] = None
+        self._depth_point_cloud: Optional[np.ndarray] = None
         self._transformed_depth: Optional[np.ndarray] = None
+        self._transformed_depth_point_cloud: Optional[np.ndarray] = None
         self._transformed_color: Optional[np.ndarray] = None
         self._cap: object = capture_capsule  # built-in PyCapsule
 
@@ -280,6 +282,22 @@ class PyK4ACapture:
                 self.device._device_id, self.device.thread_safe, self.depth, self.device._config.color_resolution,
             )
         return self._transformed_depth
+
+    @property
+    def depth_point_cloud(self) -> Optional[np.ndarray]:
+        if self._depth_point_cloud is None and self.depth is not None:
+            self._depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
+                self.device._device_id, self.device.thread_safe, self.depth, True
+            )
+        return self._depth_point_cloud
+
+    @property
+    def transformed_depth_point_cloud(self) -> Optional[np.ndarray]:
+        if self._transformed_depth_point_cloud is None and self.transformed_depth is not None:
+            self._transformed_depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
+                self.device._device_id, self.device.thread_safe, self.transformed_depth, False
+            )
+        return self._transformed_depth_point_cloud
 
     @property
     def transformed_color(self) -> Optional[np.ndarray]:
