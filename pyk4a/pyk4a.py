@@ -264,7 +264,8 @@ class PyK4A:
         self._set_color_control(ColorControlCommand.WHITEBALANCE, value=value, mode=mode)
 
     def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> Optional["ColorControlCapabilities"]:
-        res, capabilities = k4a_module.device_get_color_control_capabilities(self._device_id, self.thread_safe, cmd)
+        self._validate_is_opened()
+        res, capabilities = k4a_module.device_get_color_control_capabilities(self._device_handle, self.thread_safe, cmd)
         self._verify_error(res)
         return capabilities
 

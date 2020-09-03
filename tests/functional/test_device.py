@@ -56,3 +56,15 @@ class TestProperties:
         device = PyK4A(device_id=device_id)
         device.open()
         device.brightness = 123
+
+    @staticmethod
+    @pytest.mark.device
+    def test_reset_color_control_to_default(device_id: int):
+        device = PyK4A(device_id=device_id)
+        device.open()
+        device.reset_color_control_to_default()
+        assert device.brightness == 128  # default value 128
+        device.brightness = 123
+        assert device.brightness == 123
+        device.reset_color_control_to_default()
+        assert device.brightness == 128

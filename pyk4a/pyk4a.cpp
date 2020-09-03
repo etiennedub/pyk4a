@@ -173,7 +173,8 @@ extern "C" {
     }
 
     static PyObject* device_get_color_control_capabilities(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_color_control_command_t command;
@@ -183,15 +184,19 @@ extern "C" {
         int step_value;
         int default_value;
         k4a_color_control_mode_t default_mode;
-        PyArg_ParseTuple(args, "IpI", &device_id, &thread_safe, &command);
+
+        PyArg_ParseTuple(args, "OpI", &capsule, &thread_safe, &command);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
 
         thread_state = _gil_release(thread_safe);
-        k4a_result_t result = k4a_device_get_color_control_capabilities(devices[device_id].device, command, &supports_auto, &min_value, &max_value, &step_value, &default_value, &default_mode);
+        k4a_result_t result = k4a_device_get_color_control_capabilities(*device_handle, command, &supports_auto, &min_value, &max_value, &step_value, &default_value, &default_mode);
         _gil_restore(thread_state);
+
         if (result == K4A_RESULT_FAILED) {
             return Py_BuildValue("I(0)", result, Py_None);
         }
-        return Py_BuildValue("I{s:I,s:I,s:O,s:i,s:i,s:i,s:I}", result,
+
+        return Py_BuildValue("I{s:I,s:O,s:i,s:i,s:i,s:i,s:I}", result,
                 "color_control_command", command,
                 "supports_auto", supports_auto ? Py_True: Py_False,
                 "min_value", min_value,

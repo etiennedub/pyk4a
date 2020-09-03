@@ -71,17 +71,17 @@ class TestProperties:
     @staticmethod
     def test_color_property(device: PyK4A):
         device.open()
-        assert device.brightness == 123
-        assert device.contrast == 123
-        assert device.saturation == 123
-        assert device.sharpness == 123
-        assert device.backlight_compensation == 123
-        assert device.gain == 123
-        assert device.powerline_frequency == 123
-        assert device.exposure == 123
-        assert device.exposure_mode_auto is False
-        assert device.whitebalance == 123
-        assert device.whitebalance_mode_auto is False
+        assert device.brightness == 128
+        assert device.contrast == 5
+        assert device.saturation == 32
+        assert device.sharpness == 2
+        assert device.backlight_compensation == 0
+        assert device.gain == 128
+        assert device.powerline_frequency == 2
+        assert device.exposure == 16670
+        assert device.exposure_mode_auto is True
+        assert device.whitebalance == 4500
+        assert device.whitebalance_mode_auto is True
 
     @staticmethod
     def test_color_property_setter_on_closed_device(device: PyK4A):
@@ -89,16 +89,45 @@ class TestProperties:
             device.brightness = 123
 
     @staticmethod
+    def test_color_property_setter_incorrect_value(device: PyK4A):
+        with pytest.raises(K4AException):
+            device.contrast = 5000
+
+    @staticmethod
     def test_color_property_setter(device: PyK4A):
         device.open()
         device.brightness = 123
-        device.contrast = 123
-        device.saturation = 123
-        device.sharpness = 123
-        device.backlight_compensation = 123
+        assert device.brightness == 123
+        device.contrast = 4
+        assert device.contrast == 4
+        device.saturation = 20
+        assert device.saturation == 20
+        device.sharpness = 1
+        assert device.sharpness == 1
+        device.backlight_compensation = 1
+        assert device.backlight_compensation == 1
         device.gain = 123
-        device.powerline_frequency = 123
-        device.exposure = 123
+        assert device.gain == 123
+        device.powerline_frequency = 1
+        assert device.powerline_frequency == 1
+        device.exposure = 17000
+        assert device.exposure == 17000
         device.exposure_mode_auto = False
-        device.whitebalance = 123
+        assert device.exposure_mode_auto is False
+        device.whitebalance = 5000
+        assert device.whitebalance == 5000
         device.whitebalance_mode_auto = False
+        assert device.whitebalance_mode_auto is False
+
+    @staticmethod
+    def test_reset_color_control_to_default_on_closed_device(device: PyK4A):
+        with pytest.raises(K4AException, match="Device is not opened"):
+            device.reset_color_control_to_default()
+
+    @staticmethod
+    def test_reset_color_control_to_default(device: PyK4A):
+        device.open()
+        device.brightness = 123
+        assert device.brightness == 123
+        device.reset_color_control_to_default()
+        assert device.brightness == 128
