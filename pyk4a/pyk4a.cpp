@@ -280,7 +280,7 @@ extern "C" {
         PyThreadState *thread_state;
         char * raw_calibration;
         k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-        PyArg_ParseTuple(args, "IpsIIIIIIIII", &device_id, &thread_safe,
+        PyArg_ParseTuple(args, "IpsIIIIpiIIp", &device_id, &thread_safe,
                 &raw_calibration, &config.color_format,
                 &config.color_resolution, &config.depth_mode,
                 &config.camera_fps, &config.synchronized_images_only,
