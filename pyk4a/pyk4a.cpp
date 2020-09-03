@@ -207,31 +207,24 @@ extern "C" {
     }
 
     static PyObject* device_start_cameras(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-        PyArg_ParseTuple(args, "IpIIIIpiIIp", &device_id, &thread_safe,
+
+        PyArg_ParseTuple(args, "OpIIIIpiIIp", &capsule, &thread_safe,
                 &config.color_format,
                 &config.color_resolution, &config.depth_mode,
                 &config.camera_fps, &config.synchronized_images_only,
                 &config.depth_delay_off_color_usec, &config.wired_sync_mode,
                 &config.subordinate_delay_off_master_usec,
                 &config.disable_streaming_indicator);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
 
         k4a_result_t result;
         thread_state = _gil_release(thread_safe);
-        result = k4a_device_get_calibration(devices[device_id].device, config.depth_mode, config.color_resolution, &devices[device_id].calibration_handle);
-        if (result == K4A_RESULT_FAILED) {
-            _gil_restore(thread_state);
-            return Py_BuildValue("I", K4A_RESULT_FAILED);
-        }
-        devices[device_id].transformation_handle = k4a_transformation_create(&devices[device_id].calibration_handle);
-        if (devices[device_id].transformation_handle == NULL) {
-            _gil_restore(thread_state);
-            return Py_BuildValue("I", K4A_RESULT_FAILED);
-        }
-        result = k4a_device_start_cameras(devices[device_id].device, &config);
+        result = k4a_device_start_cameras(*device_handle, &config);
         _gil_restore(thread_state);
         return Py_BuildValue("I", result);
     }
@@ -254,17 +247,18 @@ extern "C" {
     }
 
     static PyObject* device_stop_cameras(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
-        thread_state = _gil_release(thread_safe);
-        if (devices[device_id].transformation_handle) {
-            k4a_transformation_destroy(devices[device_id].transformation_handle);
-        }
-        k4a_device_stop_cameras(devices[device_id].device);
 
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+
+        thread_state = _gil_release(thread_safe);
+        k4a_device_stop_cameras(*device_handle);
         _gil_restore(thread_state);
+
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 
