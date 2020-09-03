@@ -41,6 +41,8 @@ Make sure the [body tracking SDK](https://docs.microsoft.com/en-us/azure/Kinect-
 
 Follow the regular installation for pyk4a but add these arguments to your pip call `--global-option="build_ext" --global-option="--enable-body-tracking"`
 
+For example, installing from branch feature/body-tracking, `pip install -v --no-use-pep517 --no-build-isolation --upgrade git+https://github.com/etiennedub/pyk4a.git@feature/body-tracking --global-option="build_ext" --global-option="-I/home/louis/p/pyk4a/k4abt/usr/include/" --global-option="-L/home/louis/p/pyk4a/k4abt/usr/lib/" --global-option="--enable-body-tracking"`
+
 ## Example
 
 For a basic example displaying the first frame, you can run this code:
