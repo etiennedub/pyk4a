@@ -39,7 +39,6 @@ jobs:
     steps:
       - name: Prepare Environment
         run: |
-          chmod a+w /tmp
           apt install -q -y curl install software-properties-common build-essential
           curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
           apt-add-repository https://packages.microsoft.com/ubuntu/18.04/prod
