@@ -13,6 +13,7 @@ from pyk4a import ColorResolution, Config, PyK4A
 kinect2coco = [27, 3, 12, 13, 14, 5, 6, 7, 22, 23, 24, 18, 19, 20, 30, 28, 31, 29]
 num_joints = len(kinect2coco)
 
+
 # https://gist.github.com/markjay4k/da2f55e28514be7160a7c5fbf95bd243
 class Visualizer(object):
     def __init__(self):

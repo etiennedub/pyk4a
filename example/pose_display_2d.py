@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 
 import pyk4a
 from pyk4a import ColorResolution, Config, PyK4A
@@ -13,14 +12,19 @@ k4a = PyK4A(Config(color_resolution=ColorResolution.RES_720P, depth_mode=pyk4a.D
 k4a.connect()
 
 while True:
-    frame, _ = k4a.get_capture()
-    pose = k4a.get_pose()
-    source_H, source_W, _ = frame.shape
-    frame = cv2.resize(frame, (256 * source_W // source_H, 256))
+    capture = k4a.get_capture()
+    img_color = capture.color
+    body_skeleton = capture.body_skeleton
+
+    if img_color is None or body_skeleton is None:
+        continue
+
+    source_H, source_W, _ = img_color.shape
+    frame = cv2.resize(img_color, (256 * source_W // source_H, 256))
     target_H, target_W, _ = frame.shape
 
-    if pose is not None and pose.shape[0] > 0:
-        pts = pose[0, :, :2].reshape(-1, 2)[kinect2coco]
+    if body_skeleton is not None and body_skeleton.shape[0] > 0:
+        pts = body_skeleton[0, :, :2].reshape(-1, 2)[kinect2coco]
         pts[:, 0] = pts[:, 0] * (target_H / source_H)
         pts[:, 1] = pts[:, 1] * (target_W / source_W)
 
