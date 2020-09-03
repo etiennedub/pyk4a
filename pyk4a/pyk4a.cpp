@@ -3,6 +3,7 @@
 
 #include <k4a/k4a.h>
 #include <k4arecord/playback.h>
+#define ENABLE_BODY_TRACKING 1
 #ifdef ENABLE_BODY_TRACKING
     #include <k4abt.h>
     #define BT_N_DATA 10
