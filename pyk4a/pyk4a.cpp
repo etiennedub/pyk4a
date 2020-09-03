@@ -46,8 +46,6 @@ extern "C" {
     static void capsule_cleanup_device(PyObject *capsule) {
         k4a_device_t* device_handle;
 
-        total_capsules -= 1;
-
         device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
         free(device_handle);
     }
@@ -82,7 +80,6 @@ extern "C" {
             return Py_BuildValue("Is", K4A_RESULT_FAILED, NULL);
         }
 
-
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_open(device_id, device_handle);
         _gil_restore(thread_state);
@@ -93,7 +90,7 @@ extern "C" {
         }
 
         PyObject *capsule = PyCapsule_New(device_handle, capsule_device_name, capsule_cleanup_device);
-        total_capsules += 1;
+
         return Py_BuildValue("IN", result, capsule);
     }
 

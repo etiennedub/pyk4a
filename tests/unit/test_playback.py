@@ -68,7 +68,7 @@ class TestPropertyCalibrationJson:
     @staticmethod
     def test_validate_if_record_opened(playback: PyK4APlayback):
         with pytest.raises(K4AException, match="Playback not opened."):
-            playback.calibration_json
+            assert playback.calibration_json
 
     @staticmethod
     def test_good_file(playback: PyK4APlayback):
@@ -79,7 +79,7 @@ class TestPropertyCalibrationJson:
     def test_bad_file(playback_bad: PyK4APlayback):
         playback_bad.open()
         with pytest.raises(K4AException, match=r"Cannot read calibration from file"):
-            playback_bad.calibration_json
+            assert playback_bad.calibration_json
 
 
 class TestSeek:

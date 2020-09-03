@@ -65,4 +65,4 @@ jobs:
           pip install -e .
       - name: Run tests
         run: |
-          make test
+          make test-no-hardware

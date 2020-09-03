@@ -36,6 +36,7 @@ class PyK4A:
         self._device_id = device_id
         self._config: Config = config if (config is not None) else Config()
         self.thread_safe = thread_safe
+        self._device_handle: Optional[object] = None
         self.is_running = False
 
     def __del__(self):
@@ -46,7 +47,7 @@ class PyK4A:
 
     @property
     def opened(self) -> bool:
-        return self._handle is not None
+        return self._device_handle is not None
 
     def open(self):
         """
@@ -102,12 +103,12 @@ class PyK4A:
     def _device_open(self):
         res, handle = k4a_module.device_open(self._device_id, self.thread_safe)
         self._verify_error(res)
-        self._handle = handle
+        self._device_handle = handle
 
     def _device_close(self):
-        res = k4a_module.device_close(self._handle, self.thread_safe)
+        res = k4a_module.device_close(self._device_handle, self.thread_safe)
         self._verify_error(res)
-        self._handle = None
+        self._device_handle = None
 
     def _start_cameras(self):
         res = k4a_module.device_start_cameras(self._device_id, self.thread_safe, *self._config.unpack())
@@ -155,19 +156,19 @@ class PyK4A:
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
         self._validate_is_opened()
-        res, jack_in, jack_out = k4a_module.device_get_sync_jack(self._handle, self.thread_safe)
+        res, jack_in, jack_out = k4a_module.device_get_sync_jack(self._device_handle, self.thread_safe)
         self._verify_error(res)
         return jack_in == 1, jack_out == 1
 
     def _get_color_control(self, cmd: ColorControlCommand) -> Tuple[int, ColorControlMode]:
         self._validate_is_opened()
-        res, mode, value = k4a_module.device_get_color_control(self._handle, self.thread_safe, cmd)
+        res, mode, value = k4a_module.device_get_color_control(self._device_handle, self.thread_safe, cmd)
         self._verify_error(res)
         return value, ColorControlMode(mode)
 
     def _set_color_control(self, cmd: ColorControlCommand, value: int, mode=ColorControlMode.MANUAL):
         self._validate_is_opened()
-        res = k4a_module.device_set_color_control(self._handle, self.thread_safe, cmd, mode, value)
+        res = k4a_module.device_set_color_control(self._device_handle, self.thread_safe, cmd, mode, value)
         self._verify_error(res)
 
     @property
