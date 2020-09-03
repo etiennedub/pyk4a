@@ -149,11 +149,6 @@ class PyK4A:
         capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
         return capture
 
-    def get_pose(self) -> Optional[np.ndarray]:
-        # Make sure to call get_capture before calling this function.
-        assert PyK4A.BODY_TRACKING_SUPPORT == True
-        return k4a_module.device_get_pose_data(self._device_id, )
-
     def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Optional["ImuSample"]:
         res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, self.thread_safe, timeout)
         self._verify_error(res)
@@ -307,6 +302,9 @@ class PyK4ACapture:
         self._transformed_color: Optional[np.ndarray] = None
         self._cap: object = capture_capsule  # built-in PyCapsule
 
+        self._body_skeleton: Optional[np.ndarray] = None
+        self._body_index_map: Optional[np.ndarray] = None
+
     @property
     def color(self) -> Optional[np.ndarray]:
         if self._color is None:
@@ -361,6 +359,43 @@ class PyK4ACapture:
                 self.device._device_id, self.device.thread_safe, self.depth, self.color
             )
         return self._transformed_color
+
+    @property
+    def body_skeleton(self) -> Optional[np.ndarray]:
+        """
+        np array of floats where
+        (n_bodies, n_joints, n_data) == body_skeleton.shape
+
+        data for a joint follows this order(
+            position_x,
+            position_y,
+            position_z,
+            orientation_w,
+            orientation_x,
+            orientation_y,
+            orientation_z,
+            confidence_level,
+            position_image_0,
+            position_image_1,
+        )
+        """
+        assert self.device.BODY_TRACKING_SUPPORT
+        # TODO: assert self.device has a body_tracker
+        if self._body_skeleton is None:
+            self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
+                self._device_id, self.thread_safe
+            )
+        return self._body_skeleton
+
+    @property
+    def body_index_map(self) -> Optional[np.ndarray]:
+        assert self.device.BODY_TRACKING_SUPPORT
+        # TODO: assert self.device has a body_tracker
+        if self.body_index_map is None:
+            self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
+                self._device_id, self.thread_safe
+            )
+        return self._body_index_map
 
 
 class ImuSample(TypedDict):

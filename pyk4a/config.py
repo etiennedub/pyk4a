@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 
 # k4a_fps_t
@@ -112,9 +112,9 @@ class BTSensorOrientation(IntEnum):
 
 class BTConfig:
     def __init__(
-            self,
-            sensor_orientation: BTSensorOrientation = BTSensorOrientation.DEFAULT,
-            gpu_device_id: Optional[int] = None,
+        self,
+        sensor_orientation: BTSensorOrientation = BTSensorOrientation.DEFAULT,
+        gpu_device_id: Optional[int] = None,
     ):
         self.sensor_orientation = sensor_orientation
         self.gpu_device_id = gpu_device_id

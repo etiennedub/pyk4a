@@ -5,6 +5,7 @@
 #include <k4arecord/playback.h>
 #ifdef ENABLE_BODY_TRACKING
     #include <k4abt.h>
+    #define BT_N_DATA 10
 #endif
 #include <stdio.h>
 
@@ -30,15 +31,11 @@ extern "C" {
     #define MAX_DEVICES 32
     device_container devices[MAX_DEVICES];
 
-#ifdef ENABLE_BODY_TRACKING
-    #define NUM_JOINTS 32
-    #define NUM_DATA 10
-#endif
-
     const char* capsule_playback_name = "pyk4a playback handle";
     const char* capsule_device_name = "pyk4a device handle";
     const char* capsule_calibration_name = "pyk4a calibration handle";
     const char* capsule_transformation_name = "pyk4a transformation handle";
+
     static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
         if (thread_safe == NON_THREAD_SAFE) {
@@ -418,69 +415,79 @@ extern "C" {
 #endif
     }
 
-    static void pose_capsule_cleanup(PyObject *capsule) {
 #ifdef ENABLE_BODY_TRACKING
+    const char* capsule_body_tracking_skeleton_name = "pyk4a body tracking skeleton handle";
+
+    static void pose_capsule_cleanup(PyObject *capsule) {
         double_t *buffer = (double_t*)PyCapsule_GetContext(capsule);
+        free(buffer);
     }
-        delete buffer;
 
-    static PyObject* device_get_pose_data(PyObject* self, PyObject* args){
+    static PyObject* capture_get_body_tracking(PyObject* self, PyObject* args){
         uint32_t device_id;
+        int thread_safe;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "I", &device_id);
+        PyObject *capsule_capture;
+        k4a_capture_t *capture;
+        k4a_result_t res;
         k4abt_frame_t body_frame = NULL;
-        k4abt_tracker_enqueue_capture(devices[device_id].body_tracker, devices[device_id].capture, 0);
-        k4a_wait_result_t pop_frame_result = k4abt_tracker_pop_result(devices[device_id].body_tracker, &body_frame, 0);
-        if (pop_frame_result == K4A_WAIT_RESULT_SUCCEEDED) {
+        k4a_wait_result_t wait_res;
+        k4a_result_t res;
+        PyArg_ParseTuple(args, "IpO", &device_id, &thread_safe, &capsule_capture);
+
+        capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, NULL);
+        thread_state = _gil_release(thread_safe);
+        wait_res = k4abt_tracker_enqueue_capture(devices[device_id].body_tracker, *capture, 0);
+        if (wait_res == K4A_WAIT_RESULT_FAILED ) {
+            return Py_BuildValue("(0)(0)", Py_None, Py_None);
+        }
+        wait_res = k4abt_tracker_pop_result(devices[device_id].body_tracker, &body_frame, 0);
+        _gil_restore(thread_state);
+        if (wait_res == K4A_WAIT_RESULT_SUCCEEDED) {
             size_t num_bodies = k4abt_frame_get_num_bodies(body_frame);
-            double_t* buffer = new double_t[num_bodies*NUM_JOINTS*NUM_DATA];
-            for (size_t i = 0; i < num_bodies; i++) {
-                k4abt_skeleton_t skeleton;
-                k4abt_frame_get_body_skeleton(body_frame, i, &skeleton);
-                for (int j = 0; j < (int)K4ABT_JOINT_COUNT; j++) {
-                    k4a_float3_t position = skeleton.joints[j].position;
-                    //Convert 3d points in mm to image coordinates
-                    k4a_float2_t position_image;
-                    int valid;
-                    k4a_calibration_3d_to_2d(&devices[device_id].calibration_handle,
-                                             &position,
-                                             K4A_CALIBRATION_TYPE_DEPTH,
-                                             K4A_CALIBRATION_TYPE_COLOR,
-                                             &position_image, &valid);
-
-                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 0] = position_image.v[0];
-                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 1] = position_image.v[1];
-
-                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 2] = position.v[0];
-                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 3] = position.v[1];
-                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 4] = position.v[2];
-
-                    k4a_quaternion_t orientation = skeleton.joints[j].orientation;
-                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 6] = orientation.v[1];
-                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 5] = orientation.v[0];
-                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 7] = orientation.v[2];
-
-                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 8] = orientation.v[3];
-                    k4abt_joint_confidence_level_t confidence_level = skeleton.joints[j].confidence_level;
-                }
-                    buffer[(i * NUM_JOINTS * NUM_DATA) + (j * NUM_DATA) + 9] = confidence_level;
-            }
-            k4abt_frame_release(body_frame);
-
-            thread_state = _gil_release(device_id);
+            k4abt_skeleton_t skeleton;
+            k4abt_frame_get_body_skeleton(body_frame, i, &skeleton);
             npy_intp dims[3];
             dims[0] = num_bodies;
-            dims[1] = NUM_JOINTS;
-            dims[2] = NUM_DATA;
-            PyArrayObject* np_pose_data = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_DOUBLE, buffer);
-            PyObject *capsule = PyCapsule_New(buffer, NULL, pose_capsule_cleanup);
-            PyCapsule_SetContext(capsule, buffer);
+            dims[1] = K4ABT_JOINT_COUNT;
+            dims[2] = 10;
+            size_t body_stride = K4ABT_JOINT_COUNT*10;
+            float* buffer_pose = (float*) malloc(sizeof(float)*num_bodies*body_stride);
+
+            for (int body_index = 0; body_index < num_bodies; body_index++) {
+                k4abt_frame_get_body_skeleton(body_frame, body_index, &skeleton);
+                for (int joint_index=0; joint_index<K4ABT_JOINT_COUNT*8; joint_index++) {
+                    size_t offset = body_index * body_stride + joint_index;
+                    buffer_pose[offset + 0] = skeleton.joints[joint_index].position.xyz.x;
+                    buffer_pose[offset + 1] = skeleton.joints[joint_index].position.xyz.y;
+                    buffer_pose[offset + 2] = skeleton.joints[joint_index].position.xyz.z;
+                    buffer_pose[offset + 3] = skeleton.joints[joint_index].orientation.wxyz.w;
+                    buffer_pose[offset + 4] = skeleton.joints[joint_index].orientation.wxyz.x;
+                    buffer_pose[offset + 5] = skeleton.joints[joint_index].orientation.wxyz.y;
+                    buffer_pose[offset + 6] = skeleton.joints[joint_index].orientation.wxyz.z;
+                    buffer_pose[offset + 7] = (float) skeleton.joints[joint_index].confidence_level;
+                    // convert to image positions
+                    k4a_float2_t position_image;
+                    int valid;
+                    k4a_calibration_3d_to_2d(&devices[device_id].calibration_handle, &skeleton.joints[joint_index].position, K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR, &position_image, &valid);
+
+                    buffer_pose[offset + 8] = (float) position_image.v[0];
+                    buffer_pose[offset + 9] = (float) position_image.v[1];
+                }
+            }
+            PyArrayObject* np_skeleton = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_FLOAT, buffer_pose);
+            PyObject *capsule = PyCapsule_New(buffer, capsule_body_tracking_skeleton_name, pose_capsule_cleanup);
+            PyCapsule_SetContext(capsule, buffer_pose);
             PyArray_SetBaseObject((PyArrayObject *) np_pose_data, capsule);
-            _gil_restore(thread_state);
-            return PyArray_Return(np_pose_data);
+
+            PyArrayObject* np_body_index_map;
+            k4a_image_t body_index_map = k4abt_frame_get_body_index_map(body_frame);
+            k4a_image_to_numpy(body_index_map, &np_body_index_map);
+            k4abt_frame_release(body_frame);
+            return Py_BuildValue("OO", np_skeleton, np_body_index_map);
         }
         else {
-            return Py_BuildValue("");
+            return Py_BuildValue("(0)(0)", Py_None, Py_None);
         }
     }
 #endif
@@ -1028,7 +1035,7 @@ extern "C" {
         {"playback_seek_timestamp", playback_seek_timestamp, METH_VARARGS, "Seek playback file to specified position"},
         {"is_body_tracking_supported", is_body_tracking_supported, METH_VARARGS, "Returns body tracking support bool"},
 #ifdef ENABLE_BODY_TRACKING
-        {"device_get_pose_data", device_get_pose_data, METH_VARARGS, "Get the body pose estimates associated with the given capture"},
+        {"capture_get_body_tracking", capture_get_body_tracking, METH_VARARGS, "Get the body skeletons and body index map associated with the given capture"},
 #endif
         {NULL, NULL, 0, NULL}
     };
