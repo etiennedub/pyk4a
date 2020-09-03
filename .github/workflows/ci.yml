@@ -42,7 +42,7 @@ jobs:
           sudo apt install -q -y curl software-properties-common build-essential
           curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
           sudo apt-add-repository https://packages.microsoft.com/ubuntu/18.04/prod
-          env DEBIAN_FRONTEND=noninteractive ACCEPT_EULA=Y sudo apt install -q -y  libk4a1.4-dev
+          env DEBIAN_FRONTEND=noninteractive ACCEPT_EULA=Y sudo -E apt install -q -y  libk4a1.4-dev
       - name: Checkout
         uses: actions/checkout@v2
       - name: Setup Python 3.7
