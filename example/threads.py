@@ -30,12 +30,12 @@ class CpuWorker(Worker):
 class CameraWorker(Worker):
     def __init__(self, device_id=0, thread_safe: bool = True):
         self._device_id = device_id
-        self._thread_safe = thread_safe
+        self.thread_safe = thread_safe
         super().__init__()
 
     def run(self) -> None:
         print("Start run")
-        camera = PyK4A(device_id=self._device_id, thread_safe=self._thread_safe)
+        camera = PyK4A(device_id=self._device_id, thread_safe=self.thread_safe)
         camera.connect()
         while not self._halt:
             capture = camera.get_capture()
