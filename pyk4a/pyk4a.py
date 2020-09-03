@@ -31,7 +31,7 @@ class K4ATimeoutException(K4AException):
 
 class PyK4A:
     TIMEOUT_WAIT_INFINITE = -1
-    BODY_TRACKING_SUPPORT = k4a_module.is_body_tracking_supported() == True
+    BODY_TRACKING_SUPPORT = bool(k4a_module.is_body_tracking_supported())
 
     def __init__(self, config: Optional[Config] = None, device_id: int = 0, thread_safe: bool = True):
         self._device_id = device_id
@@ -383,7 +383,7 @@ class PyK4ACapture:
         # TODO: assert self.device has a body_tracker
         if self._body_skeleton is None:
             self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
-                self._device_id, self.thread_safe
+                self.device._device_id, self.device.thread_safe
             )
         return self._body_skeleton
 
@@ -393,7 +393,7 @@ class PyK4ACapture:
         # TODO: assert self.device has a body_tracker
         if self.body_index_map is None:
             self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
-                self._device_id, self.thread_safe
+                self.device._device_id, self.device.thread_safe
             )
         return self._body_index_map
 

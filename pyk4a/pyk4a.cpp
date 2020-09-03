@@ -16,11 +16,7 @@ extern "C" {
     // to debug, use fprintf(stdout, "debug msg\n") or fprintf(stderr, "debug msg\n");;
 
     #define NON_THREAD_SAFE 0
-    // Simple way to map k4a_color_resolution_t to dimensions
-    const int RESOLUTION_TO_DIMS[][2] = {{0, 0}, {1280, 720},
-                                    {1920, 1080}, {2560, 1440},
-                                    {2048, 1536}, {3840, 2160},
-                                    {4096, 3072}};
+    const int RESOLUTION_TO_DIMS[][2] = {{0, 0}, {1280, 720}, {1920, 1080}, {2560, 1440}, {2048, 1536}, {3840, 2160}, {4096, 3072}};
     typedef struct device_container {
         k4a_transformation_t transformation_handle;
         k4a_calibration_t calibration_handle;
