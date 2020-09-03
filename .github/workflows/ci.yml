@@ -11,7 +11,7 @@ on:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -22,10 +22,10 @@ jobs:
     - name: Cache PyPI
       uses: actions/cache@v2
       with:
-        key: pip-lint-${{ hashFiles('requirements-dev.txt') }}
+        key: pip-cache-${{ hashFiles('requirements-dev.txt') }}
         path: ~/.cache/pip
         restore-keys: |
-            pip-lint-
+            pip-cache-
     - name: Install dependencies
       uses: py-actions/py-dependency-install@v2
       with:
@@ -33,3 +33,36 @@ jobs:
     - name: Run linters
       run: |
         make lint
+  test:
+    name: Test
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Prepare Environment
+        run: |
+          sudo apt install -q -y curl software-properties-common build-essential
+          curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          sudo apt-add-repository https://packages.microsoft.com/ubuntu/18.04/prod
+          env DEBIAN_FRONTEND=noninteractive ACCEPT_EULA=Y sudo -E apt install -q -y  libk4a1.4-dev
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Cache PyPI
+        uses: actions/cache@v2
+        with:
+          key: pip-cache-${{ hashFiles('requirements-dev.txt') }}-${{ hashFiles('setup.py') }}
+          path: ~/.cache/pip
+          restore-keys: |
+              pip-cache-
+      - name: Install dependencies
+        uses: py-actions/py-dependency-install@v2
+        with:
+          path: requirements-dev.txt
+      - name: Install module
+        run:
+          pip install -e .
+      - name: Run tests
+        run: |
+          make test
