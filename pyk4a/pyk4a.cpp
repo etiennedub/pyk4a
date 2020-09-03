@@ -279,19 +279,29 @@ extern "C" {
     }
 
     static PyObject* device_get_capture(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         long long timeout;
-        PyArg_ParseTuple(args, "IpL", &device_id, &thread_safe, &timeout);
+        k4a_wait_result_t result;
+
+        PyArg_ParseTuple(args, "OpL", &capsule, &thread_safe, &timeout);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+fprintf(stderr, "1\n");
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
+        if (capture == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("IN", K4A_RESULT_FAILED, NULL);
+        }
+fprintf(stderr, "2\n");
         k4a_capture_create(capture);
         PyObject* capsule_capture = PyCapsule_New(capture, NULL, capsule_cleanup_capture);
-        k4a_wait_result_t result;
+fprintf(stderr, "3\n");
         thread_state = _gil_release(thread_safe);
-        result = k4a_device_get_capture(devices[device_id].device, capture, timeout);
+        result = k4a_device_get_capture(*device_handle, capture, timeout);
         _gil_restore(thread_state);
-
+fprintf(stderr, "4\n");
         return Py_BuildValue("IN", result, capsule_capture);
     }
 

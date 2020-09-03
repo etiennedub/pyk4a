@@ -10,6 +10,7 @@ help:
 		"- fmt: Format all code\n" \
 		"- lint: Lint code syntax and formatting\n" \
 		"- test: Run tests\n"\
+		"- test-hardware: Run tests related from connected kinect"
 		"- test-no-hardware: Run tests without connected kinect"
 
 
@@ -30,6 +31,9 @@ lint:
 
 test:
 	pytest --cov=pyk4a
+
+test-hardware:
+	pytest --cov=pyk4a  -m "device"
 
 test-no-hardware:
 	pytest --cov=pyk4a  -m "not device"

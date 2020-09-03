@@ -69,6 +69,8 @@ class TestProperties:
         device.reset_color_control_to_default()
         assert device.brightness == 128
 
+
+class TestCamera:
     @staticmethod
     @pytest.mark.device
     def test_start_stop_cameras(device_id: int):
@@ -85,3 +87,15 @@ class TestProperties:
         device._start_cameras()  # imu will not work without cameras
         device._start_imu()
         device._stop_imu()
+        device._stop_cameras()
+
+
+class TestCapture:
+    @staticmethod
+    @pytest.mark.device
+    def test_capture(device_id: int):
+        device = PyK4A(device_id=device_id)
+        device.open()
+        device._start_cameras()
+        capture = device.get_capture()
+        assert capture.color is not None

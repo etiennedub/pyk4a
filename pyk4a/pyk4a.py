@@ -142,7 +142,7 @@ class PyK4A:
         If using any ColorFormat other than ColorFormat.BGRA32, the color image must be
         decoded. See example/color_formats.py
         """
-        res, capture_capsule = k4a_module.device_get_capture(self._device_id, self.thread_safe, timeout)
+        res, capture_capsule = k4a_module.device_get_capture(self._device_handle, self.thread_safe, timeout)
         self._verify_error(res)
 
         capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
