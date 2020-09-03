@@ -29,6 +29,3 @@ lint:
 
 test:
 	pytest --cov=pyk4a $(TESTS)
-
-test-:
-	pytest --cov=pyk4a $(TESTS) -m "not hardware"
