@@ -211,31 +211,24 @@ extern "C" {
     }
 
     static PyObject* device_start_cameras(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-        PyArg_ParseTuple(args, "IpIIIIpiIIp", &device_id, &thread_safe,
+
+        PyArg_ParseTuple(args, "OpIIIIpiIIp", &capsule, &thread_safe,
                 &config.color_format,
                 &config.color_resolution, &config.depth_mode,
                 &config.camera_fps, &config.synchronized_images_only,
                 &config.depth_delay_off_color_usec, &config.wired_sync_mode,
                 &config.subordinate_delay_off_master_usec,
                 &config.disable_streaming_indicator);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
 
         k4a_result_t result;
         thread_state = _gil_release(thread_safe);
-        result = k4a_device_get_calibration(devices[device_id].device, config.depth_mode, config.color_resolution, &devices[device_id].calibration_handle);
-        if (result == K4A_RESULT_FAILED) {
-            _gil_restore(thread_state);
-            return Py_BuildValue("I", K4A_RESULT_FAILED);
-        }
-        devices[device_id].transformation_handle = k4a_transformation_create(&devices[device_id].calibration_handle);
-        if (devices[device_id].transformation_handle == NULL) {
-            _gil_restore(thread_state);
-            return Py_BuildValue("I", K4A_RESULT_FAILED);
-        }
-        result = k4a_device_start_cameras(devices[device_id].device, &config);
+        result = k4a_device_start_cameras(*device_handle, &config);
         _gil_restore(thread_state);
 
 #ifdef ENABLE_BODY_TRACKING
@@ -265,17 +258,16 @@ extern "C" {
     }
 
     static PyObject* device_stop_cameras(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+
         thread_state = _gil_release(thread_safe);
-        if (devices[device_id].transformation_handle) {
-            k4a_transformation_destroy(devices[device_id].transformation_handle);
-        }
-        k4a_device_stop_cameras(devices[device_id].device);
-
-
+        k4a_device_stop_cameras(*device_handle);
 #ifdef ENABLE_BODY_TRACKING
         if (devices[device_id].body_tracker) {
             k4abt_tracker_destroy(devices[device_id].body_tracker);
@@ -283,8 +275,6 @@ extern "C" {
         }
 #endif
         _gil_restore(thread_state);
-
-
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 
@@ -305,17 +295,26 @@ extern "C" {
     }
 
     static PyObject* device_get_capture(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         long long timeout;
-        PyArg_ParseTuple(args, "IpL", &device_id, &thread_safe, &timeout);
+        k4a_wait_result_t result;
+
+        PyArg_ParseTuple(args, "OpL", &capsule, &thread_safe, &timeout);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
+        if (capture == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("IN", K4A_RESULT_FAILED, NULL);
+        }
         k4a_capture_create(capture);
         PyObject* capsule_capture = PyCapsule_New(capture, NULL, capsule_cleanup_capture);
-        k4a_wait_result_t result;
+
         thread_state = _gil_release(thread_safe);
-        result = k4a_device_get_capture(devices[device_id].device, capture, timeout);
+        result = k4a_device_get_capture(*device_handle, capture, timeout);
         _gil_restore(thread_state);
 
         return Py_BuildValue("IN", result, capsule_capture);
