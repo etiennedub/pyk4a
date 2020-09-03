@@ -1,5 +1,4 @@
 SOURCES=pyk4a example tests
-TESTS=tests
 
 .PHONY: setup fmt lint test help
 .SILENT: help
@@ -28,4 +27,4 @@ lint:
 	mypy $(SOURCES)
 
 test:
-	pytest --cov=pyk4a $(TESTS)
+	pytest --cov=pyk4a
