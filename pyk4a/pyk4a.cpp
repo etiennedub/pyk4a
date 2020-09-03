@@ -237,14 +237,19 @@ extern "C" {
     }
 
     static PyObject* device_start_imu(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_result_t result;
-        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+
         thread_state = _gil_release(thread_safe);
-        result = k4a_device_start_imu(devices[device_id].device);
+        result = k4a_device_start_imu(*device_handle);
         _gil_restore(thread_state);
+
         return Py_BuildValue("I", result);
     }
 
@@ -264,14 +269,18 @@ extern "C" {
     }
 
     static PyObject* device_stop_imu(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "Ip", &device_id, &thread_safe);
-        thread_state = _gil_release(thread_safe);
-        k4a_device_stop_imu(devices[device_id].device);
 
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+
+        thread_state = _gil_release(thread_safe);
+        k4a_device_stop_imu(*device_handle);
         _gil_restore(thread_state);
+
         return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
     }
 

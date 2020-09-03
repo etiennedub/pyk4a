@@ -73,8 +73,8 @@ class PyK4A:
         """
         if not self.opened:
             self.open()
-        self._start_imu()
         self._start_cameras()
+        self._start_imu()
         self.is_running = True
 
     def disconnect(self):
@@ -115,7 +115,7 @@ class PyK4A:
         self._verify_error(res)
 
     def _start_imu(self):
-        res = k4a_module.device_start_imu(self._device_id, self.thread_safe)
+        res = k4a_module.device_start_imu(self._device_handle, self.thread_safe)
         self._verify_error(res)
 
     def _stop_cameras(self):
@@ -123,7 +123,7 @@ class PyK4A:
         self._verify_error(res)
 
     def _stop_imu(self):
-        res = k4a_module.device_stop_imu(self._device_id, self.thread_safe)
+        res = k4a_module.device_stop_imu(self._device_handle, self.thread_safe)
         self._verify_error(res)
 
     def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE,) -> "PyK4ACapture":
