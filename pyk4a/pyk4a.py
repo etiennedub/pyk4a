@@ -1,10 +1,17 @@
+import sys
 from enum import Enum
-from typing import Any, Mapping, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import numpy as np
 
 import k4a_module
 from pyk4a.config import ColorControlCommand, ColorControlMode, ColorFormat, Config
+
+
+if sys.version_info < (3, 8):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
 
 
 # k4a_wait_result_t
@@ -105,22 +112,10 @@ class PyK4A:
         capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
         return capture
 
-    def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Mapping[str, Any]:
+    def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Optional["ImuSample"]:
         res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, self.thread_safe, timeout)
         self._verify_error(res)
-        temperature: float
-        acc_sample: Tuple[float, float, float]
-        acc_timestamp: int
-        gyro_sample: Tuple[float, float, float]
-        gyro_timestamp: int
-        (temperature, acc_sample, acc_timestamp, gyro_sample, gyro_timestamp,) = imu_sample
-        return {
-            "temperature": temperature,
-            "acc_sample": acc_sample,
-            "acc_timestamp": acc_timestamp,
-            "gyro_sample": gyro_sample,
-            "gyro_timestamp": gyro_timestamp,
-        }
+        return imu_sample
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
@@ -229,19 +224,10 @@ class PyK4A:
         mode = ColorControlMode.AUTO if mode_auto else ColorControlMode.MANUAL
         self._set_color_control(ColorControlCommand.WHITEBALANCE, value=value, mode=mode)
 
-    def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> Mapping[str, Any]:
-        ret = k4a_module.device_get_color_control_capabilities(self._device_id, self.thread_safe, cmd)
-        (res, supports_auto, min_value, max_value, step_value, default_value, default_mode,) = ret
+    def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> Optional["ColorControlCapabilities"]:
+        res, capabilities = k4a_module.device_get_color_control_capabilities(self._device_id, self.thread_safe, cmd)
         self._verify_error(res)
-        return {
-            "color_control_command": cmd,
-            "supports_auto": supports_auto == 1,
-            "min_value": min_value,
-            "max_value": max_value,
-            "step_value": step_value,
-            "default_value": default_value,
-            "default_mode": default_mode,
-        }
+        return capabilities
 
     def reset_color_control_to_default(self):
         for cmd in ColorControlCommand:
@@ -265,7 +251,9 @@ class PyK4ACapture:
         self._color: Optional[np.ndarray] = None
         self._depth: Optional[np.ndarray] = None
         self._ir: Optional[np.ndarray] = None
+        self._depth_point_cloud: Optional[np.ndarray] = None
         self._transformed_depth: Optional[np.ndarray] = None
+        self._transformed_depth_point_cloud: Optional[np.ndarray] = None
         self._transformed_color: Optional[np.ndarray] = None
         self._cap: object = capture_capsule  # built-in PyCapsule
 
@@ -296,6 +284,22 @@ class PyK4ACapture:
         return self._transformed_depth
 
     @property
+    def depth_point_cloud(self) -> Optional[np.ndarray]:
+        if self._depth_point_cloud is None and self.depth is not None:
+            self._depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
+                self.device._device_id, self.device.thread_safe, self.depth, True
+            )
+        return self._depth_point_cloud
+
+    @property
+    def transformed_depth_point_cloud(self) -> Optional[np.ndarray]:
+        if self._transformed_depth_point_cloud is None and self.transformed_depth is not None:
+            self._transformed_depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
+                self.device._device_id, self.device.thread_safe, self.transformed_depth, False
+            )
+        return self._transformed_depth_point_cloud
+
+    @property
     def transformed_color(self) -> Optional[np.ndarray]:
         if self._transformed_color is None and self.depth is not None and self.color is not None:
             if self.device._config.color_format != ColorFormat.BGRA32:
@@ -307,3 +311,21 @@ class PyK4ACapture:
                 self.device._device_id, self.device.thread_safe, self.depth, self.color
             )
         return self._transformed_color
+
+
+class ImuSample(TypedDict):
+    temperature: float
+    acc_sample: Tuple[float, float, float]
+    acc_timestamp: int
+    gyro_sample: Tuple[float, float, float]
+    gyro_timestamp: int
+
+
+class ColorControlCapabilities(TypedDict):
+    color_control_command: ColorControlCommand
+    supports_auto: bool
+    min_value: int
+    max_value: int
+    step_value: int
+    default_value: int
+    default_mode: ColorControlMode
