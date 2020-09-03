@@ -3,7 +3,7 @@
 
 #include <k4a/k4a.h>
 #include <k4arecord/playback.h>
-#define ENABLE_BODY_TRACKING 1
+
 #ifdef ENABLE_BODY_TRACKING
     #include <k4abt.h>
     #define DATA_PER_JOINT 10
