@@ -865,7 +865,7 @@ extern "C" {
         {"playback_close", playback_close, METH_VARARGS, "Close opened playback"},
         {"playback_get_recording_length_usec", playback_get_recording_length_usec, METH_VARARGS, "Return recording length"},
         {"playback_get_calibration", playback_get_calibration, METH_VARARGS, "Extract calibration from recording"},
-        {"playback_seek_timestamp", playback_seek_timestamp, METH_VARARGS, "Extract calibration from recording"},
+        {"playback_seek_timestamp", playback_seek_timestamp, METH_VARARGS, "Seek playback file to specified position"},
         {NULL, NULL, 0, NULL}
     };
 
