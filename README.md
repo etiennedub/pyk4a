@@ -35,7 +35,7 @@ pip install pyk4a --global-option=build_ext --global-option="-IC:\Program Files\
 
 Don't forget to add the folder containing the release `k4a.dll` to your Path env variable `C:\Program Files\Azure Kinect SDK v1.2.0\sdk\windows-desktop\amd64\release\bin`
 
-## Body Tracking SDK 
+### Body Tracking SDK 
 
 Make sure the [body tracking SDK](https://docs.microsoft.com/en-us/azure/Kinect-dk/body-sdk-download) is installed properly. 
 
