@@ -980,6 +980,9 @@ extern "C" {
             PyArrayObject* np_body_index_map;
             k4a_image_t body_index_map = k4abt_frame_get_body_index_map(body_frame);
             res = k4a_image_to_numpy(&body_index_map, &np_body_index_map);
+            if (res == K4A_RESULT_FAILED) {
+                return Py_BuildValue("O(0)", np_skeleton, Py_None);
+            }
             k4abt_frame_release(body_frame);
             return Py_BuildValue("OO", np_skeleton, np_body_index_map);
         }
