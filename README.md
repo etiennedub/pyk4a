@@ -27,7 +27,6 @@ pip install pyk4a
 ### Windows
 
 Make sure you replace the paths in the following instructions with your own k4a sdk path.
-It is important to replace `1.2.0` with your installed version of the SDK.
 
 ```
 pip install pyk4a --global-option=build_ext --global-option="-IC:\Program Files\Azure Kinect SDK v1.2.0\sdk\include" --global-option="-LC:\Program Files\Azure Kinect SDK v1.2.0\sdk\windows-desktop\amd64\release\lib"
@@ -69,25 +68,14 @@ python viewer.py
 No documentation is available but most methods are used in the example. You can follow it as reference.
 You can also check directly the code of the main class [PyK4A](https://github.com/etiennedub/pyk4a/blob/master/pyk4a/pyk4a.py).
 
-## Bug Reports
-Submit an issue and please include as much details as possible.
-
-Make sure to use the search function on closed issues, especially if your problem is related to installing on [windows](https://github.com/etiennedub/pyk4a/issues?q=windows+).
-
-
 ## Module Development
 
-1) Install required packages: `make setup`
-
-2) Install local pyk4a version (compiles pyk4a.cpp): `make build`
+* Install required packages: `make setup`
 
 ## Contribution
 
 Feel free to send pull requests. The develop branch should be used.
 
-Please rebuild, format, check code quality and run tests before submitting a pull request:
-```shell script
-make build
-make fmt lint
-make test
-```
+Bug reports are also appreciated. Please include as much details as possible.
+
+Please format and check code quality before creating pull requst via: `make fmt lint`

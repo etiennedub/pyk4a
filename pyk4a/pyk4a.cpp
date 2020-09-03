@@ -2,7 +2,6 @@
 #include <numpy/arrayobject.h>
 
 #include <k4a/k4a.h>
-#include <k4arecord/playback.h>
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -23,8 +22,6 @@ extern "C" {
     } device_container;
     #define MAX_DEVICES 32
     device_container devices[MAX_DEVICES];
-
-    const char* capsule_playback_name = "pyk4a playback handle";
 
     static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
@@ -49,13 +46,6 @@ extern "C" {
     static void capsule_cleanup_capture(PyObject *capsule) {
         k4a_capture_t *capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule, NULL);
         k4a_capture_release(*capture);
-    }
-
-    static void capsule_cleanup_playback(PyObject *capsule) {
-        k4a_playback_t* playback_handle;
-
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
-        free(playback_handle);
     }
 
     static PyObject* device_open(PyObject* self, PyObject* args){
@@ -720,116 +710,6 @@ extern "C" {
         return Py_BuildValue("II(fff)", res, valid, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
 
-    static PyObject* playback_open(PyObject* self, PyObject *args) {
-        int thread_safe;
-        PyThreadState *thread_state;
-        k4a_result_t result;
-        const char* file_name;
-        k4a_playback_t* playback_handle = (k4a_playback_t*) malloc(sizeof(k4a_playback_t));
-
-        if (playback_handle == NULL) {
-            fprintf(stderr, "Cannot allocate memory");
-            return Py_BuildValue("Is", K4A_RESULT_FAILED, NULL);
-        }
-
-        PyArg_ParseTuple(args, "sp", &file_name, &thread_safe);
-
-        thread_state = _gil_release(thread_safe);
-        result = k4a_playback_open(file_name, playback_handle);
-        _gil_restore(thread_state);
-
-        if (result == K4A_RESULT_FAILED ) {
-            free(playback_handle);
-            return Py_BuildValue("Is", result, NULL);
-        }
-
-        PyObject *capsule = PyCapsule_New(playback_handle, capsule_playback_name, capsule_cleanup_playback);
-        return Py_BuildValue("IN", result, capsule);
-    }
-
-    static PyObject* playback_close(PyObject* self, PyObject *args) {
-        int thread_safe;
-        PyThreadState *thread_state;
-        PyObject *capsule;
-        k4a_playback_t* playback_handle;
-
-        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
-
-        thread_state = _gil_release(thread_safe);
-        k4a_playback_close(*playback_handle);
-        _gil_restore(thread_state);
-
-        return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
-    }
-
-    static PyObject* playback_get_recording_length_usec(PyObject* self, PyObject *args) {
-
-        int thread_safe;
-        PyThreadState *thread_state;
-        PyObject *capsule;
-        k4a_playback_t* playback_handle;
-        uint64_t recording_length;
-
-        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
-
-        thread_state = _gil_release(thread_safe);
-        recording_length = k4a_playback_get_recording_length_usec(*playback_handle);
-        _gil_restore(thread_state);
-
-        return Py_BuildValue("K", recording_length);
-    }
-
-
-    static PyObject* playback_get_calibration(PyObject* self, PyObject* args){
-        int thread_safe;
-        PyThreadState *thread_state;
-        PyObject *capsule;
-        k4a_playback_t* playback_handle;
-        k4a_buffer_result_t result;
-        size_t data_size;
-
-        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
-
-        thread_state = _gil_release(thread_safe);
-        result = k4a_playback_get_raw_calibration(*playback_handle, NULL, &data_size);
-        if (result == K4A_BUFFER_RESULT_FAILED) {
-            _gil_restore(thread_state);
-            return Py_BuildValue("Is", result, NULL);
-        }
-        uint8_t* data = (uint8_t*) malloc(data_size);
-        result = k4a_playback_get_raw_calibration(*playback_handle, data, &data_size);
-        _gil_restore(thread_state);
-        if (result != K4A_BUFFER_RESULT_SUCCEEDED) {
-            free(data);
-            return Py_BuildValue("Is", result, NULL);
-        }
-        PyObject* res = Py_BuildValue("Is", result, data);
-        free(data);
-        return res;
-    }
-
-    static PyObject* playback_seek_timestamp(PyObject* self, PyObject *args) {
-        int thread_safe;
-        PyThreadState *thread_state;
-        PyObject *capsule;
-        k4a_playback_t* playback_handle;
-        uint64_t offset;
-        k4a_playback_seek_origin_t origin;
-        k4a_result_t result;
-
-        PyArg_ParseTuple(args, "OpKI", &capsule, &thread_safe, &offset, &origin);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
-
-        thread_state = _gil_release(thread_safe);
-        result = k4a_playback_seek_timestamp(*playback_handle, offset, origin);
-        _gil_restore(thread_state);
-
-        return Py_BuildValue("I", result);
-    }
-
     struct module_state
     {
         PyObject *error;
@@ -859,11 +739,6 @@ extern "C" {
         {"transformation_depth_image_to_point_cloud", transformation_depth_image_to_point_cloud, METH_VARARGS, "Transforms the depth map to a point cloud."},
         {"calibration_3d_to_3d", calibration_3d_to_3d, METH_VARARGS, "Transforms the coordinates between 2 3D systems"},
         {"calibration_2d_to_3d", calibration_2d_to_3d, METH_VARARGS, "Transforms the coordinates between a pixel and a 3D system"},
-        {"playback_open", playback_open, METH_VARARGS, "Open file for playback"},
-        {"playback_close", playback_close, METH_VARARGS, "Close opened playback"},
-        {"playback_get_recording_length_usec", playback_get_recording_length_usec, METH_VARARGS, "Return recording length"},
-        {"playback_get_calibration", playback_get_calibration, METH_VARARGS, "Extract calibration from recording"},
-        {"playback_seek_timestamp", playback_seek_timestamp, METH_VARARGS, "Seek playback file to specified position"},
         {NULL, NULL, 0, NULL}
     };
 

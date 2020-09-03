@@ -15,7 +15,7 @@ class get_numpy_include:
 module = Extension('k4a_module',
                    sources=['pyk4a/pyk4a.cpp'],
                    include_dirs=[get_numpy_include()],
-                   libraries=['k4a', 'k4arecord'])
+                   libraries=['k4a'])
 
 setup(name='pyk4a',
       version='1.0',
