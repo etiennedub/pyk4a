@@ -2,12 +2,11 @@ import sys
 from enum import Enum
 from typing import Any, Optional, Tuple
 
-import numpy as np
-
 import k4a_module
 
 from .calibration import Calibration
-from .config import ColorControlCommand, ColorControlMode, ColorFormat, Config
+from .capture import PyK4ACapture
+from .config import ColorControlCommand, ColorControlMode, Config
 
 
 if sys.version_info < (3, 8):
@@ -149,7 +148,9 @@ class PyK4A:
         res, capture_capsule = k4a_module.device_get_capture(self._device_handle, self.thread_safe, timeout)
         self._verify_error(res)
 
-        capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
+        capture = PyK4ACapture(
+            calibration=self.calibration, capture_handle=capture_capsule, thread_safe=self.thread_safe
+        )
         return capture
 
     def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Optional["ImuSample"]:
@@ -302,76 +303,6 @@ class PyK4A:
     def _validate_is_opened(self):
         if not self.opened:
             raise K4AException("Device is not opened")
-
-
-class PyK4ACapture:
-    def __init__(self, device: PyK4A, capture_capsule: object):
-        # capture is a PyCapsule containing pointer to k4a_capture_t.
-        # use properties instead of attributes
-        self.device: PyK4A = device
-        self._color: Optional[np.ndarray] = None
-        self._depth: Optional[np.ndarray] = None
-        self._ir: Optional[np.ndarray] = None
-        self._depth_point_cloud: Optional[np.ndarray] = None
-        self._transformed_depth: Optional[np.ndarray] = None
-        self._transformed_depth_point_cloud: Optional[np.ndarray] = None
-        self._transformed_color: Optional[np.ndarray] = None
-        self._cap: object = capture_capsule  # built-in PyCapsule
-
-    @property
-    def color(self) -> Optional[np.ndarray]:
-        if self._color is None:
-            self._color = k4a_module.capture_get_color_image(self.device.thread_safe, self._cap)
-        return self._color
-
-    @property
-    def ir(self) -> Optional[np.ndarray]:
-        if self._ir is None:
-            self._ir = k4a_module.capture_get_ir_image(self.device.thread_safe, self._cap)
-        return self._ir
-
-    @property
-    def depth(self) -> Optional[np.ndarray]:
-        if self._depth is None:
-            self._depth = k4a_module.capture_get_depth_image(self.device.thread_safe, self._cap)
-        return self._depth
-
-    @property
-    def transformed_depth(self) -> Optional[np.ndarray]:
-        if self._transformed_depth is None and self.depth is not None:
-            self._transformed_depth = k4a_module.transformation_depth_image_to_color_camera(
-                self.device._device_id, self.device.thread_safe, self.depth, self.device._config.color_resolution,
-            )
-        return self._transformed_depth
-
-    @property
-    def depth_point_cloud(self) -> Optional[np.ndarray]:
-        if self._depth_point_cloud is None and self.depth is not None:
-            self._depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
-                self.device._device_id, self.device.thread_safe, self.depth, True
-            )
-        return self._depth_point_cloud
-
-    @property
-    def transformed_depth_point_cloud(self) -> Optional[np.ndarray]:
-        if self._transformed_depth_point_cloud is None and self.transformed_depth is not None:
-            self._transformed_depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
-                self.device._device_id, self.device.thread_safe, self.transformed_depth, False
-            )
-        return self._transformed_depth_point_cloud
-
-    @property
-    def transformed_color(self) -> Optional[np.ndarray]:
-        if self._transformed_color is None and self.depth is not None and self.color is not None:
-            if self.device._config.color_format != ColorFormat.BGRA32:
-                raise RuntimeError(
-                    "color image must be of format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
-                    "transformation_color_image_to_depth_camera"
-                )
-            self._transformed_color = k4a_module.transformation_color_image_to_depth_camera(
-                self.device._device_id, self.device.thread_safe, self.depth, self.color
-            )
-        return self._transformed_color
 
 
 class ImuSample(TypedDict):

@@ -1,4 +1,5 @@
 from .calibration import Calibration
+from .capture import PyK4ACapture
 from .config import (
     FPS,
     ColorControlCommand,
@@ -10,7 +11,7 @@ from .config import (
     WiredSyncMode,
 )
 from .playback import PyK4APlayback, SeekOrigin
-from .pyk4a import K4AException, K4ATimeoutException, PyK4A, PyK4ACapture
+from .pyk4a import K4AException, K4ATimeoutException, PyK4A
 
 
 __all__ = (

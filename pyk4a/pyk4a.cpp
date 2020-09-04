@@ -84,7 +84,7 @@ extern "C" {
 
         if (device_handle == NULL) {
             fprintf(stderr, "Cannot allocate memory");
-            return Py_BuildValue("Is", K4A_RESULT_FAILED, NULL);
+            return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
 
         thread_state = _gil_release(thread_safe);
@@ -632,82 +632,103 @@ extern "C" {
     }
 
     static PyObject* capture_get_color_image(PyObject* self, PyObject* args){
+        k4a_capture_t* capture_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
-        PyObject *capsule_capture;
-        k4a_capture_t *capture;
         k4a_result_t res;
-        PyArg_ParseTuple(args, "pO", &thread_safe, &capsule_capture);
 
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        capture_handle = (k4a_capture_t*)PyCapsule_GetPointer(capsule, capsule_capture_name);
 
-        capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, capsule_capture_name);
-        k4a_image_t* color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        if (image == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("");
+        }
+
         thread_state = _gil_release(thread_safe);
-        *color_image = k4a_capture_get_color_image(*capture);
+        *image = k4a_capture_get_color_image(*capture_handle);
         _gil_restore(thread_state);
-        PyArrayObject* np_color_image;
-        if (color_image) {
-            res = k4a_image_to_numpy(color_image, &np_color_image);
+
+        PyArrayObject* np_image;
+        if (image) {
+            res = k4a_image_to_numpy(image, &np_image);
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            return PyArray_Return(np_color_image);
+            return PyArray_Return(np_image);
         }
         else {
-            free(color_image);
+            free(image);
             return Py_BuildValue("");
         }
     }
 
     static PyObject* capture_get_depth_image(PyObject* self, PyObject* args){
+        k4a_capture_t* capture_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
-        PyObject *capsule_capture;
-        k4a_capture_t *capture;
         k4a_result_t res;
-        PyArg_ParseTuple(args, "pO", &thread_safe, &capsule_capture);
 
-        capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, capsule_capture_name);
-        thread_state = _gil_release(thread_safe);
-        k4a_image_t* depth_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
-        *depth_image = k4a_capture_get_depth_image(*capture);
-        _gil_restore(thread_state);
-        PyArrayObject* np_depth_image;
-        if (depth_image) {
-            res = k4a_image_to_numpy(depth_image, &np_depth_image);
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        capture_handle = (k4a_capture_t*)PyCapsule_GetPointer(capsule, capsule_capture_name);
+
+        k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        if (image == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("");
         }
+
+        thread_state = _gil_release(thread_safe);
+        *image = k4a_capture_get_depth_image(*capture_handle);
+        _gil_restore(thread_state);
+
+        PyArrayObject* np_image;
+        if (image) {
+            res = k4a_image_to_numpy(image, &np_image);
+        }
+
         if (K4A_RESULT_SUCCEEDED == res) {
-            return PyArray_Return(np_depth_image);
+            return PyArray_Return(np_image);
         }
         else {
-            free(depth_image);
+            free(image);
             return Py_BuildValue("");
         }
     }
 
     static PyObject* capture_get_ir_image(PyObject* self, PyObject* args){
+        k4a_capture_t* capture_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
-        PyObject *capsule_capture;
-        k4a_capture_t *capture;
         k4a_result_t res;
-        PyArg_ParseTuple(args, "pO", &thread_safe, &capsule_capture);
 
-        capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, capsule_capture_name);
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        capture_handle = (k4a_capture_t*)PyCapsule_GetPointer(capsule, capsule_capture_name);
+
+        k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        if (image == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("");
+        }
+
         thread_state = _gil_release(thread_safe);
-        k4a_image_t* ir_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
-        *ir_image = k4a_capture_get_ir_image(*capture);
+        *image = k4a_capture_get_ir_image(*capture_handle);
         _gil_restore(thread_state);
-        PyArrayObject* np_ir_image;
-        if (ir_image) {
-            res = k4a_image_to_numpy(ir_image, &np_ir_image);
+
+        PyArrayObject* np_image;
+        if (image) {
+            res = k4a_image_to_numpy(image, &np_image);
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            return PyArray_Return(np_ir_image);
+            return PyArray_Return(np_image);
         }
         else {
-            free(ir_image);
+            free(image);
             return Py_BuildValue("");
         }
     }
