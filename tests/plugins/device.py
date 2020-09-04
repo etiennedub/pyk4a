@@ -6,6 +6,7 @@ import pytest
 
 from pyk4a.pyk4a import ColorControlCapabilities, ColorControlCommand, ColorControlMode, Result
 
+from .calibration import CalibrationHandle
 from .capture import random_capture
 
 
@@ -228,6 +229,10 @@ def patch_module_device(monkeypatch):
                 return Result.Failed.value, None
             return Result.Success.value, (36.6, (0.1, 9.8, 0.005), time.time_ns(), (0.1, 0.2, 0.3), time.time_ns())
 
+        def device_get_calibration(self, depth_mode: int, color_resolution: int) -> Tuple[int, Optional[object]]:
+            assert self._opened is True
+            return Result.Success.value, CalibrationHandle(depth_mode=depth_mode, color_resolution=color_resolution)
+
     def _device_open(device_id: int, thread_safe: bool) -> Tuple[int, object]:
         if device_id not in DEVICE_METAS:
             return Result.Failed.value, None
@@ -284,6 +289,11 @@ def patch_module_device(monkeypatch):
     ) -> Tuple[int, Tuple[float, Tuple[float, float, float], int, Tuple[float, float, float], int]]:
         return capsule.device_get_imu_sample()
 
+    def _device_get_calibration(
+        capsule: DeviceHandle, thread_safe, depth_mode: int, color_resolution: int
+    ) -> Tuple[int, Optional[object]]:
+        return capsule.device_get_calibration(depth_mode, color_resolution)
+
     monkeypatch.setattr("k4a_module.device_open", _device_open)
     monkeypatch.setattr("k4a_module.device_close", _device_close)
     monkeypatch.setattr("k4a_module.device_get_sync_jack", _device_get_sync_jack)
@@ -296,6 +306,7 @@ def patch_module_device(monkeypatch):
     monkeypatch.setattr("k4a_module.device_stop_imu", _device_stop_imu)
     monkeypatch.setattr("k4a_module.device_get_capture", _device_get_capture)
     monkeypatch.setattr("k4a_module.device_get_imu_sample", _device_get_imu_sample)
+    monkeypatch.setattr("k4a_module.device_get_calibration", _device_get_calibration)
 
 
 @pytest.fixture()

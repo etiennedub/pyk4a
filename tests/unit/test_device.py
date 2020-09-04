@@ -132,6 +132,13 @@ class TestProperties:
         device.reset_color_control_to_default()
         assert device.brightness == 128
 
+    @staticmethod
+    def test_calibration(device: PyK4A):
+        device.open()
+        device._start_cameras()
+        calibration = device.calibration
+        assert calibration
+
 
 class TestCameras:
     @staticmethod

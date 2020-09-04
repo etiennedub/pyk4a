@@ -5,7 +5,9 @@ from typing import Any, Optional, Tuple
 import numpy as np
 
 import k4a_module
-from pyk4a.config import ColorControlCommand, ColorControlMode, ColorFormat, Config
+
+from .calibration import Calibration
+from .config import ColorControlCommand, ColorControlMode, ColorFormat, Config
 
 
 if sys.version_info < (3, 8):
@@ -37,6 +39,7 @@ class PyK4A:
         self._config: Config = config if (config is not None) else Config()
         self.thread_safe = thread_safe
         self._device_handle: Optional[object] = None
+        self._calibration: Optional[Calibration] = None
         self.is_running = False
 
     def __del__(self):
@@ -275,6 +278,18 @@ class PyK4A:
         for cmd in ColorControlCommand:
             capability = self._get_color_control_capabilities(cmd)
             self._set_color_control(cmd, capability["default_value"], capability["default_mode"])
+
+    @property
+    def calibration(self) -> Calibration:
+        self._validate_is_opened()
+        if not self._calibration:
+            res, calibration_handle = k4a_module.device_get_calibration(
+                self._device_handle, self.thread_safe, self._config.depth_mode, self._config.color_resolution
+            )
+
+            self._calibration = Calibration(calibration_handle)
+            self._verify_error(res)
+        return self._calibration
 
     @staticmethod
     def _verify_error(res):

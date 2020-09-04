@@ -30,10 +30,10 @@ lint:
 	mypy $(SOURCES)
 
 test:
-	pytest --cov=pyk4a
+	pytest --cov=pyk4a --verbose
 
 test-hardware:
-	pytest --cov=pyk4a  -m "device"
+	pytest --cov=pyk4a  -m "device" --verbose
 
 test-no-hardware:
-	pytest --cov=pyk4a  -m "not device"
+	pytest --cov=pyk4a  -m "not device" --verbose

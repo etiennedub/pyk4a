@@ -1,4 +1,4 @@
-from .calibration import Calibration, CalibrationType
+from .calibration import Calibration
 from .config import (
     FPS,
     ColorControlCommand,
@@ -15,7 +15,6 @@ from .pyk4a import K4AException, K4ATimeoutException, PyK4A, PyK4ACapture
 
 __all__ = (
     "Calibration",
-    "CalibrationType",
     "FPS",
     "ColorControlCommand",
     "ColorControlMode",
