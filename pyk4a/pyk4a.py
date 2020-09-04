@@ -142,6 +142,7 @@ class PyK4A:
         If using any ColorFormat other than ColorFormat.BGRA32, the color image must be
         decoded. See example/color_formats.py
         """
+        self._validate_is_opened()
         res, capture_capsule = k4a_module.device_get_capture(self._device_handle, self.thread_safe, timeout)
         self._verify_error(res)
 
@@ -149,7 +150,8 @@ class PyK4A:
         return capture
 
     def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Optional["ImuSample"]:
-        res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, self.thread_safe, timeout)
+        self._validate_is_opened()
+        res, imu_sample = k4a_module.device_get_imu_sample(self._device_handle, self.thread_safe, timeout)
         self._verify_error(res)
         return imu_sample
 

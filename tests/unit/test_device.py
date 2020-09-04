@@ -131,3 +131,32 @@ class TestProperties:
         assert device.brightness == 123
         device.reset_color_control_to_default()
         assert device.brightness == 128
+
+
+class TestCameras:
+    @staticmethod
+    def test_capture_on_closed_device(device: PyK4A):
+        with pytest.raises(K4AException, match="Device is not opened"):
+            device.get_capture()
+
+    @staticmethod
+    def test_get_capture(device: PyK4A):
+        device.open()
+        device._start_cameras()
+        capture = device.get_capture()
+        assert capture is not None
+
+
+class TestIMU:
+    @staticmethod
+    def test_get_imu_sample_on_closed_device(device: PyK4A):
+        with pytest.raises(K4AException, match="Device is not opened"):
+            device.get_imu_sample()
+
+    @staticmethod
+    def test_get_imu_sample(device: PyK4A):
+        device.open()
+        device._start_cameras()
+        device._start_imu()
+        sample = device.get_imu_sample()
+        assert sample

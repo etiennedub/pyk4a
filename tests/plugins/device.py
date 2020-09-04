@@ -1,9 +1,12 @@
+import time
 from dataclasses import dataclass
-from typing import Any, Mapping, Tuple
+from typing import Any, Mapping, Optional, Tuple
 
 import pytest
 
 from pyk4a.pyk4a import ColorControlCapabilities, ColorControlCommand, ColorControlMode, Result
+
+from .capture import random_capture
 
 
 @dataclass(frozen=True)
@@ -119,6 +122,8 @@ def patch_module_device(monkeypatch):
         def __init__(self, device_id: int):
             self._meta: DeviceMeta = DEVICE_METAS[device_id]
             self._opened = True
+            self._cameras_started = False
+            self._imu_started = False
             self._color_controls: Mapping[ColorControlCommand, ColorControl] = self._default_color_controls()
 
         def _default_color_controls(self) -> Mapping[ColorControlCommand, ColorControl]:
@@ -130,18 +135,21 @@ def patch_module_device(monkeypatch):
             return ret
 
         def close(self) -> int:
-            assert self._opened
+            assert self._opened is True
             self._opened = False
             return Result.Success.value
 
         def get_sync_jack(self) -> Tuple[int, bool, bool]:
+            assert self._opened is True
             return Result.Success.value, self._meta.jack_in, self._meta.jack_out
 
         def device_get_color_control(self, cmd: int) -> Tuple[int, int, int]:
+            assert self._opened is True
             control = self._color_controls[ColorControlCommand(cmd)]
             return Result.Success.value, control.mode, control.value
 
         def device_set_color_control(self, cmd: int, mode: int, value: int):
+            assert self._opened is True
             command = ColorControlCommand(cmd)
             control = self._color_controls[command]
             for color_control_meta in self._meta.color_controls:
@@ -165,6 +173,7 @@ def patch_module_device(monkeypatch):
             return Result.Success.value
 
         def device_get_color_control_capabilities(self, cmd: int) -> Tuple[int, ColorControlCapabilities]:
+            assert self._opened is True
             command = ColorControlCommand(cmd)
             for color_control_meta in self._meta.color_controls:
                 if color_control_meta["color_control_command"] == command:
@@ -175,27 +184,105 @@ def patch_module_device(monkeypatch):
                 raise ValueError(f"Unknown cmd: {cmd}")
             return Result.Success.value, control_meta
 
-    def _device_open(device_id: int, thread_safe: bool):
+        def device_start_cameras(self) -> int:
+            assert self._opened is True
+            if self._cameras_started:
+                return Result.Failed.value
+            self._cameras_started = True
+            return Result.Success.value
+
+        def device_stop_cameras(self) -> int:
+            assert self._opened is True
+            if not self._cameras_started:
+                return Result.Failed.value
+            self._cameras_started = False
+            return Result.Success.value
+
+        def device_start_imu(self) -> int:
+            assert self._opened is True
+            if not self._cameras_started:  # imu didnt work without color camera
+                return Result.Failed.value
+            if self._imu_started:
+                return Result.Failed.value
+            self._imu_started = True
+            return Result.Success.value
+
+        def device_stop_imu(self) -> int:
+            assert self._opened is True
+            if not self._imu_started:
+                return Result.Failed.value
+            self._imu_started = False
+            return Result.Success.value
+
+        def device_get_capture(self) -> Tuple[int, Optional[object]]:
+            assert self._opened is True
+            if not self._cameras_started:
+                return Result.Failed.value, None
+            return Result.Success.value, random_capture()
+
+        def device_get_imu_sample(
+            self,
+        ) -> Tuple[int, Optional[Tuple[float, Tuple[float, float, float], int, Tuple[float, float, float], int]]]:
+            assert self._opened is True
+            if not self._cameras_started:
+                return Result.Failed.value, None
+            return Result.Success.value, (36.6, (0.1, 9.8, 0.005), time.time_ns(), (0.1, 0.2, 0.3), time.time_ns())
+
+    def _device_open(device_id: int, thread_safe: bool) -> Tuple[int, object]:
         if device_id not in DEVICE_METAS:
             return Result.Failed.value, None
         capsule = DeviceHandle(device_id)
         return Result.Success.value, capsule
 
-    def _device_close(capsule: DeviceHandle, thread_safe: bool):
+    def _device_close(capsule: DeviceHandle, thread_safe: bool) -> int:
         capsule.close()
-        return Result.Success
+        return Result.Success.value
 
-    def _device_get_sync_jack(capsule: DeviceHandle, thread_safe: bool):
+    def _device_get_sync_jack(capsule: DeviceHandle, thread_safe: bool) -> Tuple[int, bool, bool]:
         return capsule.get_sync_jack()
 
-    def _device_get_color_control(capsule: DeviceHandle, thread_safe: bool, cmd: int):
+    def _device_get_color_control(capsule: DeviceHandle, thread_safe: bool, cmd: int) -> Tuple[int, int, int]:
         return capsule.device_get_color_control(cmd)
 
-    def _device_set_color_control(capsule: DeviceHandle, thread_safe: bool, cmd: int, mode: int, value: int):
+    def _device_set_color_control(capsule: DeviceHandle, thread_safe: bool, cmd: int, mode: int, value: int) -> int:
         return capsule.device_set_color_control(cmd, mode, value)
 
-    def _device_get_color_control_capabilities(capsule: DeviceHandle, thread_safe: bool, cmd: int):
+    def _device_get_color_control_capabilities(
+        capsule: DeviceHandle, thread_safe: bool, cmd: int
+    ) -> Tuple[int, ColorControlCapabilities]:
         return capsule.device_get_color_control_capabilities(cmd)
+
+    def _device_start_cameras(
+        capsule: DeviceHandle,
+        thread_safe: bool,
+        color_format: int,
+        color_resolution: int,
+        dept_mode: int,
+        camera_fps: int,
+        synchronized_images_only: bool,
+        depth_delay_off_color_usec: int,
+        wired_sync_mode: int,
+        subordinate_delay_off_master_usec: int,
+        disable_streaming_indicator: bool,
+    ) -> int:
+        return capsule.device_start_cameras()
+
+    def _device_stop_cameras(capsule: DeviceHandle, thread_safe: bool) -> int:
+        return capsule.device_stop_cameras()
+
+    def _device_start_imu(capsule: DeviceHandle, thread_safe: bool) -> int:
+        return capsule.device_start_imu()
+
+    def _device_stop_imu(capsule: DeviceHandle, thread_safe: bool) -> int:
+        return capsule.device_stop_imu()
+
+    def _device_get_capture(capsule: DeviceHandle, thread_safe: bool, timeout: int) -> Tuple[int, Optional[object]]:
+        return capsule.device_get_capture()
+
+    def _device_get_imu_sample(
+        capsule: DeviceHandle, thread_safe: bool, timeout: int
+    ) -> Tuple[int, Tuple[float, Tuple[float, float, float], int, Tuple[float, float, float], int]]:
+        return capsule.device_get_imu_sample()
 
     monkeypatch.setattr("k4a_module.device_open", _device_open)
     monkeypatch.setattr("k4a_module.device_close", _device_close)
@@ -203,6 +290,12 @@ def patch_module_device(monkeypatch):
     monkeypatch.setattr("k4a_module.device_get_color_control", _device_get_color_control)
     monkeypatch.setattr("k4a_module.device_set_color_control", _device_set_color_control)
     monkeypatch.setattr("k4a_module.device_get_color_control_capabilities", _device_get_color_control_capabilities)
+    monkeypatch.setattr("k4a_module.device_start_cameras", _device_start_cameras)
+    monkeypatch.setattr("k4a_module.device_stop_cameras", _device_stop_cameras)
+    monkeypatch.setattr("k4a_module.device_start_imu", _device_start_imu)
+    monkeypatch.setattr("k4a_module.device_stop_imu", _device_stop_imu)
+    monkeypatch.setattr("k4a_module.device_get_capture", _device_get_capture)
+    monkeypatch.setattr("k4a_module.device_get_imu_sample", _device_get_imu_sample)
 
 
 @pytest.fixture()

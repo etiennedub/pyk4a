@@ -70,7 +70,7 @@ class TestProperties:
         assert device.brightness == 128
 
 
-class TestCamera:
+class TestCameras:
     @staticmethod
     @pytest.mark.device
     def test_start_stop_cameras(device_id: int):
@@ -81,6 +81,17 @@ class TestCamera:
 
     @staticmethod
     @pytest.mark.device
+    def test_capture(device_id: int):
+        device = PyK4A(device_id=device_id)
+        device.open()
+        device._start_cameras()
+        capture = device.get_capture()
+        assert capture.color is not None
+
+
+class TestIMU:
+    @staticmethod
+    @pytest.mark.device
     def test_start_stop_imu(device_id: int):
         device = PyK4A(device_id=device_id)
         device.open()
@@ -89,13 +100,12 @@ class TestCamera:
         device._stop_imu()
         device._stop_cameras()
 
-
-class TestCapture:
     @staticmethod
     @pytest.mark.device
-    def test_capture(device_id: int):
+    def test_get_imu_sample(device_id: int):
         device = PyK4A(device_id=device_id)
         device.open()
         device._start_cameras()
-        capture = device.get_capture()
-        assert capture.color is not None
+        device._start_imu()
+        sample = device.get_imu_sample()
+        assert sample is not None

@@ -305,19 +305,21 @@ extern "C" {
     }
 
     static PyObject* device_get_imu_sample(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_device_t* device_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         long long timeout;
-        PyArg_ParseTuple(args, "IpL", &device_id, &thread_safe, &timeout);
-
         k4a_imu_sample_t imu_sample;
         k4a_wait_result_t result;
 
-        thread_state = _gil_release(thread_safe);
-        result = k4a_device_get_imu_sample(devices[device_id].device, &imu_sample, timeout);
+        PyArg_ParseTuple(args, "OpL", &capsule, &thread_safe, &timeout);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
 
+        thread_state = _gil_release(thread_safe);
+        result = k4a_device_get_imu_sample(*device_handle, &imu_sample, timeout);
         _gil_restore(thread_state);
+
         if (K4A_WAIT_RESULT_SUCCEEDED == result) {
             return Py_BuildValue("I{s:f,s:(fff),s:L,s:(fff),s:L}", result,
                     "temperature", imu_sample.temperature,
