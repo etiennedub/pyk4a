@@ -4,7 +4,7 @@ from typing import Any, Mapping, Optional, Tuple
 import pytest
 
 from pyk4a.playback import BufferResult, SeekOrigin, StreamResult
-from pyk4a.pyk4a import Result
+from pyk4a.result import Result
 
 
 @dataclass(frozen=True)

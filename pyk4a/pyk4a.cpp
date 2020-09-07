@@ -341,7 +341,6 @@ extern "C" {
 
     static PyObject* calibration_get_from_raw(PyObject* self, PyObject* args){
         k4a_calibration_t* calibration_handle;
-        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         char * raw_calibration;
@@ -349,7 +348,6 @@ extern "C" {
         k4a_color_resolution_t color_resolution;
         k4a_result_t result;
 
-        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
         PyArg_ParseTuple(args, "psII", &thread_safe, &raw_calibration, &depth_mode, &color_resolution);
 
         size_t raw_calibration_size = strlen(raw_calibration) + 1;
@@ -771,7 +769,8 @@ extern "C" {
     }
 
     static PyObject* calibration_3d_to_3d(PyObject* self, PyObject *args){
-        uint32_t device_id;
+        k4a_calibration_t* calibration_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_result_t res;
@@ -779,25 +778,25 @@ extern "C" {
         k4a_float3_t target_point3d_mm;
         k4a_calibration_type_t source_camera;
         k4a_calibration_type_t target_camera;
-        int source_point_x;
-        int source_point_y;
-        int source_point_z;
-        PyArg_ParseTuple(args, "Ip(fff)II",
-                &device_id,
+        float source_point_x;
+        float source_point_y;
+        float source_point_z;
+        PyArg_ParseTuple(args, "Op(fff)II",
+                &capsule,
                 &thread_safe,
                 &source_point_x,
                 &source_point_y,
                 &source_point_z,
                 &source_camera,
                 &target_camera);
+        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, capsule_calibration_name);
 
         thread_state = _gil_release(thread_safe);
         source_point3d_mm.xyz.x = source_point_x;
         source_point3d_mm.xyz.y = source_point_y;
         source_point3d_mm.xyz.z = source_point_z;
 
-
-        res = k4a_calibration_3d_to_3d (&devices[device_id].calibration_handle,
+        res = k4a_calibration_3d_to_3d (calibration_handle,
                                         &source_point3d_mm,
                                         source_camera,
                                         target_camera,
@@ -810,7 +809,8 @@ extern "C" {
     }
 
     static PyObject* calibration_2d_to_3d(PyObject* self, PyObject *args){
-        uint32_t device_id;
+        k4a_calibration_t* calibration_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         int source_point_x;
@@ -822,21 +822,22 @@ extern "C" {
         k4a_result_t res;
         k4a_float2_t source_point2d;
         k4a_float3_t target_point3d_mm;
-        PyArg_ParseTuple(args, "Ip(ff)fII",
-                &device_id,
+        PyArg_ParseTuple(args, "Op(ff)fII",
+                &capsule,
                 &thread_safe,
                 &source_point_x,
                 &source_point_y,
                 &source_depth_mm,
                 &source_camera,
                 &target_camera);
+        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, capsule_calibration_name);
 
         thread_state = _gil_release(thread_safe);
         source_point2d.xy.x = source_point_x;
         source_point2d.xy.y = source_point_y;
 
 
-        res = k4a_calibration_2d_to_3d (&devices[device_id].calibration_handle,
+        res = k4a_calibration_2d_to_3d (calibration_handle,
                                         &source_point2d,
                                         source_depth_mm,
                                         source_camera,

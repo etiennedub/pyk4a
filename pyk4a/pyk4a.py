@@ -6,8 +6,7 @@ import k4a_module
 from .calibration import Calibration
 from .capture import PyK4ACapture
 from .config import ColorControlCommand, ColorControlMode, Config
-from .error import K4AException, K4ATimeoutException
-from .result import Result
+from .errors import K4AException, _verify_error
 
 
 if sys.version_info < (3, 8):
@@ -86,29 +85,29 @@ class PyK4A:
 
     def _device_open(self):
         res, handle = k4a_module.device_open(self._device_id, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
         self._device_handle = handle
 
     def _device_close(self):
         res = k4a_module.device_close(self._device_handle, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
         self._device_handle = None
 
     def _start_cameras(self):
         res = k4a_module.device_start_cameras(self._device_handle, self.thread_safe, *self._config.unpack())
-        self._verify_error(res)
+        _verify_error(res)
 
     def _start_imu(self):
         res = k4a_module.device_start_imu(self._device_handle, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
 
     def _stop_cameras(self):
         res = k4a_module.device_stop_cameras(self._device_handle, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
 
     def _stop_imu(self):
         res = k4a_module.device_stop_imu(self._device_handle, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
 
     def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE,) -> "PyK4ACapture":
         """
@@ -128,7 +127,7 @@ class PyK4A:
         """
         self._validate_is_opened()
         res, capture_capsule = k4a_module.device_get_capture(self._device_handle, self.thread_safe, timeout)
-        self._verify_error(res)
+        _verify_error(res)
 
         capture = PyK4ACapture(
             calibration=self.calibration, capture_handle=capture_capsule, thread_safe=self.thread_safe
@@ -138,7 +137,7 @@ class PyK4A:
     def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Optional["ImuSample"]:
         self._validate_is_opened()
         res, imu_sample = k4a_module.device_get_imu_sample(self._device_handle, self.thread_safe, timeout)
-        self._verify_error(res)
+        _verify_error(res)
         return imu_sample
 
     @property
@@ -158,19 +157,19 @@ class PyK4A:
     def sync_jack_status(self) -> Tuple[bool, bool]:
         self._validate_is_opened()
         res, jack_in, jack_out = k4a_module.device_get_sync_jack(self._device_handle, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
         return jack_in == 1, jack_out == 1
 
     def _get_color_control(self, cmd: ColorControlCommand) -> Tuple[int, ColorControlMode]:
         self._validate_is_opened()
         res, mode, value = k4a_module.device_get_color_control(self._device_handle, self.thread_safe, cmd)
-        self._verify_error(res)
+        _verify_error(res)
         return value, ColorControlMode(mode)
 
     def _set_color_control(self, cmd: ColorControlCommand, value: int, mode=ColorControlMode.MANUAL):
         self._validate_is_opened()
         res = k4a_module.device_set_color_control(self._device_handle, self.thread_safe, cmd, mode, value)
-        self._verify_error(res)
+        _verify_error(res)
 
     @property
     def brightness(self) -> int:
@@ -267,7 +266,7 @@ class PyK4A:
     def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> Optional["ColorControlCapabilities"]:
         self._validate_is_opened()
         res, capabilities = k4a_module.device_get_color_control_capabilities(self._device_handle, self.thread_safe, cmd)
-        self._verify_error(res)
+        _verify_error(res)
         return capabilities
 
     def reset_color_control_to_default(self):
@@ -282,7 +281,7 @@ class PyK4A:
             res, calibration_handle = k4a_module.device_get_calibration(
                 self._device_handle, self.thread_safe, self._config.depth_mode, self._config.color_resolution
             )
-            self._verify_error(res)
+            _verify_error(res)
             self._calibration = Calibration(
                 handle=calibration_handle,
                 depth_mode=self._config.depth_mode,
@@ -290,14 +289,6 @@ class PyK4A:
                 thread_safe=self.thread_safe,
             )
         return self._calibration
-
-    @staticmethod
-    def _verify_error(res):
-        res = Result(res)
-        if res == Result.Failed:
-            raise K4AException()
-        elif res == Result.Timeout:
-            raise K4ATimeoutException()
 
     def _validate_is_opened(self):
         if not self.opened:

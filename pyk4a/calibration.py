@@ -1,10 +1,19 @@
-from typing import Optional
+from enum import IntEnum
+from typing import Optional, Tuple
 
 import k4a_module
 
 from .config import ColorResolution, DepthMode
-from .error import K4AException
-from .result import Result
+from .errors import _verify_error
+
+
+class CalibrationType(IntEnum):
+    UNKNOWN = -1  # Unknown
+    DEPTH = 0  # Depth Camera
+    COLOR = 1  # Color Sensor
+    GYRO = 2  # Gyroscope
+    ACCEL = 3  # Accelerometer
+    NUM = 4  # Number of types excluding unknown type
 
 
 class Calibration:
@@ -21,9 +30,8 @@ class Calibration:
     def from_raw(
         cls, value: str, depth_mode: DepthMode, color_resolution: ColorResolution, thread_safe: bool = True
     ) -> "Calibration":
-        result, handle = k4a_module.calibration_get_from_raw(thread_safe, value, depth_mode, color_resolution)
-        if Result(result) != Result.Success:
-            raise K4AException()
+        res, handle = k4a_module.calibration_get_from_raw(thread_safe, value, depth_mode, color_resolution)
+        _verify_error(res)
         return Calibration(
             handle=handle, depth_mode=depth_mode, color_resolution=color_resolution, thread_safe=thread_safe
         )
@@ -35,6 +43,34 @@ class Calibration:
     @property
     def color_resolution(self) -> ColorResolution:
         return self._color_resolution
+
+    def _convert_3d_to_3d(
+        self,
+        source_point_3d: Tuple[float, float, float],
+        source_camera: CalibrationType,
+        target_camera: CalibrationType,
+    ) -> Tuple[float, float, float]:
+        """
+            Transform a 3d point of a source coordinate system into a 3d
+            point of the target coordinate system.
+            :param source_point_3d  The 3D coordinates in millimeters representing a point in source_camera.
+            :param source_camera    The current camera.
+            :param target_camera    The target camera.
+            :return                 The 3D coordinates in millimeters representing a point in target camera.
+        """
+        # Device needs to be running for the functions to work
+        res, target_point_3d = k4a_module.calibration_3d_to_3d(
+            self._handle, self.thread_safe, source_point_3d, source_camera, target_camera,
+        )
+
+        _verify_error(res)
+        return target_point_3d
+
+    def depth_to_color_3d(self, point_3d: Tuple[float, float, float]) -> Tuple[float, float, float]:
+        return self._convert_3d_to_3d(point_3d, CalibrationType.DEPTH, CalibrationType.COLOR)
+
+    def color_to_depth_3d(self, point_3d: Tuple[float, float, float]) -> Tuple[float, float, float]:
+        return self._convert_3d_to_3d(point_3d, CalibrationType.COLOR, CalibrationType.DEPTH)
 
 
 # from enum import IntEnum

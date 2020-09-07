@@ -4,7 +4,8 @@ from typing import Any, Mapping, Optional, Tuple
 
 import pytest
 
-from pyk4a.pyk4a import ColorControlCapabilities, ColorControlCommand, ColorControlMode, Result
+from pyk4a import ColorControlCapabilities, ColorControlCommand, ColorControlMode
+from pyk4a.result import Result
 
 from .calibration import CalibrationHandle
 from .capture import random_capture

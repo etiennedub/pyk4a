@@ -10,9 +10,9 @@ from .config import (
     DepthMode,
     WiredSyncMode,
 )
-from .error import K4AException, K4ATimeoutException
+from .errors import K4AException, K4ATimeoutException
 from .playback import PyK4APlayback, SeekOrigin
-from .pyk4a import PyK4A
+from .pyk4a import ColorControlCapabilities, PyK4A
 
 
 __all__ = (
@@ -31,4 +31,5 @@ __all__ = (
     "PyK4ACapture",
     "PyK4APlayback",
     "SeekOrigin",
+    "ColorControlCapabilities",
 )

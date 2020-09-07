@@ -4,7 +4,8 @@ from typing import Optional, Union
 
 import k4a_module
 
-from .pyk4a import K4AException, Result
+from .errors import K4AException
+from .result import Result
 
 
 # k4a_buffer_result_t
