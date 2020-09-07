@@ -90,9 +90,8 @@ class PyK4A:
         self.is_running = False
 
     def save_calibration_json(self, path: Any):
-        calibration = k4a_module.device_get_calibration(self._device_id, self.thread_safe)
         with open(path, "w") as f:
-            f.write(calibration)
+            f.write(self.calibration_raw)
 
     def load_calibration_json(self, path: Any):
         with open(path, "r") as f:
@@ -158,6 +157,12 @@ class PyK4A:
         res, imu_sample = k4a_module.device_get_imu_sample(self._device_handle, self.thread_safe, timeout)
         self._verify_error(res)
         return imu_sample
+
+    @property
+    def calibration_raw(self) -> str:
+        self._validate_is_opened()
+        raw = k4a_module.device_get_raw_calibration(self._device_handle, self.thread_safe)
+        return raw
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:

@@ -92,3 +92,12 @@ class TestIMU:
         device._start_imu()
         sample = device.get_imu_sample()
         assert sample is not None
+
+
+class TestCalibrationRaw:
+    @staticmethod
+    @pytest.mark.device
+    def test_calibration_raw(device: PyK4A):
+        device.open()
+        raw = device.calibration_raw
+        assert raw

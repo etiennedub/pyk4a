@@ -233,6 +233,10 @@ def patch_module_device(monkeypatch):
             assert self._opened is True
             return Result.Success.value, CalibrationHandle(depth_mode=depth_mode, color_resolution=color_resolution)
 
+        def device_get_raw_calibration(self) -> Optional[str]:
+            assert self._opened is True
+            return "{}"
+
     def _device_open(device_id: int, thread_safe: bool) -> Tuple[int, object]:
         if device_id not in DEVICE_METAS:
             return Result.Failed.value, None
@@ -294,6 +298,9 @@ def patch_module_device(monkeypatch):
     ) -> Tuple[int, Optional[object]]:
         return capsule.device_get_calibration(depth_mode, color_resolution)
 
+    def _device_get_raw_calibration(capsule: DeviceHandle, thread_safe) -> Optional[str]:
+        return capsule.device_get_raw_calibration()
+
     monkeypatch.setattr("k4a_module.device_open", _device_open)
     monkeypatch.setattr("k4a_module.device_close", _device_close)
     monkeypatch.setattr("k4a_module.device_get_sync_jack", _device_get_sync_jack)
@@ -307,6 +314,7 @@ def patch_module_device(monkeypatch):
     monkeypatch.setattr("k4a_module.device_get_capture", _device_get_capture)
     monkeypatch.setattr("k4a_module.device_get_imu_sample", _device_get_imu_sample)
     monkeypatch.setattr("k4a_module.device_get_calibration", _device_get_calibration)
+    monkeypatch.setattr("k4a_module.device_get_raw_calibration", _device_get_raw_calibration)
 
 
 @pytest.fixture()

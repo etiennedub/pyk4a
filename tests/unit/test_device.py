@@ -167,3 +167,15 @@ class TestIMU:
         device._start_imu()
         sample = device.get_imu_sample()
         assert sample
+
+
+class TestCalibrationRaw:
+    @staticmethod
+    def test_calibration_raw_on_closed_device(device: PyK4A):
+        with pytest.raises(K4AException, match="Device is not opened"):
+            assert device.calibration_raw
+
+    @staticmethod
+    def test_calibration_raw(device: PyK4A):
+        device.open()
+        assert device.calibration_raw

@@ -1,6 +1,10 @@
+from typing import Optional
+
+
 class Calibration:
     def __init__(self, handle: object):
         self._handle = handle
+        self._raw: Optional[str] = None
 
 
 # from enum import IntEnum

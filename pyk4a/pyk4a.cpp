@@ -404,6 +404,40 @@ extern "C" {
 
     }
 
+    static PyObject* device_get_raw_calibration(PyObject* self, PyObject* args){
+        k4a_device_t* device_handle;
+        PyObject *capsule;
+        int thread_safe;
+        PyThreadState *thread_state;
+        k4a_buffer_result_t result;
+        size_t data_size;
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+
+        thread_state = _gil_release(thread_safe);
+        result = k4a_device_get_raw_calibration(*device_handle, NULL, &data_size);
+        if (result == K4A_BUFFER_RESULT_FAILED) {
+            _gil_restore(thread_state);
+            return Py_BuildValue("s", "");
+        }
+        uint8_t* data = (uint8_t*) malloc(data_size);
+        if (data == NULL) {
+            _gil_restore(thread_state);
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("s", "");
+        }
+        result = k4a_device_get_raw_calibration(*device_handle, data, &data_size);
+        _gil_restore(thread_state);
+        if (result == K4A_BUFFER_RESULT_FAILED) {
+            return Py_BuildValue("s", "");
+        }
+
+        PyObject* res = Py_BuildValue("s", data);
+        free(data);
+        return res;
+    }
+
     k4a_result_t k4a_image_to_numpy(k4a_image_t* img_src, PyArrayObject** img_dst){
         uint8_t* buffer = k4a_image_get_buffer(*img_src);
         npy_intp dims[3];
@@ -948,7 +982,8 @@ extern "C" {
         {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
         {"device_set_color_control", device_set_color_control, METH_VARARGS, "Set device color control."},
         {"device_get_color_control_capabilities", device_get_color_control_capabilities, METH_VARARGS, "Get device color control capabilities."},
-        {"device_get_calibration", device_get_calibration, METH_VARARGS, "Get device calibration in json format."},
+        {"device_get_calibration", device_get_calibration, METH_VARARGS, "Get device calibration handle."},
+        {"device_get_raw_calibration", device_get_raw_calibration, METH_VARARGS, "Get device calibration in text/json format."},
         {"calibration_set_from_raw", calibration_set_from_raw, METH_VARARGS, "Temporary set the calibration from a json format. Must be called after device_start_cameras."},
         {"transformation_depth_image_to_color_camera", transformation_depth_image_to_color_camera, METH_VARARGS, "Transforms the depth map into the geometry of the color camera."},
         {"transformation_color_image_to_depth_camera", transformation_color_image_to_depth_camera, METH_VARARGS, "Transforms the color image into the geometry of the depth camera."},

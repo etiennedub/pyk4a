@@ -1,7 +1,8 @@
+import numpy as np
 import pytest
 
 from pyk4a import PyK4A
-import numpy as np
+
 
 class TestCapture:
     @staticmethod
