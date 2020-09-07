@@ -1,10 +1,40 @@
 from typing import Optional
 
+import k4a_module
+
+from .config import ColorResolution, DepthMode
+from .error import K4AException
+from .result import Result
+
 
 class Calibration:
-    def __init__(self, handle: object):
+    def __init__(
+        self, handle: object, depth_mode: DepthMode, color_resolution: ColorResolution, thread_safe: bool = True
+    ):
         self._handle = handle
+        self.thread_safe = thread_safe
+        self._depth_mode = depth_mode
+        self._color_resolution = color_resolution
         self._raw: Optional[str] = None
+
+    @classmethod
+    def from_raw(
+        cls, value: str, depth_mode: DepthMode, color_resolution: ColorResolution, thread_safe: bool = True
+    ) -> "Calibration":
+        result, handle = k4a_module.calibration_get_from_raw(thread_safe, value, depth_mode, color_resolution)
+        if Result(result) != Result.Success:
+            raise K4AException()
+        return Calibration(
+            handle=handle, depth_mode=depth_mode, color_resolution=color_resolution, thread_safe=thread_safe
+        )
+
+    @property
+    def depth_mode(self) -> DepthMode:
+        return self._depth_mode
+
+    @property
+    def color_resolution(self) -> ColorResolution:
+        return self._color_resolution
 
 
 # from enum import IntEnum

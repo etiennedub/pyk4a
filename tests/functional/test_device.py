@@ -100,4 +100,7 @@ class TestCalibrationRaw:
     def test_calibration_raw(device: PyK4A):
         device.open()
         raw = device.calibration_raw
+        import sys
+
+        print(raw, file=sys.stderr)
         assert raw

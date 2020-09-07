@@ -1,5 +1,5 @@
 SOURCES=pyk4a example tests
-
+TESTS=tests
 .PHONY: setup fmt lint test help build
 .SILENT: help
 help:
@@ -30,10 +30,10 @@ lint:
 	mypy $(SOURCES)
 
 test:
-	pytest --cov=pyk4a --verbose
+	pytest --cov=pyk4a --verbose $(TESTS)
 
 test-hardware:
-	pytest --cov=pyk4a  -m "device" --verbose
+	pytest --cov=pyk4a  -m "device" --verbose $(TESTS)
 
 test-no-hardware:
-	pytest --cov=pyk4a  -m "not device" --verbose
+	pytest --cov=pyk4a  -m "not device" --verbose $(TESTS)

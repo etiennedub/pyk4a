@@ -339,36 +339,39 @@ extern "C" {
         return Py_BuildValue("I(0)", result, Py_None);
     }
 
-    static PyObject* calibration_set_from_raw(PyObject* self, PyObject* args){
-        uint32_t device_id;
+    static PyObject* calibration_get_from_raw(PyObject* self, PyObject* args){
+        k4a_calibration_t* calibration_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         char * raw_calibration;
-        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
-        PyArg_ParseTuple(args, "IpsIIIIpiIIp", &device_id, &thread_safe,
-                &raw_calibration, &config.color_format,
-                &config.color_resolution, &config.depth_mode,
-                &config.camera_fps, &config.synchronized_images_only,
-                &config.depth_delay_off_color_usec, &config.wired_sync_mode,
-                &config.subordinate_delay_off_master_usec,
-                &config.disable_streaming_indicator);
-        size_t raw_calibration_size = strlen(raw_calibration) + 1;
+        k4a_depth_mode_t depth_mode;
+        k4a_color_resolution_t color_resolution;
         k4a_result_t result;
+
+        k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+        PyArg_ParseTuple(args, "psII", &thread_safe, &raw_calibration, &depth_mode, &color_resolution);
+
+        size_t raw_calibration_size = strlen(raw_calibration) + 1;
+
+        calibration_handle = (k4a_calibration_t*) malloc(sizeof(k4a_calibration_t));
+        if (calibration_handle == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
+        }
 
         thread_state = _gil_release(thread_safe);
         result = k4a_calibration_get_from_raw(raw_calibration,
-                raw_calibration_size, config.depth_mode,
-                config.color_resolution, &devices[device_id].calibration_handle);
+                raw_calibration_size, depth_mode,
+                color_resolution, calibration_handle);
         if (result == K4A_RESULT_FAILED) {
             _gil_restore(thread_state);
-            return Py_BuildValue("I", K4A_RESULT_FAILED);
+            return Py_BuildValue("IN", result, Py_None);
         }
-        if (devices[device_id].transformation_handle) {
-            k4a_transformation_destroy(devices[device_id].transformation_handle);
-        }
-        devices[device_id].transformation_handle = k4a_transformation_create(&devices[device_id].calibration_handle);
         _gil_restore(thread_state);
-        return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
+        PyObject *calibration_capsule = PyCapsule_New(calibration_handle, capsule_calibration_name, capsule_cleanup_calibration);
+
+        return Py_BuildValue("IN", K4A_RESULT_SUCCEEDED, calibration_capsule);
     }
 
     static PyObject* device_get_calibration(PyObject* self, PyObject* args){
@@ -982,7 +985,7 @@ extern "C" {
         {"device_get_color_control_capabilities", device_get_color_control_capabilities, METH_VARARGS, "Get device color control capabilities."},
         {"device_get_calibration", device_get_calibration, METH_VARARGS, "Get device calibration handle."},
         {"device_get_raw_calibration", device_get_raw_calibration, METH_VARARGS, "Get device calibration in text/json format."},
-        {"calibration_set_from_raw", calibration_set_from_raw, METH_VARARGS, "Temporary set the calibration from a json format. Must be called after device_start_cameras."},
+        {"calibration_get_from_raw", calibration_get_from_raw, METH_VARARGS, "Create new calibration handle from raw json."},
         {"transformation_depth_image_to_color_camera", transformation_depth_image_to_color_camera, METH_VARARGS, "Transforms the depth map into the geometry of the color camera."},
         {"transformation_color_image_to_depth_camera", transformation_color_image_to_depth_camera, METH_VARARGS, "Transforms the color image into the geometry of the depth camera."},
         {"transformation_depth_image_to_point_cloud", transformation_depth_image_to_point_cloud, METH_VARARGS, "Transforms the depth map to a point cloud."},

@@ -231,7 +231,7 @@ def patch_module_device(monkeypatch):
 
         def device_get_calibration(self, depth_mode: int, color_resolution: int) -> Tuple[int, Optional[object]]:
             assert self._opened is True
-            return Result.Success.value, CalibrationHandle(depth_mode=depth_mode, color_resolution=color_resolution)
+            return Result.Success.value, CalibrationHandle()
 
         def device_get_raw_calibration(self) -> Optional[str]:
             assert self._opened is True

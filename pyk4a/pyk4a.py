@@ -1,5 +1,4 @@
 import sys
-from enum import Enum
 from typing import Any, Optional, Tuple
 
 import k4a_module
@@ -7,27 +6,14 @@ import k4a_module
 from .calibration import Calibration
 from .capture import PyK4ACapture
 from .config import ColorControlCommand, ColorControlMode, Config
+from .error import K4AException, K4ATimeoutException
+from .result import Result
 
 
 if sys.version_info < (3, 8):
     from typing_extensions import TypedDict
 else:
     from typing import TypedDict
-
-
-# k4a_wait_result_t
-class Result(Enum):
-    Success = 0
-    Failed = 1
-    Timeout = 2
-
-
-class K4AException(Exception):
-    pass
-
-
-class K4ATimeoutException(K4AException):
-    pass
 
 
 class PyK4A:
@@ -96,10 +82,7 @@ class PyK4A:
     def load_calibration_json(self, path: Any):
         with open(path, "r") as f:
             calibration = f.read()
-        res = k4a_module.calibration_set_from_raw(
-            self._device_id, self.thread_safe, calibration, *self._config.unpack()
-        )
-        self._verify_error(res)
+        self.calibration_raw = calibration
 
     def _device_open(self):
         res, handle = k4a_module.device_open(self._device_id, self.thread_safe)
@@ -163,6 +146,13 @@ class PyK4A:
         self._validate_is_opened()
         raw = k4a_module.device_get_raw_calibration(self._device_handle, self.thread_safe)
         return raw
+
+    @calibration_raw.setter
+    def calibration_raw(self, value: str):
+        self._validate_is_opened()
+        self._calibration = Calibration.from_raw(
+            value, self._config.depth_mode, self._config.color_resolution, self.thread_safe
+        )
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
@@ -292,9 +282,13 @@ class PyK4A:
             res, calibration_handle = k4a_module.device_get_calibration(
                 self._device_handle, self.thread_safe, self._config.depth_mode, self._config.color_resolution
             )
-
-            self._calibration = Calibration(calibration_handle)
             self._verify_error(res)
+            self._calibration = Calibration(
+                handle=calibration_handle,
+                depth_mode=self._config.depth_mode,
+                color_resolution=self._config.color_resolution,
+                thread_safe=self.thread_safe,
+            )
         return self._calibration
 
     @staticmethod
