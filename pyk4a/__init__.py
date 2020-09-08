@@ -1,4 +1,4 @@
-from .calibration import Calibration
+from .calibration import Calibration, CalibrationType
 from .capture import PyK4ACapture
 from .config import (
     FPS,
@@ -17,6 +17,7 @@ from .pyk4a import ColorControlCapabilities, PyK4A
 
 __all__ = (
     "Calibration",
+    "CalibrationType",
     "FPS",
     "ColorControlCommand",
     "ColorControlMode",

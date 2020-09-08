@@ -813,8 +813,8 @@ extern "C" {
         PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
-        int source_point_x;
-        int source_point_y;
+        float source_point_x;
+        float source_point_y;
         float source_depth_mm;
         int valid;
         k4a_calibration_type_t source_camera;
@@ -822,6 +822,7 @@ extern "C" {
         k4a_result_t res;
         k4a_float2_t source_point2d;
         k4a_float3_t target_point3d_mm;
+
         PyArg_ParseTuple(args, "Op(ff)fII",
                 &capsule,
                 &thread_safe,
@@ -835,7 +836,6 @@ extern "C" {
         thread_state = _gil_release(thread_safe);
         source_point2d.xy.x = source_point_x;
         source_point2d.xy.y = source_point_y;
-
 
         res = k4a_calibration_2d_to_3d (calibration_handle,
                                         &source_point2d,

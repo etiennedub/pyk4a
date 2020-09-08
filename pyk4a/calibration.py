@@ -72,6 +72,47 @@ class Calibration:
     def color_to_depth_3d(self, point_3d: Tuple[float, float, float]) -> Tuple[float, float, float]:
         return self._convert_3d_to_3d(point_3d, CalibrationType.COLOR, CalibrationType.DEPTH)
 
+    def _convert_2d_to_3d(
+        self,
+        source_pixel_2d: Tuple[float, float],
+        source_depth: float,
+        source_camera: CalibrationType,
+        target_camera: CalibrationType,
+    ) -> Tuple[float, float, float]:
+        """
+            Transform a 3d point of a source coordinate system into a 3d
+            point of the target coordinate system.
+            :param source_pixel_2d    The 2D coordinates in px of source_camera image.
+            :param source_depth       Depth in mm
+            :param source_camera      The current camera.
+            :param target_camera      The target camera.
+            :return                   The 3D coordinates in mm representing a point in target camera.
+        """
+        # Device needs to be running for the functions to work
+        res, valid, target_point_3d = k4a_module.calibration_2d_to_3d(
+            self._handle, self.thread_safe, source_pixel_2d, source_depth, source_camera, target_camera,
+        )
+
+        _verify_error(res)
+        if valid == 0:
+            raise ValueError(f"Coordinates {source_pixel_2d} are not valid in the calibration model")
+
+        return target_point_3d
+
+    def convert_2d_to_3d(
+        self,
+        coordinates: Tuple[float, float],
+        depth: float,
+        source_camera: CalibrationType,
+        target_camera: Optional[CalibrationType] = None,
+    ):
+        """
+            Transform a 2d pixel to a 3d point of the target coordinate system.
+        """
+        if target_camera is None:
+            target_camera = source_camera
+        return self._convert_2d_to_3d(coordinates, depth, source_camera, target_camera)
+
 
 # from enum import IntEnum
 # from typing import Optional, Tuple
