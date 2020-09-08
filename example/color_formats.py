@@ -25,27 +25,27 @@ def get_color_image_size(config, imshow=True):
 
 def convert_to_bgra_if_required(k4a, img_color):
     # examples for all possible pyk4a.ColorFormats
-    if k4a._config.color_format == pyk4a.ColorFormat.MJPG:
+    if k4a._config.color_format == pyk4a.ImageFormat.COLOR_MJPG:
         img_color = cv2.imdecode(img_color, cv2.IMREAD_COLOR)
-    elif k4a._config.color_format == pyk4a.ColorFormat.NV12:
+    elif k4a._config.color_format == pyk4a.ImageFormat.COLOR_NV12:
         img_color = cv2.cvtColor(img_color, cv2.COLOR_YUV2BGRA_NV12)
-        # this also works and it explains how the NV12 color format is stored in memory
+        # this also works and it explains how the COLOR_NV12 color format is stored in memory
         # h, w = img_color.shape[0:2]
         # h = h // 3 * 2
         # luminance = img_color[:h]
         # chroma = img_color[h:, :w//2]
         # img_color = cv2.cvtColorTwoPlane(luminance, chroma, cv2.COLOR_YUV2BGRA_NV12)
-    elif k4a._config.color_format == pyk4a.ColorFormat.YUY2:
+    elif k4a._config.color_format == pyk4a.ImageFormat.COLOR_YUY2:
         img_color = cv2.cvtColor(img_color, cv2.COLOR_YUV2BGRA_YUY2)
     return img_color
 
 
 if __name__ == "__main__":
     imshow = True
-    config_BGRA32 = Config(color_format=pyk4a.ColorFormat.BGRA32)
-    config_MJPG = Config(color_format=pyk4a.ColorFormat.MJPG)
-    config_NV12 = Config(color_format=pyk4a.ColorFormat.NV12)
-    config_YUY2 = Config(color_format=pyk4a.ColorFormat.YUY2)
+    config_BGRA32 = Config(color_format=pyk4a.ImageFormat.COLOR_BGRA32)
+    config_MJPG = Config(color_format=pyk4a.ImageFormat.COLOR_MJPG)
+    config_NV12 = Config(color_format=pyk4a.ImageFormat.COLOR_NV12)
+    config_YUY2 = Config(color_format=pyk4a.ImageFormat.COLOR_YUY2)
 
     nbytes_BGRA32 = get_color_image_size(config_BGRA32, imshow=imshow)
     nbytes_MJPG = get_color_image_size(config_MJPG, imshow=imshow)
@@ -57,4 +57,4 @@ if __name__ == "__main__":
 
     # output:
     # nbytes_BGRA32=3686400 nbytes_MJPG=229693
-    # BGRA32 is 16.04924834452944 larger
+    # COLOR_BGRA32 is 16.04924834452944 larger

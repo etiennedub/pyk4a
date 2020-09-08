@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 import k4a_module
 
 from .config import ColorResolution, DepthMode
-from .errors import _verify_error
+from .errors import K4AException, _verify_error
 
 
 class CalibrationType(IntEnum):
@@ -21,6 +21,7 @@ class Calibration:
         self, handle: object, depth_mode: DepthMode, color_resolution: ColorResolution, thread_safe: bool = True
     ):
         self._handle = handle
+        self._transformation_handle: Optional[object] = None
         self.thread_safe = thread_safe
         self._depth_mode = depth_mode
         self._color_resolution = color_resolution
@@ -112,6 +113,15 @@ class Calibration:
         if target_camera is None:
             target_camera = source_camera
         return self._convert_2d_to_3d(coordinates, depth, source_camera, target_camera)
+
+    @property
+    def _transformation(self) -> object:
+        if not self._transformation_handle:
+            handle = k4a_module.transformation_create(self._handle, self.thread_safe)
+            if not handle:
+                raise K4AException("Cannot create transformation handle")
+            self._transformation_handle = handle
+        return self._transformation_handle
 
 
 # from enum import IntEnum

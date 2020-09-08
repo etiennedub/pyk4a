@@ -7,7 +7,8 @@ from pyk4a import PyK4APlayback
 def info(playback: PyK4APlayback):
     print(f"Record length: {playback.length / 1000000: 0.2f} sec")
 
-    calibration_str = playback.calibration_json
+    calibration_str = playback.calibration_raw
+    print(calibration_str)
     calibration_formatted = dumps(loads(calibration_str), indent=2)
     print("=== Calibration ===")
     print(calibration_formatted)

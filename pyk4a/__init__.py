@@ -4,10 +4,10 @@ from .config import (
     FPS,
     ColorControlCommand,
     ColorControlMode,
-    ColorFormat,
     ColorResolution,
     Config,
     DepthMode,
+    ImageFormat,
     WiredSyncMode,
 )
 from .errors import K4AException, K4ATimeoutException
@@ -21,7 +21,7 @@ __all__ = (
     "FPS",
     "ColorControlCommand",
     "ColorControlMode",
-    "ColorFormat",
+    "ImageFormat",
     "ColorResolution",
     "Config",
     "DepthMode",

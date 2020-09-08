@@ -64,22 +64,47 @@ class TestPropertyLength:
         assert playback.length == 1234
 
 
-class TestPropertyCalibrationJson:
+class TestPropertyConfiguration:
     @staticmethod
     def test_validate_if_record_opened(playback: PyK4APlayback):
         with pytest.raises(K4AException, match="Playback not opened."):
-            assert playback.calibration_json
+            assert playback.configuration
+
+
+class TestPropertyCalibrationRaw:
+    @staticmethod
+    def test_validate_if_record_opened(playback: PyK4APlayback):
+        with pytest.raises(K4AException, match="Playback not opened."):
+            assert playback.calibration_raw
 
     @staticmethod
     def test_good_file(playback: PyK4APlayback):
         playback.open()
-        assert playback.calibration_json
+        assert playback.calibration_raw
 
     @staticmethod
     def test_bad_file(playback_bad: PyK4APlayback):
         playback_bad.open()
-        with pytest.raises(K4AException, match=r"Cannot read calibration from file"):
-            assert playback_bad.calibration_json
+        with pytest.raises(K4AException):
+            assert playback_bad.calibration_raw
+
+
+class TestPropertyCalibration:
+    @staticmethod
+    def test_validate_if_record_opened(playback: PyK4APlayback):
+        with pytest.raises(K4AException, match="Playback not opened."):
+            assert playback.calibration
+
+    @staticmethod
+    def test_good_file(playback: PyK4APlayback):
+        playback.open()
+        assert playback.calibration
+
+    @staticmethod
+    def test_bad_file(playback_bad: PyK4APlayback):
+        playback_bad.open()
+        with pytest.raises(K4AException):
+            assert playback_bad.calibration
 
 
 class TestSeek:

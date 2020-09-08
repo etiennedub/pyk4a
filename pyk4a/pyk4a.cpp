@@ -75,6 +75,11 @@ extern "C" {
         free(playback_handle);
     }
 
+    static void capsule_cleanup_transformation(PyObject *capsule) {
+        k4a_transformation_t *transformation = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, capsule_transformation_name);
+        k4a_transformation_destroy(*transformation);
+    }
+
     static PyObject* device_open(PyObject* self, PyObject* args){
         uint32_t device_id;
         int thread_safe;
@@ -200,7 +205,7 @@ extern "C" {
         _gil_restore(thread_state);
 
         if (result == K4A_RESULT_FAILED) {
-            return Py_BuildValue("I(0)", result, Py_None);
+            return Py_BuildValue("I()", result, Py_None);
         }
 
         return Py_BuildValue("I{s:I,s:O,s:i,s:i,s:i,s:i,s:I}", result,
@@ -336,7 +341,7 @@ extern "C" {
                     "gyro_timestamp", imu_sample.gyro_timestamp_usec);
         }
 
-        return Py_BuildValue("I(0)", result, Py_None);
+        return Py_BuildValue("I()", result, Py_None);
     }
 
     static PyObject* calibration_get_from_raw(PyObject* self, PyObject* args){
@@ -519,6 +524,26 @@ extern "C" {
                 (uint8_t*) img_src->data,
                 width_pixels * height_pixels * pixel_size,
                 NULL, NULL, img_dst);
+    }
+
+    static PyObject* transformation_create(PyObject* self, PyObject *args){
+        k4a_calibration_t* calibration_handle;
+        PyObject *capsule;
+        int thread_safe;
+        PyThreadState *thread_state;
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+
+        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, capsule_calibration_name);
+
+        thread_state = _gil_release(thread_safe);
+        k4a_transformation_t transformation_handle = k4a_transformation_create(calibration_handle);
+        _gil_restore(thread_state);
+        if (transformation_handle == NULL ) {
+            return Py_BuildValue("N", Py_None);
+        }
+        PyObject *transformation_capsule = PyCapsule_New(transformation_handle, capsule_transformation_name, capsule_cleanup_transformation);
+
+        return Py_BuildValue("N", transformation_capsule);
     }
 
     static PyObject* transformation_depth_image_to_color_camera(PyObject* self, PyObject* args){
@@ -803,7 +828,7 @@ extern "C" {
                                         &target_point3d_mm);
        _gil_restore(thread_state);
         if (res == K4A_RESULT_FAILED ) {
-            return Py_BuildValue("I(0)", res, Py_None);
+            return Py_BuildValue("I()", res, Py_None);
         }
         return Py_BuildValue("I(fff)", res, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
@@ -914,7 +939,7 @@ extern "C" {
     }
 
 
-    static PyObject* playback_get_calibration(PyObject* self, PyObject* args){
+    static PyObject* playback_get_raw_calibration(PyObject* self, PyObject* args){
         int thread_safe;
         PyThreadState *thread_state;
         PyObject *capsule;
@@ -962,6 +987,73 @@ extern "C" {
         return Py_BuildValue("I", result);
     }
 
+    static PyObject* playback_get_calibration(PyObject* self, PyObject *args) {
+        int thread_safe;
+        PyThreadState *thread_state;
+        PyObject *capsule;
+        k4a_playback_t* playback_handle;
+        k4a_calibration_t* calibration_handle;
+        k4a_result_t result;
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+
+        calibration_handle = (k4a_calibration_t*) malloc(sizeof(k4a_calibration_t));
+        if (calibration_handle == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
+        }
+
+        thread_state = _gil_release(thread_safe);
+        result = k4a_playback_get_calibration(*playback_handle, calibration_handle);
+        _gil_restore(thread_state);
+
+        if (result == K4A_RESULT_FAILED ) {
+            free(calibration_handle);
+            return Py_BuildValue("IN", result, Py_None);
+        }
+
+        PyObject *calibration_capsule = PyCapsule_New(calibration_handle, capsule_calibration_name, capsule_cleanup_calibration);
+
+        return Py_BuildValue("IN", result, calibration_capsule);
+    }
+
+    static PyObject* playback_get_record_configuration(PyObject* self, PyObject *args) {
+        int thread_safe;
+        PyThreadState *thread_state;
+        PyObject *capsule;
+        k4a_playback_t* playback_handle;
+        k4a_result_t result;
+        k4a_record_configuration_t config;
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+
+        thread_state = _gil_release(thread_safe);
+        result = k4a_playback_get_record_configuration(*playback_handle, &config);
+        _gil_restore(thread_state);
+
+        if (result == K4A_RESULT_FAILED ) {
+            return Py_BuildValue("I()", result, Py_None);
+        }
+
+        return Py_BuildValue("I(IIIIiiiiIIII)",
+            result,
+            config.color_format,
+            config.color_resolution,
+            config.depth_mode,
+            config.camera_fps,
+            config.color_track_enabled,
+            config.depth_track_enabled,
+            config.ir_track_enabled,
+            config.imu_track_enabled,
+            config.depth_delay_off_color_usec,
+            config.wired_sync_mode,
+            config.subordinate_delay_off_master_usec,
+            config.start_timestamp_offset_usec
+            );
+    }
+
     struct module_state
     {
         PyObject *error;
@@ -987,6 +1079,7 @@ extern "C" {
         {"device_get_calibration", device_get_calibration, METH_VARARGS, "Get device calibration handle."},
         {"device_get_raw_calibration", device_get_raw_calibration, METH_VARARGS, "Get device calibration in text/json format."},
         {"calibration_get_from_raw", calibration_get_from_raw, METH_VARARGS, "Create new calibration handle from raw json."},
+        {"transformation_create", transformation_create, METH_VARARGS, "Create transformation handle from calibration"},
         {"transformation_depth_image_to_color_camera", transformation_depth_image_to_color_camera, METH_VARARGS, "Transforms the depth map into the geometry of the color camera."},
         {"transformation_color_image_to_depth_camera", transformation_color_image_to_depth_camera, METH_VARARGS, "Transforms the color image into the geometry of the depth camera."},
         {"transformation_depth_image_to_point_cloud", transformation_depth_image_to_point_cloud, METH_VARARGS, "Transforms the depth map to a point cloud."},
@@ -995,8 +1088,10 @@ extern "C" {
         {"playback_open", playback_open, METH_VARARGS, "Open file for playback"},
         {"playback_close", playback_close, METH_VARARGS, "Close opened playback"},
         {"playback_get_recording_length_usec", playback_get_recording_length_usec, METH_VARARGS, "Return recording length"},
-        {"playback_get_calibration", playback_get_calibration, METH_VARARGS, "Extract calibration from recording"},
+        {"playback_get_calibration", playback_get_calibration, METH_VARARGS, "Extract calibration and create handle from recording"},
+        {"playback_get_raw_calibration", playback_get_raw_calibration, METH_VARARGS, "Extract calibration json from recording"},
         {"playback_seek_timestamp", playback_seek_timestamp, METH_VARARGS, "Seek playback file to specified position"},
+        {"playback_get_record_configuration", playback_get_record_configuration, METH_VARARGS, "Extract record configuration"},
         {NULL, NULL, 0, NULL}
     };
 

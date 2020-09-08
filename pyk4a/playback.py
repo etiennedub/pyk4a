@@ -1,10 +1,19 @@
+import sys
 from enum import IntEnum
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Tuple, Union
+
+
+if sys.version_info < (3, 8):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
 
 import k4a_module
 
-from .errors import K4AException
+from .calibration import Calibration
+from .config import FPS, ColorResolution, DepthMode, ImageFormat, WiredSyncMode
+from .errors import K4AException, _verify_error
 from .result import Result
 
 
@@ -28,6 +37,21 @@ class SeekOrigin(IntEnum):
     DEVICE_TIME = 2
 
 
+class Configuration(TypedDict):
+    color_format: ImageFormat
+    color_resolution: ColorResolution
+    depth_mode: DepthMode
+    camera_fps: FPS
+    color_track_enabled: bool
+    depth_track_enabled: bool
+    ir_track_enabled: bool
+    imu_track_enabled: bool
+    depth_delay_off_color_usec: int
+    wired_sync_mode: WiredSyncMode
+    subordinate_delay_off_master_usec: int
+    start_timestamp_offset_usec: int
+
+
 class PyK4APlayback:
     def __init__(self, path: Union[str, Path], thread_safe: bool = True):
         self._path: Path = Path(path)
@@ -35,6 +59,8 @@ class PyK4APlayback:
         self._handle: Optional[object] = None
         self._length: Optional[int] = None
         self._calibration_json: Optional[str] = None
+        self._calibration: Optional[Calibration] = None
+        self._configuration: Optional[Configuration] = None
 
     def __del__(self):
         if self._handle:
@@ -48,6 +74,30 @@ class PyK4APlayback:
         return self._path
 
     @property
+    def configuration(self) -> Configuration:
+        self._validate_is_open()
+        if self._configuration is None:
+            res, conf = k4a_module.playback_get_record_configuration(
+                self._handle, self.thread_safe
+            )  # type: int, Tuple[Any,...]
+            _verify_error(res)
+            self._configuration = Configuration(
+                color_format=ImageFormat(conf[0]),
+                color_resolution=ColorResolution(conf[1]),
+                depth_mode=DepthMode(conf[2]),
+                camera_fps=FPS(conf[3]),
+                color_track_enabled=bool(conf[4]),
+                depth_track_enabled=bool(conf[5]),
+                ir_track_enabled=bool(conf[6]),
+                imu_track_enabled=bool(conf[7]),
+                depth_delay_off_color_usec=conf[8],
+                wired_sync_mode=WiredSyncMode(conf[9]),
+                subordinate_delay_off_master_usec=conf[10],
+                start_timestamp_offset_usec=conf[11],
+            )
+        return self._configuration
+
+    @property
     def length(self) -> int:
         """
             Record length in usec
@@ -58,17 +108,32 @@ class PyK4APlayback:
         return self._length
 
     @property
-    def calibration_json(self) -> str:
-        """
-            Calibration parameters as JSON string
-        """
-        if self._calibration_json is None:
-            self._validate_is_open()
-            result, self._calibration_json = k4a_module.playback_get_calibration(self._handle, self.thread_safe)
-            typed_result = BufferResult(result)
-            if typed_result != BufferResult.Success:  # pragma: no cover
-                raise K4AException(f"Cannot read calibration from file: {typed_result}")
-        return self._calibration_json
+    def calibration_raw(self) -> str:
+        self._validate_is_open()
+        res, raw = k4a_module.playback_get_raw_calibration(self._handle, self.thread_safe)
+        _verify_error(res)
+        return raw
+
+    # @calibration_raw.setter
+    # def calibration_raw(self, value: str):
+    #     self._validate_is_open()
+    #     self._calibration = Calibration.from_raw(
+    #         value, self._config.depth_mode, self._config.color_resolution, self.thread_safe
+    #     )
+
+    @property
+    def calibration(self) -> Calibration:
+        self._validate_is_open()
+        if self._calibration is None:
+            res, handle = k4a_module.playback_get_calibration(self._handle, self.thread_safe)
+            _verify_error(res)
+            self._calibration = Calibration(
+                handle=handle,
+                depth_mode=self.configuration["depth_mode"],
+                color_resolution=self.configuration["color_resolution"],
+                thread_safe=self.thread_safe,
+            )
+        return self._calibration
 
     def open(self) -> None:
         """

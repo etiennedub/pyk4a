@@ -7,7 +7,7 @@ import k4a_module
 from .calibration import Calibration
 
 
-# from .config import ColorFormat
+# from .config import ImageFormat
 
 
 class PyK4ACapture:
@@ -70,7 +70,7 @@ class PyK4ACapture:
     # @property
     # def transformed_color(self) -> Optional[np.ndarray]:
     #     if self._transformed_color is None and self.depth is not None and self.color is not None:
-    #         if self.device._config.color_format != ColorFormat.BGRA32:
+    #         if self.device._config.color_format != ImageFormat.COLOR_BGRA32:
     #             raise RuntimeError(
     #                 "color image must be of format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
     #                 "transformation_color_image_to_depth_camera"
