@@ -130,7 +130,10 @@ class PyK4A:
         _verify_error(res)
 
         capture = PyK4ACapture(
-            calibration=self.calibration, capture_handle=capture_capsule, thread_safe=self.thread_safe
+            calibration=self.calibration,
+            capture_handle=capture_capsule,
+            color_format=self._config.color_format,
+            thread_safe=self.thread_safe,
         )
         return capture
 

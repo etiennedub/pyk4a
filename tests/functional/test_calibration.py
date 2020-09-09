@@ -27,5 +27,5 @@ class TestCalibration:
 
     @staticmethod
     def test_creating_transfromation_handle(calibration: Calibration):
-        transformation = calibration._transformation
+        transformation = calibration.transformation_handle
         assert transformation is not None

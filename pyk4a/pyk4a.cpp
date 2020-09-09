@@ -16,13 +16,6 @@ extern "C" {
                                     {1920, 1080}, {2560, 1440},
                                     {2048, 1536}, {3840, 2160},
                                     {4096, 3072}};
-    typedef struct device_container {
-        k4a_transformation_t transformation_handle;
-        k4a_calibration_t calibration_handle;
-        k4a_device_t device;
-    } device_container;
-    #define MAX_DEVICES 32
-    device_container devices[MAX_DEVICES];
 
     const char* capsule_playback_name = "pyk4a playback handle";
     const char* capsule_device_name = "pyk4a device handle";
@@ -78,6 +71,7 @@ extern "C" {
     static void capsule_cleanup_transformation(PyObject *capsule) {
         k4a_transformation_t *transformation = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, capsule_transformation_name);
         k4a_transformation_destroy(*transformation);
+        free(transformation);
     }
 
     static PyObject* device_open(PyObject* self, PyObject* args){
@@ -526,17 +520,26 @@ extern "C" {
                 NULL, NULL, img_dst);
     }
 
+
+
+
     static PyObject* transformation_create(PyObject* self, PyObject *args){
         k4a_calibration_t* calibration_handle;
         PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
-        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
 
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
         calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, capsule_calibration_name);
 
         thread_state = _gil_release(thread_safe);
-        k4a_transformation_t transformation_handle = k4a_transformation_create(calibration_handle);
+
+        k4a_transformation_t* transformation_handle = (k4a_transformation_t*) malloc(sizeof(k4a_transformation_t));
+        if (calibration_handle == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("N", Py_None);
+        }
+        *transformation_handle = k4a_transformation_create(calibration_handle);
         _gil_restore(thread_state);
         if (transformation_handle == NULL ) {
             return Py_BuildValue("N", Py_None);
@@ -547,13 +550,16 @@ extern "C" {
     }
 
     static PyObject* transformation_depth_image_to_color_camera(PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_transformation_t* transformation_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_result_t res;
         PyArrayObject *in_array;
         k4a_color_resolution_t color_resolution;
-        PyArg_ParseTuple(args, "IpO!I", &device_id, &thread_safe, &PyArray_Type, &in_array, &color_resolution);
+
+        PyArg_ParseTuple(args, "OpO!I", &capsule, &thread_safe, &PyArray_Type, &in_array, &color_resolution);
+        transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, capsule_transformation_name);
 
         k4a_image_t* depth_image_transformed = (k4a_image_t*) malloc(sizeof(k4a_image_t));
 
@@ -571,7 +577,7 @@ extern "C" {
 
         if (K4A_RESULT_SUCCEEDED == res) {
             res = k4a_transformation_depth_image_to_color_camera(
-                    devices[device_id].transformation_handle,
+                    *transformation_handle,
                     depth_image, *depth_image_transformed);
             k4a_image_release(depth_image);
         }
@@ -591,14 +597,16 @@ extern "C" {
     }
 
     static PyObject* transformation_depth_image_to_point_cloud(PyObject* self, PyObject* args) {
-        uint32_t device_id;
+        k4a_transformation_t* transformation_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_result_t res;
-
         PyArrayObject *depth_in_array;
         int calibration_type_depth;
-        PyArg_ParseTuple(args, "IpO!p", &device_id, &thread_safe, &PyArray_Type, &depth_in_array, &calibration_type_depth);
+
+        PyArg_ParseTuple(args, "OpO!p", &capsule, &thread_safe, &PyArray_Type, &depth_in_array, &calibration_type_depth);
+        transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, capsule_transformation_name);
 
         k4a_calibration_type_t camera;
         if (calibration_type_depth == 1) {
@@ -622,7 +630,7 @@ extern "C" {
 
         if (K4A_RESULT_SUCCEEDED == res) {
             res = k4a_transformation_depth_image_to_point_cloud(
-                    devices[device_id].transformation_handle,
+                    *transformation_handle,
                     depth_image, camera, *xyz_image);
             k4a_image_release(depth_image);
         }
@@ -643,13 +651,16 @@ extern "C" {
 
     static PyObject* transformation_color_image_to_depth_camera(
             PyObject* self, PyObject* args){
-        uint32_t device_id;
+        k4a_transformation_t* transformation_handle;
+        PyObject *capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_result_t res;
         PyArrayObject *in_depth_array;
         PyArrayObject *in_color_array;
-        PyArg_ParseTuple(args, "IpO!O!", &device_id, &thread_safe, &PyArray_Type, &in_depth_array, &PyArray_Type, &in_color_array);
+
+        PyArg_ParseTuple(args, "OpO!O!", &capsule, &thread_safe, &PyArray_Type, &in_depth_array, &PyArray_Type, &in_color_array);
+        transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, capsule_transformation_name);
 
         k4a_image_t* transformed_color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
 
@@ -671,7 +682,7 @@ extern "C" {
         thread_state = _gil_release(thread_safe);
         if (K4A_RESULT_SUCCEEDED == res) {
             res = k4a_transformation_color_image_to_depth_camera(
-                    devices[device_id].transformation_handle,
+                    *transformation_handle,
                     depth_image, color_image, *transformed_color_image);
             k4a_image_release(depth_image);
             k4a_image_release(color_image);

@@ -5,16 +5,17 @@ import numpy as np
 import k4a_module
 
 from .calibration import Calibration
-
-
-# from .config import ImageFormat
+from .config import ImageFormat
 
 
 class PyK4ACapture:
-    def __init__(self, calibration: Calibration, capture_handle: object, thread_safe: bool = True):
+    def __init__(
+        self, calibration: Calibration, capture_handle: object, color_format: ImageFormat, thread_safe: bool = True
+    ):
         self._calibration: Calibration = calibration
         self._capture_handle: object = capture_handle  # built-in PyCapsule
         self.thread_safe = thread_safe
+        self._color_format = color_format
 
         self._color: Optional[np.ndarray] = None
         self._depth: Optional[np.ndarray] = None
@@ -42,40 +43,42 @@ class PyK4ACapture:
             self._ir = k4a_module.capture_get_ir_image(self._capture_handle, self.thread_safe)
         return self._ir
 
-    #
-    # @property
-    # def transformed_depth(self) -> Optional[np.ndarray]:
-    #     if self._transformed_depth is None and self.depth is not None:
-    #         self._transformed_depth = k4a_module.transformation_depth_image_to_color_camera(
-    #             self.device._device_id, self.device.thread_safe, self.depth, self.device._config.color_resolution,
-    #         )
-    #     return self._transformed_depth
-    #
-    # @property
-    # def depth_point_cloud(self) -> Optional[np.ndarray]:
-    #     if self._depth_point_cloud is None and self.depth is not None:
-    #         self._depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
-    #             self.device._device_id, self.device.thread_safe, self.depth, True
-    #         )
-    #     return self._depth_point_cloud
-    #
-    # @property
-    # def transformed_depth_point_cloud(self) -> Optional[np.ndarray]:
-    #     if self._transformed_depth_point_cloud is None and self.transformed_depth is not None:
-    #         self._transformed_depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
-    #             self.device._device_id, self.device.thread_safe, self.transformed_depth, False
-    #         )
-    #     return self._transformed_depth_point_cloud
-    #
-    # @property
-    # def transformed_color(self) -> Optional[np.ndarray]:
-    #     if self._transformed_color is None and self.depth is not None and self.color is not None:
-    #         if self.device._config.color_format != ImageFormat.COLOR_BGRA32:
-    #             raise RuntimeError(
-    #                 "color image must be of format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
-    #                 "transformation_color_image_to_depth_camera"
-    #             )
-    #         self._transformed_color = k4a_module.transformation_color_image_to_depth_camera(
-    #             self.device._device_id, self.device.thread_safe, self.depth, self.color
-    #         )
-    #     return self._transformed_color
+    @property
+    def transformed_depth(self) -> Optional[np.ndarray]:
+        if self._transformed_depth is None and self.depth is not None:
+            self._transformed_depth = k4a_module.transformation_depth_image_to_color_camera(
+                self._calibration.transformation_handle,
+                self.thread_safe,
+                self.depth,
+                self._calibration.color_resolution,
+            )
+        return self._transformed_depth
+
+    @property
+    def depth_point_cloud(self) -> Optional[np.ndarray]:
+        if self._depth_point_cloud is None and self.depth is not None:
+            self._depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
+                self._calibration.transformation_handle, self.thread_safe, self.depth, True
+            )
+        return self._depth_point_cloud
+
+    @property
+    def transformed_depth_point_cloud(self) -> Optional[np.ndarray]:
+        if self._transformed_depth_point_cloud is None and self.transformed_depth is not None:
+            self._transformed_depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
+                self._calibration.transformation_handle, self.thread_safe, self.transformed_depth, False
+            )
+        return self._transformed_depth_point_cloud
+
+    @property
+    def transformed_color(self) -> Optional[np.ndarray]:
+        if self._transformed_color is None and self.depth is not None and self.color is not None:
+            if self._color_format != ImageFormat.COLOR_BGRA32:
+                raise RuntimeError(
+                    "color image must be of format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
+                    "transformation_color_image_to_depth_camera"
+                )
+            self._transformed_color = k4a_module.transformation_color_image_to_depth_camera(
+                self._calibration.transformation_handle, self.thread_safe, self.depth, self.color
+            )
+        return self._transformed_color
