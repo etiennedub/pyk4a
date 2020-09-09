@@ -13,6 +13,7 @@ from .config import (
 from .errors import K4AException, K4ATimeoutException
 from .playback import PyK4APlayback, SeekOrigin
 from .pyk4a import ColorControlCapabilities, PyK4A
+from .transformation import color_image_to_depth_camera, depth_image_to_color_camera, depth_image_to_point_cloud
 
 
 __all__ = (
@@ -33,4 +34,7 @@ __all__ = (
     "PyK4APlayback",
     "SeekOrigin",
     "ColorControlCapabilities",
+    "color_image_to_depth_camera",
+    "depth_image_to_point_cloud",
+    "depth_image_to_color_camera",
 )
