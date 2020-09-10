@@ -116,7 +116,7 @@ class TestSeek:
     @staticmethod
     def test_bad_file(playback_bad: PyK4APlayback):
         playback_bad.open()
-        with pytest.raises(K4AException, match=r"Cannot seek to specified position"):
+        with pytest.raises(K4AException):
             playback_bad.seek(10)
 
     @staticmethod
@@ -127,5 +127,5 @@ class TestSeek:
     @staticmethod
     def test_seek_eof(playback: PyK4APlayback):
         playback.open()
-        with pytest.raises(K4AException, match=r"Cannot seek to specified position"):
+        with pytest.raises(EOFError):
             playback.seek(9999)
