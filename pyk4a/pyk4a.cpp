@@ -1071,7 +1071,6 @@ extern "C" {
         PyObject *capsule;
         k4a_playback_t* playback_handle;
         k4a_stream_result_t result;
-        k4a_record_configuration_t config;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
         playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
@@ -1081,13 +1080,44 @@ extern "C" {
             fprintf(stderr, "Cannot allocate memory");
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
-        k4a_capture_create(capture);
-        PyObject* capsule_capture = PyCapsule_New(capture, capsule_capture_name, capsule_cleanup_capture);
 
         thread_state = _gil_release(thread_safe);
         result = k4a_playback_get_next_capture(*playback_handle, capture);
         _gil_restore(thread_state);
 
+        if (result != K4A_STREAM_RESULT_SUCCEEDED) {
+            free(capture);
+            return Py_BuildValue("IN", result, Py_None);
+        }
+        PyObject* capsule_capture = PyCapsule_New(capture, capsule_capture_name, capsule_cleanup_capture);
+        return Py_BuildValue("IN", result, capsule_capture);
+    }
+
+      static PyObject* playback_get_previous_capture(PyObject* self, PyObject *args) {
+        int thread_safe;
+        PyThreadState *thread_state;
+        PyObject *capsule;
+        k4a_playback_t* playback_handle;
+        k4a_stream_result_t result;
+
+        PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+
+        k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
+        if (capture == NULL) {
+            fprintf(stderr, "Cannot allocate memory");
+            return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
+        }
+
+        thread_state = _gil_release(thread_safe);
+        result = k4a_playback_get_previous_capture(*playback_handle, capture);
+        _gil_restore(thread_state);
+
+        if (result != K4A_STREAM_RESULT_SUCCEEDED) {
+            free(capture);
+            return Py_BuildValue("IN", result, Py_None);
+        }
+        PyObject* capsule_capture = PyCapsule_New(capture, capsule_capture_name, capsule_cleanup_capture);
         return Py_BuildValue("IN", result, capsule_capture);
     }
 
@@ -1130,6 +1160,7 @@ extern "C" {
         {"playback_seek_timestamp", playback_seek_timestamp, METH_VARARGS, "Seek playback file to specified position"},
         {"playback_get_record_configuration", playback_get_record_configuration, METH_VARARGS, "Extract record configuration"},
         {"playback_get_next_capture", playback_get_next_capture, METH_VARARGS, "Get next capture from playback"},
+        {"playback_get_previous_capture", playback_get_previous_capture, METH_VARARGS, "Get previous capture from playback"},
 
         {NULL, NULL, 0, NULL}
     };

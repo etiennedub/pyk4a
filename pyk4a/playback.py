@@ -115,12 +115,12 @@ class PyK4APlayback:
         _verify_error(res)
         return raw
 
-    # @calibration_raw.setter
-    # def calibration_raw(self, value: str):
-    #     self._validate_is_open()
-    #     self._calibration = Calibration.from_raw(
-    #         value, self._config.depth_mode, self._config.color_resolution, self.thread_safe
-    #     )
+    @calibration_raw.setter
+    def calibration_raw(self, value: str):
+        self._validate_is_open()
+        self._calibration = Calibration.from_raw(
+            value, self.calibration.depth_mode, self.calibration.color_resolution, self.thread_safe
+        )
 
     @property
     def calibration(self) -> Calibration:
@@ -164,9 +164,20 @@ class PyK4APlayback:
         result = k4a_module.playback_seek_timestamp(self._handle, self.thread_safe, offset, int(origin))
         self._verify_stream_error(result)
 
-    def get_capture(self):
+    def get_next_capture(self):
         self._validate_is_open()
         result, capture_handle = k4a_module.playback_get_next_capture(self._handle, self.thread_safe)
+        self._verify_stream_error(result)
+        return PyK4ACapture(
+            calibration=self._calibration,
+            capture_handle=capture_handle,
+            color_format=self.configuration["color_format"],
+            thread_safe=self.thread_safe,
+        )
+
+    def get_previouse_capture(self):
+        self._validate_is_open()
+        result, capture_handle = k4a_module.playback_get_previous_capture(self._handle, self.thread_safe)
         self._verify_stream_error(result)
         return PyK4ACapture(
             calibration=self._calibration,

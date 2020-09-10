@@ -73,22 +73,33 @@ class TestCalibration:
 
 
 class TestSeek:
+    # playback asset has only one capture inside
+
     @staticmethod
     def test_seek_from_start(playback: PyK4APlayback):
         # TODO fetch capture/data and validate time
         playback.open()
-        playback.seek(RECORD_LENGTH - 10000, origin=SeekOrigin.BEGIN)
+        playback.get_next_capture()
+        playback.seek(playback.configuration["start_timestamp_offset_usec"], origin=SeekOrigin.BEGIN)
+        capture = playback.get_next_capture()
+        assert capture.color is not None
+        with pytest.raises(EOFError):
+            playback.get_previouse_capture()
 
     @staticmethod
     def test_seek_from_end(playback: PyK4APlayback):
         # TODO fetch capture/data and validate time
         playback.open()
-        playback.seek(RECORD_LENGTH - 10000, origin=SeekOrigin.END)
+        playback.seek(0, origin=SeekOrigin.END)
+        capture = playback.get_previouse_capture()
+        assert capture.color is not None
+        with pytest.raises(EOFError):
+            playback.get_next_capture()
 
     @staticmethod
     def test_seek_by_device_time(playback: PyK4APlayback):
         # TODO fetch capture/data and validate time
         playback.open()
-        playback.seek(1598632729175486424, origin=SeekOrigin.DEVICE_TIME)
-
-    # TODO add seek to incorrect position test (require get_next_capture method)
+        playback.seek(1, origin=SeekOrigin.DEVICE_TIME)  # TODO add correct timestamp from datablock here
+        capture = playback.get_next_capture()
+        assert capture.color is not None

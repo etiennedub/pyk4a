@@ -1,17 +1,44 @@
 from argparse import ArgumentParser
-from json import dumps, loads
+from typing import Optional, Tuple
+
+import cv2
+import numpy as np
 
 from pyk4a import PyK4APlayback
+
+
+def colorize(
+    image: np.ndarray,
+    clipping_range: Tuple[Optional[int], Optional[int]] = (None, None),
+    colormap: int = cv2.COLORMAP_HSV,
+) -> np.ndarray:
+    if clipping_range[0] or clipping_range[1]:
+        img = image.clip(clipping_range[0], clipping_range[1])
+    else:
+        img = image.copy()
+    img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+    img = cv2.applyColorMap(img, colormap)
+    return img
 
 
 def info(playback: PyK4APlayback):
     print(f"Record length: {playback.length / 1000000: 0.2f} sec")
 
-    calibration_str = playback.calibration_raw
-    print(calibration_str)
-    calibration_formatted = dumps(loads(calibration_str), indent=2)
-    print("=== Calibration ===")
-    print(calibration_formatted)
+
+def play(playback: PyK4APlayback):
+    while True:
+        try:
+            capture = playback.get_next_capture()
+            # if capture.color is not None:
+            #     cv2.imshow("Color", capture.color)
+            if capture.depth is not None:
+                cv2.imshow("Depth", colorize(capture.depth, (None, 5000)))
+            key = cv2.waitKey(10)
+            if key != -1:
+                break
+        except EOFError:
+            break
+    cv2.destroyAllWindows()
 
 
 def main() -> None:
@@ -30,6 +57,7 @@ def main() -> None:
 
     if offset != 0.0:
         playback.seek(int(offset * 1000000))
+    play(playback)
 
     playback.close()
 
