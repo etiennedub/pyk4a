@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 import cv2
 import numpy as np
 
-from pyk4a import PyK4APlayback
+from pyk4a import ImageFormat, PyK4APlayback
 
 
 def colorize(
@@ -21,6 +21,23 @@ def colorize(
     return img
 
 
+def convert_to_bgra_if_required(color_format, color_image):
+    # examples for all possible pyk4a.ColorFormats
+    if color_format == ImageFormat.COLOR_MJPG:
+        color_image = cv2.imdecode(color_image, cv2.IMREAD_COLOR)
+    elif color_format == ImageFormat.COLOR_NV12:
+        color_image = cv2.cvtColor(color_image, cv2.COLOR_YUV2BGRA_NV12)
+        # this also works and it explains how the COLOR_NV12 color color_format is stored in memory
+        # h, w = color_image.shape[0:2]
+        # h = h // 3 * 2
+        # luminance = color_image[:h]
+        # chroma = color_image[h:, :w//2]
+        # color_image = cv2.cvtColorTwoPlane(luminance, chroma, cv2.COLOR_YUV2BGRA_NV12)
+    elif color_format == ImageFormat.COLOR_YUY2:
+        color_image = cv2.cvtColor(color_image, cv2.COLOR_YUV2BGRA_YUY2)
+    return color_image
+
+
 def info(playback: PyK4APlayback):
     print(f"Record length: {playback.length / 1000000: 0.2f} sec")
 
@@ -29,8 +46,8 @@ def play(playback: PyK4APlayback):
     while True:
         try:
             capture = playback.get_next_capture()
-            # if capture.color is not None:
-            #     cv2.imshow("Color", capture.color)
+            if capture.color is not None:
+                cv2.imshow("Color", convert_to_bgra_if_required(playback.configuration["color_format"], capture.color))
             if capture.depth is not None:
                 cv2.imshow("Depth", colorize(capture.depth, (None, 5000)))
             key = cv2.waitKey(10)

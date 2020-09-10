@@ -74,11 +74,11 @@ def parse_args() -> Namespace:
         help="Color sensor resoultion. Default: 720P",
     )
     parser.add_argument(
-        "--color-format",
+        "--color-color_format",
         type=ImageFormat,
         action=EnumActionTuned,
         default=ImageFormat.COLOR_BGRA32,
-        help="Color image format. Default: BGRA32",
+        help="Color color_image color_format. Default: BGRA32",
     )
     parser.add_argument(
         "--depth-mode",

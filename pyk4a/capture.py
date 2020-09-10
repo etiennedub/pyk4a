@@ -69,7 +69,7 @@ class PyK4ACapture:
         if self._transformed_color is None and self.depth is not None and self.color is not None:
             if self._color_format != ImageFormat.COLOR_BGRA32:
                 raise RuntimeError(
-                    "color image must be of format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
+                    "color color_image must be of color_format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
                     "transformation_color_image_to_depth_camera"
                 )
             self._transformed_color = color_image_to_depth_camera(

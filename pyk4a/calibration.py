@@ -83,7 +83,7 @@ class Calibration:
         """
             Transform a 3d point of a source coordinate system into a 3d
             point of the target coordinate system.
-            :param source_pixel_2d    The 2D coordinates in px of source_camera image.
+            :param source_pixel_2d    The 2D coordinates in px of source_camera color_image.
             :param source_depth       Depth in mm
             :param source_camera      The current camera.
             :param target_camera      The target camera.

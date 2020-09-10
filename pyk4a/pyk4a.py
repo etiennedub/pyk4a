@@ -122,7 +122,7 @@ class PyK4A:
                 in the current capture. There are no guarantees that the returned
                 object will contain all the requested images.
 
-        If using any ImageFormat other than ImageFormat.COLOR_BGRA32, the color image must be
+        If using any ImageFormat other than ImageFormat.COLOR_BGRA32, the color color_image must be
         decoded. See example/color_formats.py
         """
         self._validate_is_opened()

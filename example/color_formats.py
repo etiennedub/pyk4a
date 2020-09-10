@@ -29,12 +29,12 @@ def convert_to_bgra_if_required(k4a, img_color):
         img_color = cv2.imdecode(img_color, cv2.IMREAD_COLOR)
     elif k4a._config.color_format == pyk4a.ImageFormat.COLOR_NV12:
         img_color = cv2.cvtColor(img_color, cv2.COLOR_YUV2BGRA_NV12)
-        # this also works and it explains how the COLOR_NV12 color format is stored in memory
-        # h, w = img_color.shape[0:2]
+        # this also works and it explains how the COLOR_NV12 color color_format is stored in memory
+        # h, w = color_image.shape[0:2]
         # h = h // 3 * 2
-        # luminance = img_color[:h]
-        # chroma = img_color[h:, :w//2]
-        # img_color = cv2.cvtColorTwoPlane(luminance, chroma, cv2.COLOR_YUV2BGRA_NV12)
+        # luminance = color_image[:h]
+        # chroma = color_image[h:, :w//2]
+        # color_image = cv2.cvtColorTwoPlane(luminance, chroma, cv2.COLOR_YUV2BGRA_NV12)
     elif k4a._config.color_format == pyk4a.ImageFormat.COLOR_YUY2:
         img_color = cv2.cvtColor(img_color, cv2.COLOR_YUV2BGRA_YUY2)
     return img_color
