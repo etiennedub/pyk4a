@@ -8,9 +8,9 @@ from pyk4a import Config, PyK4A
 def main():
     k4a = PyK4A(
         Config(
-            color_resolution=pyk4a.ColorResolution.RES_720P,
+            color_resolution=pyk4a.ColorResolution.OFF,
             depth_mode=pyk4a.DepthMode.NFOV_UNBINNED,
-            synchronized_images_only=True,
+            synchronized_images_only=False,
         )
     )
     k4a.connect()
@@ -31,8 +31,6 @@ def main():
             # coloring image by choosed color map
             colored_depth = cv2.applyColorMap(normalized_depth, cv2.COLORMAP_HSV)
             cv2.imshow("k4a", colored_depth)
-            # cv2.imshow('k4a', capture.ir)
-            # cv2.imshow('k4a', capture.color)
             key = cv2.waitKey(10)
             if key != -1:
                 cv2.destroyAllWindows()

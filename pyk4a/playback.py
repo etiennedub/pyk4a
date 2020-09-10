@@ -12,6 +12,7 @@ else:
 import k4a_module
 
 from .calibration import Calibration
+from .capture import PyK4ACapture
 from .config import FPS, ColorResolution, DepthMode, ImageFormat, WiredSyncMode
 from .errors import K4AException, _verify_error
 from .result import Result
@@ -161,10 +162,30 @@ class PyK4APlayback:
         """
         self._validate_is_open()
         result = k4a_module.playback_seek_timestamp(self._handle, self.thread_safe, offset, int(origin))
-        typed_result = StreamResult(result)
-        if typed_result != StreamResult.Success:
-            raise K4AException(f"Cannot seek to specified position: {typed_result}")
+        self._verify_stream_error(result)
+
+    def get_capture(self):
+        self._validate_is_open()
+        result, capture_handle = k4a_module.playback_get_next_capture(self._handle, self.thread_safe)
+        self._verify_stream_error(result)
+        return PyK4ACapture(
+            calibration=self._calibration,
+            capture_handle=capture_handle,
+            color_format=self.configuration["color_format"],
+            thread_safe=self.thread_safe,
+        )
 
     def _validate_is_open(self):
         if not self._handle:
             raise K4AException("Playback not opened.")
+
+    @staticmethod
+    def _verify_stream_error(res: int):
+        """
+        Validate k4a_module result(k4a_stream_result_t)
+        """
+        result = StreamResult(res)
+        if result == StreamResult.Failed:
+            raise K4AException()
+        elif result == StreamResult.EOF:
+            raise EOFError()
