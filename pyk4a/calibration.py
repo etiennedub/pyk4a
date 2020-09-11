@@ -59,7 +59,6 @@ class Calibration:
             :param target_camera    The target camera.
             :return                 The 3D coordinates in millimeters representing a point in target camera.
         """
-        # Device needs to be running for the functions to work
         res, target_point_3d = k4a_module.calibration_3d_to_3d(
             self._calibration_handle, self.thread_safe, source_point_3d, source_camera, target_camera,
         )
@@ -89,7 +88,6 @@ class Calibration:
             :param target_camera      The target camera.
             :return                   The 3D coordinates in mm representing a point in target camera.
         """
-        # Device needs to be running for the functions to work
         res, valid, target_point_3d = k4a_module.calibration_2d_to_3d(
             self._calibration_handle, self.thread_safe, source_pixel_2d, source_depth, source_camera, target_camera,
         )
