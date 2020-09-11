@@ -78,7 +78,7 @@ def parse_args() -> Namespace:
         type=ImageFormat,
         action=EnumActionTuned,
         default=ImageFormat.COLOR_BGRA32,
-        help="Color color_image color_format. Default: BGRA32",K
+        help="Color color_image color_format. Default: BGRA32",
     )
     parser.add_argument(
         "--depth-mode",
