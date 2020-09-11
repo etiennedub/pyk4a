@@ -20,7 +20,7 @@ class Calibration:
     def __init__(
         self, handle: object, depth_mode: DepthMode, color_resolution: ColorResolution, thread_safe: bool = True
     ):
-        self._handle = handle
+        self._calibration_handle = handle
         self._transformation_handle: Optional[object] = None
         self.thread_safe = thread_safe
         self._depth_mode = depth_mode
@@ -61,7 +61,7 @@ class Calibration:
         """
         # Device needs to be running for the functions to work
         res, target_point_3d = k4a_module.calibration_3d_to_3d(
-            self._handle, self.thread_safe, source_point_3d, source_camera, target_camera,
+            self._calibration_handle, self.thread_safe, source_point_3d, source_camera, target_camera,
         )
 
         _verify_error(res)
@@ -91,7 +91,7 @@ class Calibration:
         """
         # Device needs to be running for the functions to work
         res, valid, target_point_3d = k4a_module.calibration_2d_to_3d(
-            self._handle, self.thread_safe, source_pixel_2d, source_depth, source_camera, target_camera,
+            self._calibration_handle, self.thread_safe, source_pixel_2d, source_depth, source_camera, target_camera,
         )
 
         _verify_error(res)
@@ -117,7 +117,7 @@ class Calibration:
     @property
     def transformation_handle(self) -> object:
         if not self._transformation_handle:
-            handle = k4a_module.transformation_create(self._handle, self.thread_safe)
+            handle = k4a_module.transformation_create(self._calibration_handle, self.thread_safe)
             if not handle:
                 raise K4AException("Cannot create transformation handle")
             self._transformation_handle = handle

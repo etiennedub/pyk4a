@@ -54,7 +54,7 @@ class TestProperties:
     def test_get_calibration(device: PyK4A):
         device.open()
         calibration = device.calibration
-        assert calibration._handle
+        assert calibration._calibration_handle
 
 
 class TestCameras:
