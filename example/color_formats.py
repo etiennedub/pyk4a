@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from helpers import convert_to_bgra_if_required
 
 import pyk4a
 from pyk4a import Config, PyK4A
@@ -16,28 +17,11 @@ def get_color_image_size(config, imshow=True):
         if np.any(capture.color):
             count += 1
             if imshow:
-                cv2.imshow("k4a", convert_to_bgra_if_required(k4a, capture.color))
+                cv2.imshow("k4a", convert_to_bgra_if_required(config.color_format, capture.color))
                 cv2.waitKey(10)
     cv2.destroyAllWindows()
     k4a.disconnect()
     return capture.color.nbytes
-
-
-def convert_to_bgra_if_required(k4a, img_color):
-    # examples for all possible pyk4a.ColorFormats
-    if k4a._config.color_format == pyk4a.ImageFormat.COLOR_MJPG:
-        img_color = cv2.imdecode(img_color, cv2.IMREAD_COLOR)
-    elif k4a._config.color_format == pyk4a.ImageFormat.COLOR_NV12:
-        img_color = cv2.cvtColor(img_color, cv2.COLOR_YUV2BGRA_NV12)
-        # this also works and it explains how the COLOR_NV12 color color_format is stored in memory
-        # h, w = color_image.shape[0:2]
-        # h = h // 3 * 2
-        # luminance = color_image[:h]
-        # chroma = color_image[h:, :w//2]
-        # color_image = cv2.cvtColorTwoPlane(luminance, chroma, cv2.COLOR_YUV2BGRA_NV12)
-    elif k4a._config.color_format == pyk4a.ImageFormat.COLOR_YUY2:
-        img_color = cv2.cvtColor(img_color, cv2.COLOR_YUV2BGRA_YUY2)
-    return img_color
 
 
 if __name__ == "__main__":
@@ -52,8 +36,8 @@ if __name__ == "__main__":
     nbytes_NV12 = get_color_image_size(config_NV12, imshow=imshow)
     nbytes_YUY2 = get_color_image_size(config_YUY2, imshow=imshow)
 
-    print(f"{nbytes_BGRA32} {nbytes_MJPG}")
-    print(f"BGRA32 is {nbytes_BGRA32/nbytes_MJPG} larger")
+    print(f"BGRA32: {nbytes_BGRA32},  MJPG: {nbytes_MJPG}, NV12: {nbytes_NV12}, YUY2: {nbytes_YUY2}")
+    print(f"BGRA32 is {nbytes_BGRA32/nbytes_MJPG:0.2f} larger than MJPG")
 
     # output:
     # nbytes_BGRA32=3686400 nbytes_MJPG=229693
