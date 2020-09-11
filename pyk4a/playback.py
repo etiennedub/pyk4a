@@ -15,21 +15,7 @@ from .calibration import Calibration
 from .capture import PyK4ACapture
 from .config import FPS, ColorResolution, DepthMode, ImageFormat, WiredSyncMode
 from .errors import K4AException, _verify_error
-from .result import Result
-
-
-# k4a_buffer_result_t
-class BufferResult(IntEnum):
-    Success = 0
-    Failed = 1
-    TooSmall = 2
-
-
-# k4a_stream_result_t
-class StreamResult(IntEnum):
-    Success = 0
-    Failed = 1
-    EOF = 2
+from .results import Result, StreamResult
 
 
 class SeekOrigin(IntEnum):

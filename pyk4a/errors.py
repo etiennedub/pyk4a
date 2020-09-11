@@ -1,4 +1,4 @@
-from .result import Result
+from .results import Result
 
 
 class K4AException(Exception):

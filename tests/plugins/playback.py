@@ -4,8 +4,8 @@ from typing import Any, Mapping, Optional, Tuple
 import pytest
 
 from pyk4a.config import FPS, ColorResolution, DepthMode, ImageFormat, WiredSyncMode
-from pyk4a.playback import BufferResult, SeekOrigin, StreamResult
-from pyk4a.result import Result
+from pyk4a.playback import SeekOrigin
+from pyk4a.results import BufferResult, Result, StreamResult
 from tests.plugins.calibration import CalibrationHandle
 
 
