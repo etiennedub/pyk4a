@@ -26,9 +26,31 @@ class PyK4A:
         self._calibration: Optional[Calibration] = None
         self.is_running = False
 
+    def start(self):
+        """
+        Open device if device not opened, then start cameras and IMU
+        All-in-one function
+        :return:
+        """
+        if not self.opened:
+            self.open()
+        self._start_cameras()
+        self._start_imu()
+        self.is_running = True
+
+    def stop(self):
+        """
+        Stop cameras, IMU, ... and close device
+        :return:
+        """
+        self._stop_imu()
+        self._stop_cameras()
+        self._device_close()
+        self.is_running = False
+
     def __del__(self):
         if self.is_running:
-            self.disconnect()
+            self.stop()
         elif self.opened:
             self.close()
 
@@ -46,33 +68,8 @@ class PyK4A:
         self._device_open()
 
     def close(self):
-        """
-        Close device
-        """
         self._validate_is_opened()
         self._device_close()
-
-    def connect(self):
-        """
-        Open device if device not opened, then start cameras and IMU
-        All-in-one function
-        :return:
-        """
-        if not self.opened:
-            self.open()
-        self._start_cameras()
-        self._start_imu()
-        self.is_running = True
-
-    def disconnect(self):
-        """
-        Stop cameras, IMU, ... and close device
-        :return:
-        """
-        self._stop_imu()
-        self._stop_cameras()
-        self._device_close()
-        self.is_running = False
 
     def save_calibration_json(self, path: Any):
         with open(path, "w") as f:

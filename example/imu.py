@@ -25,7 +25,7 @@ def main():
             synchronized_images_only=True,
         )
     )
-    k4a.connect()
+    k4a.start()
     k4a._start_imu()
 
     plt.ion()
@@ -75,7 +75,7 @@ def main():
         fig.canvas.flush_events()
 
     k4a._stop_imu()
-    k4a.disconnect()
+    k4a.stop()
 
 
 if __name__ == "__main__":

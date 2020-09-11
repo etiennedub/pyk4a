@@ -115,7 +115,7 @@ def parse_args() -> Namespace:
 
 def bench(config: Config, device_id: int):
     device = PyK4A(config=config, device_id=device_id)
-    device.connect()
+    device.start()
     depth = color = depth_period = color_period = 0
     print("Press CTRL-C top stop benchmark")
     started_at = started_at_period = monotonic()
@@ -138,7 +138,7 @@ def bench(config: Config, device_id: int):
         except KeyboardInterrupt:
             break
     elapsed = monotonic() - started_at
-    device.disconnect()
+    device.stop()
     print()
     print(f"Result: Color: {color / elapsed:0.2f} FPS, Depth: {depth / elapsed: 0.2f} FPS")
 

@@ -10,7 +10,7 @@ def get_color_image_size(config, imshow=True):
     if imshow:
         cv2.namedWindow("k4a")
     k4a = PyK4A(config)
-    k4a.connect()
+    k4a.start()
     count = 0
     while count < 60:
         capture = k4a.get_capture()
@@ -20,7 +20,7 @@ def get_color_image_size(config, imshow=True):
                 cv2.imshow("k4a", convert_to_bgra_if_required(config.color_format, capture.color))
                 cv2.waitKey(10)
     cv2.destroyAllWindows()
-    k4a.disconnect()
+    k4a.stop()
     return capture.color.nbytes
 
 

@@ -202,7 +202,7 @@ extern "C" {
             return Py_BuildValue("IN", result, Py_None);
         }
 
-        return Py_BuildValue("I{s:I,s:O,s:i,s:i,s:i,s:i,s:I}", result,
+        return Py_BuildValue("I{s:I,s:N,s:i,s:i,s:i,s:i,s:I}", result,
                 "color_control_command", command,
                 "supports_auto", supports_auto ? Py_True: Py_False,
                 "min_value", min_value,

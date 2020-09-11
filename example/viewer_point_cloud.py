@@ -15,7 +15,7 @@ def main():
             synchronized_images_only=True,
         )
     )
-    k4a.connect()
+    k4a.start()
 
     # getters and setters directly get and set on device
     k4a.whitebalance = 4500
@@ -47,7 +47,7 @@ def main():
     ax.view_init(elev=-90, azim=-90)
     plt.show()
 
-    k4a.disconnect()
+    k4a.stop()
 
 
 if __name__ == "__main__":

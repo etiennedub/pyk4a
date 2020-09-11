@@ -7,7 +7,7 @@ from pyk4a import Config, PyK4A
 
 def main():
     k4a = PyK4A(Config(color_resolution=pyk4a.ColorResolution.RES_720P, depth_mode=pyk4a.DepthMode.NFOV_UNBINNED,))
-    k4a.connect()
+    k4a.start()
 
     while True:
         capture = k4a.get_capture()
@@ -27,7 +27,7 @@ def main():
             cv2.destroyAllWindows()
             break
 
-    k4a.disconnect()
+    k4a.stop()
 
 
 if __name__ == "__main__":
