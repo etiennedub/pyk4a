@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
 
 import cv2
-from helpers import colorize, convert_to_bgra_if_required
 
+from helpers import colorize, convert_to_bgra_if_required
 from pyk4a import PyK4APlayback
 
 

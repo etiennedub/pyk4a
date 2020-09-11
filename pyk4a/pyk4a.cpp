@@ -199,7 +199,7 @@ extern "C" {
         _gil_restore(thread_state);
 
         if (result == K4A_RESULT_FAILED) {
-            return Py_BuildValue("I()", result, Py_None);
+            return Py_BuildValue("IN", result, Py_None);
         }
 
         return Py_BuildValue("I{s:I,s:O,s:i,s:i,s:i,s:i,s:I}", result,
@@ -335,7 +335,7 @@ extern "C" {
                     "gyro_timestamp", imu_sample.gyro_timestamp_usec);
         }
 
-        return Py_BuildValue("I()", result, Py_None);
+        return Py_BuildValue("IN", result, Py_None);
     }
 
     static PyObject* calibration_get_from_raw(PyObject* self, PyObject* args){
@@ -839,7 +839,7 @@ extern "C" {
                                         &target_point3d_mm);
        _gil_restore(thread_state);
         if (res == K4A_RESULT_FAILED ) {
-            return Py_BuildValue("I()", res, Py_None);
+            return Py_BuildValue("IN", res, Py_None);
         }
         return Py_BuildValue("I(fff)", res, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
@@ -882,7 +882,7 @@ extern "C" {
                                         &valid);
         _gil_restore(thread_state);
         if (res == K4A_RESULT_FAILED ) {
-            return Py_BuildValue("II(0)", res, valid, Py_None);
+            return Py_BuildValue("IIN", res, valid, Py_None);
         }
         // Return object...
         return Py_BuildValue("II(fff)", res, valid, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
@@ -1045,7 +1045,7 @@ extern "C" {
         _gil_restore(thread_state);
 
         if (result == K4A_RESULT_FAILED ) {
-            return Py_BuildValue("I()", result, Py_None);
+            return Py_BuildValue("IN", result, Py_None);
         }
 
         return Py_BuildValue("I(IIIIiiiiIIII)",

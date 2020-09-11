@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
-from helpers import convert_to_bgra_if_required
 
 import pyk4a
+from helpers import convert_to_bgra_if_required
 from pyk4a import Config, PyK4A
 
 

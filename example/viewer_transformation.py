@@ -1,7 +1,7 @@
 import cv2
-from helpers import colorize
 
 import pyk4a
+from helpers import colorize
 from pyk4a import Config, PyK4A
 
 
