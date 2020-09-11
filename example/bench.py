@@ -62,7 +62,7 @@ class EnumActionTuned(Action):
 
 def parse_args() -> Namespace:
     parser = ArgumentParser(
-        description="Bench camera captures transfer speed. \n"
+        description="Camera captures transfer speed benchmark. \n"
         "You can check if you USB controller/cable has enough performance."
     )
     parser.add_argument("--device-id", type=int, default=0, help="Device ID, from zero. Default: 0")
@@ -78,7 +78,7 @@ def parse_args() -> Namespace:
         type=ImageFormat,
         action=EnumActionTuned,
         default=ImageFormat.COLOR_BGRA32,
-        help="Color color_image color_format. Default: BGRA32",
+        help="Color color_image color_format. Default: BGRA32",K
     )
     parser.add_argument(
         "--depth-mode",
