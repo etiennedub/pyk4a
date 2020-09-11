@@ -17,11 +17,11 @@ extern "C" {
                                     {2048, 1536}, {3840, 2160},
                                     {4096, 3072}};
 
-    const char* capsule_playback_name = "pyk4a playback handle";
-    const char* capsule_device_name = "pyk4a device handle";
-    const char* capsule_calibration_name = "pyk4a calibration handle";
-    const char* capsule_transformation_name = "pyk4a transformation handle";
-    const char* capsule_capture_name = "pyk4a capture handle";
+    const char* CAPSULE_PLAYBACK_NAME = "pyk4a playback handle";
+    const char* CAPSULE_DEVICE_NAME = "pyk4a device handle";
+    const char* CAPSULE_CALIBRATION_NAME = "pyk4a calibration handle";
+    const char* CAPSULE_TRANSFORMATION_NAME = "pyk4a transformation handle";
+    const char* CAPSULE_CAPTURE_NAME = "pyk4a capture handle";
 
     static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
@@ -40,7 +40,7 @@ extern "C" {
     static void capsule_cleanup_device(PyObject *capsule) {
         k4a_device_t* device_handle;
 
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
         free(device_handle);
     }
 
@@ -51,12 +51,12 @@ extern "C" {
     }
 
     static void capsule_cleanup_calibration(PyObject *capsule) {
-        k4a_calibration_t *calibration = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, capsule_calibration_name);
+        k4a_calibration_t *calibration = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, CAPSULE_CALIBRATION_NAME);
         free(calibration);
     }
 
     static void capsule_cleanup_capture(PyObject *capsule) {
-        k4a_capture_t *capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule, capsule_capture_name);
+        k4a_capture_t *capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
         k4a_capture_release(*capture);
         free(capture);
     }
@@ -64,12 +64,12 @@ extern "C" {
     static void capsule_cleanup_playback(PyObject *capsule) {
         k4a_playback_t* playback_handle;
 
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
         free(playback_handle);
     }
 
     static void capsule_cleanup_transformation(PyObject *capsule) {
-        k4a_transformation_t *transformation = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, capsule_transformation_name);
+        k4a_transformation_t *transformation = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, CAPSULE_TRANSFORMATION_NAME);
         k4a_transformation_destroy(*transformation);
         free(transformation);
     }
@@ -95,7 +95,7 @@ extern "C" {
             return Py_BuildValue("IN", result, Py_None);
         }
 
-        PyObject *capsule = PyCapsule_New(device_handle, capsule_device_name, capsule_cleanup_device);
+        PyObject *capsule = PyCapsule_New(device_handle, CAPSULE_DEVICE_NAME, capsule_cleanup_device);
 
         return Py_BuildValue("IN", result, capsule);
     }
@@ -107,7 +107,7 @@ extern "C" {
         PyThreadState *thread_state;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         thread_state = _gil_release(thread_safe);
         k4a_device_close(*device_handle);
@@ -125,7 +125,7 @@ extern "C" {
         bool out_jack = 0;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_get_sync_jack(*device_handle, &in_jack, &out_jack);
@@ -144,7 +144,7 @@ extern "C" {
         int32_t value = 0;
 
         PyArg_ParseTuple(args, "OpI", &capsule, &thread_safe, &command);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_get_color_control(*device_handle, command, &mode, &value);
@@ -166,7 +166,7 @@ extern "C" {
         int32_t value = 0;
 
         PyArg_ParseTuple(args, "OpIIi", &capsule, &thread_safe, &command, &mode, &value);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_set_color_control(*device_handle, command, mode, value);
@@ -192,7 +192,7 @@ extern "C" {
         k4a_color_control_mode_t default_mode;
 
         PyArg_ParseTuple(args, "OpI", &capsule, &thread_safe, &command);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         thread_state = _gil_release(thread_safe);
         k4a_result_t result = k4a_device_get_color_control_capabilities(*device_handle, command, &supports_auto, &min_value, &max_value, &step_value, &default_value, &default_mode);
@@ -226,7 +226,7 @@ extern "C" {
                 &config.depth_delay_off_color_usec, &config.wired_sync_mode,
                 &config.subordinate_delay_off_master_usec,
                 &config.disable_streaming_indicator);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         k4a_result_t result;
         thread_state = _gil_release(thread_safe);
@@ -243,7 +243,7 @@ extern "C" {
         k4a_result_t result;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         thread_state = _gil_release(thread_safe);
         result = k4a_device_start_imu(*device_handle);
@@ -259,7 +259,7 @@ extern "C" {
         PyThreadState *thread_state;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         thread_state = _gil_release(thread_safe);
         k4a_device_stop_cameras(*device_handle);
@@ -275,7 +275,7 @@ extern "C" {
         PyThreadState *thread_state;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         thread_state = _gil_release(thread_safe);
         k4a_device_stop_imu(*device_handle);
@@ -293,7 +293,7 @@ extern "C" {
         k4a_wait_result_t result;
 
         PyArg_ParseTuple(args, "OpL", &capsule, &thread_safe, &timeout);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
         if (capture == NULL) {
@@ -301,7 +301,7 @@ extern "C" {
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
         k4a_capture_create(capture);
-        PyObject* capsule_capture = PyCapsule_New(capture, capsule_capture_name, capsule_cleanup_capture);
+        PyObject* capsule_capture = PyCapsule_New(capture, CAPSULE_CAPTURE_NAME, capsule_cleanup_capture);
 
         thread_state = _gil_release(thread_safe);
         result = k4a_device_get_capture(*device_handle, capture, timeout);
@@ -320,7 +320,7 @@ extern "C" {
         k4a_wait_result_t result;
 
         PyArg_ParseTuple(args, "OpL", &capsule, &thread_safe, &timeout);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         thread_state = _gil_release(thread_safe);
         result = k4a_device_get_imu_sample(*device_handle, &imu_sample, timeout);
@@ -366,7 +366,7 @@ extern "C" {
             return Py_BuildValue("IN", result, Py_None);
         }
         _gil_restore(thread_state);
-        PyObject *calibration_capsule = PyCapsule_New(calibration_handle, capsule_calibration_name, capsule_cleanup_calibration);
+        PyObject *calibration_capsule = PyCapsule_New(calibration_handle, CAPSULE_CALIBRATION_NAME, capsule_cleanup_calibration);
 
         return Py_BuildValue("IN", K4A_RESULT_SUCCEEDED, calibration_capsule);
     }
@@ -381,7 +381,7 @@ extern "C" {
         k4a_result_t result;
 
         PyArg_ParseTuple(args, "OpII", &capsule, &thread_safe, &depth_mode, &color_resolution);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         k4a_calibration_t* calibration_handle = (k4a_calibration_t*) malloc(sizeof(k4a_calibration_t));
         if (calibration_handle == NULL) {
@@ -398,7 +398,7 @@ extern "C" {
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
 
-        PyObject *calibration_capsule = PyCapsule_New(calibration_handle, capsule_calibration_name, capsule_cleanup_calibration);
+        PyObject *calibration_capsule = PyCapsule_New(calibration_handle, CAPSULE_CALIBRATION_NAME, capsule_cleanup_calibration);
 
         return Py_BuildValue("IN", result, calibration_capsule);
 
@@ -413,7 +413,7 @@ extern "C" {
         size_t data_size;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, capsule_device_name);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
 
         thread_state = _gil_release(thread_safe);
         result = k4a_device_get_raw_calibration(*device_handle, NULL, &data_size);
@@ -530,7 +530,7 @@ extern "C" {
         PyThreadState *thread_state;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, capsule_calibration_name);
+        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, CAPSULE_CALIBRATION_NAME);
 
         thread_state = _gil_release(thread_safe);
 
@@ -544,7 +544,7 @@ extern "C" {
         if (transformation_handle == NULL ) {
             return Py_BuildValue("N", Py_None);
         }
-        PyObject *transformation_capsule = PyCapsule_New(transformation_handle, capsule_transformation_name, capsule_cleanup_transformation);
+        PyObject *transformation_capsule = PyCapsule_New(transformation_handle, CAPSULE_TRANSFORMATION_NAME, capsule_cleanup_transformation);
 
         return Py_BuildValue("N", transformation_capsule);
     }
@@ -559,7 +559,7 @@ extern "C" {
         k4a_color_resolution_t color_resolution;
 
         PyArg_ParseTuple(args, "OpO!I", &capsule, &thread_safe, &PyArray_Type, &in_array, &color_resolution);
-        transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, capsule_transformation_name);
+        transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, CAPSULE_TRANSFORMATION_NAME);
 
         k4a_image_t* depth_image_transformed = (k4a_image_t*) malloc(sizeof(k4a_image_t));
 
@@ -606,7 +606,7 @@ extern "C" {
         int calibration_type_depth;
 
         PyArg_ParseTuple(args, "OpO!p", &capsule, &thread_safe, &PyArray_Type, &depth_in_array, &calibration_type_depth);
-        transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, capsule_transformation_name);
+        transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, CAPSULE_TRANSFORMATION_NAME);
 
         k4a_calibration_type_t camera;
         if (calibration_type_depth == 1) {
@@ -660,7 +660,7 @@ extern "C" {
         PyArrayObject *in_color_array;
 
         PyArg_ParseTuple(args, "OpO!O!", &capsule, &thread_safe, &PyArray_Type, &in_depth_array, &PyArray_Type, &in_color_array);
-        transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, capsule_transformation_name);
+        transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, CAPSULE_TRANSFORMATION_NAME);
 
         k4a_image_t* transformed_color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
 
@@ -710,7 +710,7 @@ extern "C" {
         k4a_result_t res = K4A_RESULT_FAILED;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        capture_handle = (k4a_capture_t*)PyCapsule_GetPointer(capsule, capsule_capture_name);
+        capture_handle = (k4a_capture_t*)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
 
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
@@ -744,7 +744,7 @@ extern "C" {
         k4a_result_t res = K4A_RESULT_FAILED;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        capture_handle = (k4a_capture_t*)PyCapsule_GetPointer(capsule, capsule_capture_name);
+        capture_handle = (k4a_capture_t*)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
 
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
@@ -778,7 +778,7 @@ extern "C" {
         k4a_result_t res = K4A_RESULT_FAILED;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        capture_handle = (k4a_capture_t*)PyCapsule_GetPointer(capsule, capsule_capture_name);
+        capture_handle = (k4a_capture_t*)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
 
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
@@ -825,7 +825,7 @@ extern "C" {
                 &source_point_z,
                 &source_camera,
                 &target_camera);
-        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, capsule_calibration_name);
+        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, CAPSULE_CALIBRATION_NAME);
 
         thread_state = _gil_release(thread_safe);
         source_point3d_mm.xyz.x = source_point_x;
@@ -867,7 +867,7 @@ extern "C" {
                 &source_depth_mm,
                 &source_camera,
                 &target_camera);
-        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, capsule_calibration_name);
+        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(capsule, CAPSULE_CALIBRATION_NAME);
 
         thread_state = _gil_release(thread_safe);
         source_point2d.xy.x = source_point_x;
@@ -911,7 +911,7 @@ extern "C" {
             return Py_BuildValue("IN", result, Py_None);
         }
 
-        PyObject *capsule = PyCapsule_New(playback_handle, capsule_playback_name, capsule_cleanup_playback);
+        PyObject *capsule = PyCapsule_New(playback_handle, CAPSULE_PLAYBACK_NAME, capsule_cleanup_playback);
         return Py_BuildValue("IN", result, capsule);
     }
 
@@ -922,7 +922,7 @@ extern "C" {
         k4a_playback_t* playback_handle;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
 
         thread_state = _gil_release(thread_safe);
         k4a_playback_close(*playback_handle);
@@ -940,7 +940,7 @@ extern "C" {
         uint64_t recording_length;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
 
         thread_state = _gil_release(thread_safe);
         recording_length = k4a_playback_get_recording_length_usec(*playback_handle);
@@ -959,7 +959,7 @@ extern "C" {
         size_t data_size;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
 
         thread_state = _gil_release(thread_safe);
         result = k4a_playback_get_raw_calibration(*playback_handle, NULL, &data_size);
@@ -989,7 +989,7 @@ extern "C" {
         k4a_result_t result;
 
         PyArg_ParseTuple(args, "OpKI", &capsule, &thread_safe, &offset, &origin);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
 
         thread_state = _gil_release(thread_safe);
         result = k4a_playback_seek_timestamp(*playback_handle, offset, origin);
@@ -1007,7 +1007,7 @@ extern "C" {
         k4a_result_t result;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
 
         calibration_handle = (k4a_calibration_t*) malloc(sizeof(k4a_calibration_t));
         if (calibration_handle == NULL) {
@@ -1024,7 +1024,7 @@ extern "C" {
             return Py_BuildValue("IN", result, Py_None);
         }
 
-        PyObject *calibration_capsule = PyCapsule_New(calibration_handle, capsule_calibration_name, capsule_cleanup_calibration);
+        PyObject *calibration_capsule = PyCapsule_New(calibration_handle, CAPSULE_CALIBRATION_NAME, capsule_cleanup_calibration);
 
         return Py_BuildValue("IN", result, calibration_capsule);
     }
@@ -1038,7 +1038,7 @@ extern "C" {
         k4a_record_configuration_t config;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
 
         thread_state = _gil_release(thread_safe);
         result = k4a_playback_get_record_configuration(*playback_handle, &config);
@@ -1073,7 +1073,7 @@ extern "C" {
         k4a_stream_result_t result;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
 
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
         if (capture == NULL) {
@@ -1089,7 +1089,7 @@ extern "C" {
             free(capture);
             return Py_BuildValue("IN", result, Py_None);
         }
-        PyObject* capsule_capture = PyCapsule_New(capture, capsule_capture_name, capsule_cleanup_capture);
+        PyObject* capsule_capture = PyCapsule_New(capture, CAPSULE_CAPTURE_NAME, capsule_cleanup_capture);
         return Py_BuildValue("IN", result, capsule_capture);
     }
 
@@ -1101,7 +1101,7 @@ extern "C" {
         k4a_stream_result_t result;
 
         PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
-        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, capsule_playback_name);
+        playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
 
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
         if (capture == NULL) {
@@ -1117,7 +1117,7 @@ extern "C" {
             free(capture);
             return Py_BuildValue("IN", result, Py_None);
         }
-        PyObject* capsule_capture = PyCapsule_New(capture, capsule_capture_name, capsule_cleanup_capture);
+        PyObject* capsule_capture = PyCapsule_New(capture, CAPSULE_CAPTURE_NAME, capsule_cleanup_capture);
         return Py_BuildValue("IN", result, capsule_capture);
     }
 
