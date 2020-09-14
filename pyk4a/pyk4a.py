@@ -2,7 +2,7 @@ from typing import Tuple, Union, Optional
 import k4a_module
 from enum import Enum
 import numpy as np
-
+import json
 from pyk4a.config import Config, ColorControlMode, ColorControlCommand
 
 
@@ -43,8 +43,14 @@ class PyK4A:
         self._device_close()
         self.is_running = False
 
-    def save_calibration_json(self, path):
+    def get_calibration(self,as_str:bool=False):
         calibration = k4a_module.device_get_calibration()
+        if not as_str:
+            calibration = json.loads(calibration)
+        return calibration
+
+    def save_calibration_json(self, path):
+        calibration = self.get_calibration(True)
         with open(path, 'w') as f:
             f.write(calibration)
 
