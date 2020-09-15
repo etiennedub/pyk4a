@@ -28,4 +28,6 @@ setup(name='pyk4a',
       url='https://github.com/etiennedub/pyk4a/',
       download_url='https://github.com/etiennedub/pyk4a/archive/0.2.tar.gz',
       packages=['pyk4a'],
-      ext_modules=[module])
+      package_data={'pyk4a': ["py.typed"]},
+      ext_modules=[module],
+      )
