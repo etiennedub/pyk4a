@@ -181,11 +181,15 @@ extern "C" {
         switch (format){
             case K4A_IMAGE_FORMAT_COLOR_BGRA32:
                 dims[2] = 4;
-                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
-                break;
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);break;
+                
             case K4A_IMAGE_FORMAT_DEPTH16:
-                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(2, dims, NPY_UINT16, buffer);
-                break;
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(2, dims, NPY_UINT16, buffer);break;
+            case K4A_IMAGE_FORMAT_IR16:
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(2, dims, NPY_UINT16, buffer);break;
+            case K4A_IMAGE_FORMAT_CUSTOM:
+                dims[2]=3;
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_INT16, buffer);break;
             default:
                 // Not supported
                 return K4A_RESULT_FAILED;
@@ -265,6 +269,51 @@ extern "C" {
         }
     }
 
+
+    static PyObject* transformation_depth_image_to_pcl(
+            PyObject* self, PyObject* args){
+        k4a_result_t res;
+        PyArrayObject *in_array;
+        int transformed_to_color;
+        
+        PyArg_ParseTuple(args, "O!I", &PyArray_Type, &in_array, &transformed_to_color);
+
+        
+
+        k4a_image_t* pcl_img = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        
+        k4a_image_t depth_image;
+        
+        res = numpy_to_k4a_image(in_array, &depth_image, K4A_IMAGE_FORMAT_DEPTH16);
+        if(res!=K4A_RESULT_SUCCEEDED)        {            return Py_BuildValue("");        }
+
+        int depth_image_width_pixels = k4a_image_get_width_pixels(depth_image);
+        int depth_image_height_pixels = k4a_image_get_height_pixels(depth_image);
+        res = k4a_image_create(K4A_IMAGE_FORMAT_CUSTOM,
+                    depth_image_width_pixels,
+                    depth_image_height_pixels,
+                    depth_image_width_pixels * 3 * (int)sizeof(int16_t),
+                    pcl_img);
+        if(res!=K4A_RESULT_SUCCEEDED)        {            return Py_BuildValue("");        }
+
+        k4a_calibration_type_t depth_frame_calibration = transformed_to_color? K4A_CALIBRATION_TYPE_COLOR:K4A_CALIBRATION_TYPE_DEPTH;
+        res = k4a_transformation_depth_image_to_point_cloud(
+                    transformation_handle,
+                    depth_image,
+                    depth_frame_calibration,
+                     *pcl_img);
+        k4a_image_release(depth_image);
+        if(res!=K4A_RESULT_SUCCEEDED)        {            return Py_BuildValue("");        }
+        
+        PyArrayObject* np_pcl_image;
+        res = k4a_image_to_numpy(pcl_img, &np_pcl_image);
+        if(res!=K4A_RESULT_SUCCEEDED)        {free(pcl_img);return Py_BuildValue("");        }
+
+        return PyArray_Return(np_pcl_image);
+    }
+
+
+
     static PyObject* device_get_color_image(PyObject* self, PyObject* args){
         k4a_result_t res;
         k4a_image_t* color_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
@@ -303,6 +352,26 @@ extern "C" {
         }
     }
 
+    static PyObject* device_get_ir_image(PyObject* self, PyObject* args){
+        k4a_result_t res;
+        k4a_image_t* ir_image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        *ir_image = k4a_capture_get_ir_image(capture);
+
+        PyArrayObject* np_ir_image;
+        if (ir_image) {
+            res = k4a_image_to_numpy(ir_image, &np_ir_image);
+        }
+
+        if (K4A_RESULT_SUCCEEDED == res) {
+            return PyArray_Return(np_ir_image);
+        }
+        else {
+            free(ir_image);
+            return Py_BuildValue("");
+        }
+    }
+
+
     // Source : https://github.com/MathGaron/pyvicon/blob/master/pyvicon/pyvicon.cpp
     //###################
     //Module initialisation
@@ -326,6 +395,7 @@ extern "C" {
         {"device_get_capture", device_get_capture, METH_VARARGS, "Reads a sensor capture"},
         {"device_get_color_image", device_get_color_image, METH_VARARGS, "Get the color image associated with the given capture"},
         {"device_get_depth_image", device_get_depth_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
+        {"device_get_ir_image", device_get_ir_image, METH_VARARGS, "Set or add a depth image to the associated capture"},
         {"device_close", device_close, METH_VARARGS, "Close an Azure Kinect device"},
         {"device_get_sync_jack", device_get_sync_jack, METH_VARARGS, "Get the device jack status for the synchronization in and synchronization out connectors."},
         {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
@@ -334,6 +404,8 @@ extern "C" {
         {"device_get_calibration", device_get_calibration, METH_VARARGS, "Get device calibration in json format."},
         {"calibration_set_from_raw", calibration_set_from_raw, METH_VARARGS, "Temporary set the calibration from a json format. Must be called after device_start_cameras."},
         {"transformation_depth_image_to_color_camera", transformation_depth_image_to_color_camera, METH_VARARGS, "Transforms the depth map into the geometry of the color camera."},
+        {"transformation_depth_image_to_pcl", transformation_depth_image_to_pcl, METH_VARARGS, "Transforms the depth map into pcl map."},
+        
         {NULL, NULL, 0, NULL}
     };
 

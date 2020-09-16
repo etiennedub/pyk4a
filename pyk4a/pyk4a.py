@@ -43,7 +43,7 @@ class PyK4A:
         self._device_close()
         self.is_running = False
 
-    def get_calibration(self,as_str:bool=False):
+    def get_calibration(self, as_str: bool = False):
         calibration = k4a_module.device_get_calibration()
         if not as_str:
             calibration = json.loads(calibration)
@@ -76,14 +76,14 @@ class PyK4A:
         res = k4a_module.device_stop_cameras()
         self._verify_error(res)
 
-    def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, color_only=False, transform_depth_to_color=True):
+    def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE, transform_to_color=True, color=True, ir=True, depth=True,pcl=True):
         r"""Fetch a capture from the device and return as numpy array(s) or None.
 
         Arguments:
+            :param depth:
+            :param ir:
+            :param color:
             :param timeout: Timeout in ms. Default is infinite.
-            :param color_only: If true, returns color image only as np.array
-            :param transform_depth_to_color: If true, transforms the depth image to the color image reference, using the
-                kinect azure device calibration parameters.
 
 
         Returns:
@@ -96,19 +96,34 @@ class PyK4A:
                 >>> k4a.get_capture(color_only=True) # type: Optional[np.ndarray]
                 >>> k4a.get_capture() # type: Tuple[Optional[np.ndarray], Optional[np.ndarray]]
         """
+        img_color = None
+        img_ir = None
+        img_depth = None
+        img_pcl = None
 
         res = k4a_module.device_get_capture(timeout)
         self._verify_error(res)
 
-        color = self._get_capture_color()
-        if color_only:
-            return color
-        else:
-            depth = self._get_capture_depth(transform_depth_to_color)
-            return color, depth
+        if color:
+            img_color = self._get_capture_color()
+        if ir:
+            img_ir = self._get_capture_ir(transform_to_color)
+        if depth:
+            img_depth = self._get_capture_depth(transform_to_color)
+            if pcl:
+                img_pcl = k4a_module.transformation_depth_image_to_pcl(img_depth, transform_to_color)
+
+
+        return img_color, img_ir, img_depth, img_pcl
 
     def _get_capture_color(self) -> Optional[np.ndarray]:
         return k4a_module.device_get_color_image()
+
+    def _get_capture_ir(self, transform_to_color: bool) -> Optional[np.ndarray]:
+        ir = k4a_module.device_get_ir_image()
+        if ir is not None and transform_to_color:
+            ir = k4a_module.transformation_depth_image_to_color_camera(ir, self._config.color_resolution)
+        return ir
 
     def _get_capture_depth(self, transform_depth_to_color: bool) -> Optional[np.ndarray]:
         depth = k4a_module.device_get_depth_image()
