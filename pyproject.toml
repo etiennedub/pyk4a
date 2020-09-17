@@ -8,3 +8,6 @@ line-length = 120
 markers = [
         "device: Tests require connected real device"
 ]
+filterwarnings = [
+        "ignore::pytest.PytestAssertRewriteWarning"
+]
