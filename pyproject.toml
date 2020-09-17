@@ -11,3 +11,4 @@ markers = [
 filterwarnings = [
         "ignore::pytest.PytestAssertRewriteWarning"
 ]
+addopts = "--cov=pyk4a --cov-report=xml --verbose"
