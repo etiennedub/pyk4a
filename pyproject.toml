@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools", "wheel", "numpy"]
+
+[tool.black]
+line-length = 120
+
+[tool.pytest.ini_options]
+markers = [
+        "device: Tests require connected real device"
+]
+filterwarnings = [
+        "ignore::pytest.PytestAssertRewriteWarning"
+]

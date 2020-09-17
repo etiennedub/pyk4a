@@ -1,4 +1,5 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
+from typing import Tuple
 
 
 # k4a_fps_t
@@ -6,6 +7,19 @@ class FPS(IntEnum):
     FPS_5 = 0
     FPS_15 = 1
     FPS_30 = 2
+
+
+# k4a_image_format_t
+class ImageFormat(IntEnum):
+    COLOR_MJPG = 0
+    COLOR_NV12 = 1
+    COLOR_YUY2 = 2
+    COLOR_BGRA32 = 3
+    DEPTH16 = 4
+    IR16 = 5
+    CUSTOM8 = 6
+    CUSTOM16 = 7
+    CUSTOM = 8
 
 
 # k4a_depth_mode_t
@@ -57,16 +71,20 @@ class ColorControlMode(IntEnum):
 
 
 class Config:
-    def __init__(self,
-                 color_resolution=ColorResolution.RES_720P,
-                 depth_mode=DepthMode.NFOV_UNBINNED,
-                 camera_fps=FPS.FPS_30,
-                 synchronized_images_only=True,
-                 depth_delay_off_color_usec=0,
-                 wired_sync_mode=WiredSyncMode.STANDALONE,
-                 subordinate_delay_off_master_usec=0,
-                 disable_streaming_indicator=False):
+    def __init__(
+        self,
+        color_resolution: ColorResolution = ColorResolution.RES_720P,
+        color_format: ImageFormat = ImageFormat.COLOR_BGRA32,
+        depth_mode: DepthMode = DepthMode.NFOV_UNBINNED,
+        camera_fps: FPS = FPS.FPS_30,
+        synchronized_images_only: bool = True,
+        depth_delay_off_color_usec: int = 0,
+        wired_sync_mode: WiredSyncMode = WiredSyncMode.STANDALONE,
+        subordinate_delay_off_master_usec: int = 0,
+        disable_streaming_indicator: bool = False,
+    ):
         self.color_resolution = color_resolution
+        self.color_format = color_format
         self.depth_mode = depth_mode
         self.camera_fps = camera_fps
         self.synchronized_images_only = synchronized_images_only
@@ -74,15 +92,17 @@ class Config:
         self.wired_sync_mode = wired_sync_mode
         self.subordinate_delay_off_master_usec = subordinate_delay_off_master_usec
         self.disable_streaming_indicator = disable_streaming_indicator
-        self.color_format = 3  # BGRA32
+        assert self.subordinate_delay_off_master_usec >= 0
 
-    def unpack(self):
-        return (self.color_format,
-                self.color_resolution,
-                self.depth_mode,
-                self.camera_fps,
-                self.synchronized_images_only,
-                self.depth_delay_off_color_usec,
-                self.wired_sync_mode,
-                self.subordinate_delay_off_master_usec,
-                self.disable_streaming_indicator)
+    def unpack(self) -> Tuple[ImageFormat, ColorResolution, DepthMode, FPS, bool, int, WiredSyncMode, int, bool]:
+        return (
+            self.color_format,
+            self.color_resolution,
+            self.depth_mode,
+            self.camera_fps,
+            self.synchronized_images_only,
+            self.depth_delay_off_color_usec,
+            self.wired_sync_mode,
+            self.subordinate_delay_off_master_usec,
+            self.disable_streaming_indicator,
+        )
