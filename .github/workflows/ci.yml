@@ -37,7 +37,7 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: [ '3.4', '3.5', '3.6', '3.7', '3.8']
+        python-version: ['3.5', '3.6', '3.7', '3.8']
     name: Test
     runs-on: ubuntu-18.04
     steps:
