@@ -18,7 +18,7 @@ num_joints = len(kinect2coco)
 class Visualizer(object):
     def __init__(self):
         self.k4a = PyK4A(Config(color_resolution=ColorResolution.RES_720P, depth_mode=pyk4a.DepthMode.NFOV_UNBINNED,))
-        self.k4a.connect()
+        self.k4a.start()
 
         self.traces = dict()
         self.app = QtGui.QApplication(sys.argv)
@@ -50,8 +50,8 @@ class Visualizer(object):
         self.traces[name].setData(pos=points, color=color)
 
     def update(self):
-        _, _ = self.k4a.get_capture()
-        pose = self.k4a.get_pose()
+        capture = self.k4a.get_capture()
+        pose = capture.get_pose()
         if pose is not None:
             for i in range(pose.shape[0]):
                 pts = pose[i, :, :3].reshape(-1, 3)[kinect2coco]
@@ -68,5 +68,6 @@ class Visualizer(object):
 
 # Start Qt event loop unless running in interactive mode.
 if __name__ == "__main__":
+    raise NotImplementedError("Not refactored yet")
     v = Visualizer()
     v.animation()

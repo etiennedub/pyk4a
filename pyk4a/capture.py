@@ -98,18 +98,22 @@ class PyK4ACapture:
             position_image_1,
         )
         """
-        assert self._calibration.body_tracker_handle is not None
         if self._body_skeleton is None:
             self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
-                self._calibration.body_tracker_handle, self._calibration._calibration_handle, self.thread_safe
+                self._capture_handle,
+                self._calibration._calibration_handle,
+                self._calibration.body_tracker_handle,
+                self.thread_safe
             )
         return self._body_skeleton
 
     @property
     def body_index_map(self) -> Optional[np.ndarray]:
-        assert self._calibration.body_tracker_handle is not None
-        if self.body_index_map is None:
+        if self._body_index_map is None:
             self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
-                self._calibration.body_tracker_handle, self._calibration._calibration_handle, self.thread_safe
+                self._capture_handle,
+                self._calibration._calibration_handle,
+                self._calibration.body_tracker_handle,
+                self.thread_safe
             )
         return self._body_index_map

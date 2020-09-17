@@ -5,6 +5,7 @@
 #include <k4arecord/playback.h>
 
 #ifdef ENABLE_BODY_TRACKING
+#warning "Body tracking enabled"
 #include <k4abt.h>
 #define DATA_PER_JOINT 10
 #endif
@@ -237,7 +238,6 @@ extern "C" {
         thread_state = _gil_release(thread_safe);
         result = k4a_device_start_cameras(*device_handle, &config);
         _gil_restore(thread_state);
-
         return Py_BuildValue("I", result);
     }
 
@@ -485,6 +485,12 @@ extern "C" {
                 dims[1] = k4a_image_get_width_pixels(*img_src);
                 dims[2] = 3;
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_INT16, buffer);
+                break;
+            case K4A_IMAGE_FORMAT_CUSTOM8:
+                dims[0] = k4a_image_get_height_pixels(*img_src);
+                dims[1] = k4a_image_get_width_pixels(*img_src);
+                dims[2] = 1;
+                *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
                 break;
             default:
                 // Not supported
@@ -1129,11 +1135,12 @@ extern "C" {
 
     static PyObject* is_body_tracking_supported(PyObject* self,PyObject* args) {
 #ifdef ENABLE_BODY_TRACKING
-        return Py_BuildValue("N", Py_True);
+        return Py_True;
 #else
-        return Py_BuildValue("N", Py_False);
+        return Py_False;
 #endif
     }
+
 
 #ifdef ENABLE_BODY_TRACKING
     const char* CAPSULE_BODY_TRACKER_NAME = "pyk4a body tracker handle";
@@ -1146,40 +1153,38 @@ extern "C" {
     }
 
     static void capsule_cleanup_body_data(PyObject *capsule) {
-        double_t *buffer = (double_t*)PyCapsule_GetContext(capsule);
+        fprintf(stdout, "free called on body data");
+        void* buffer = PyCapsule_GetPointer(capsule, CAPSULE_BODY_DATA_NAME);
         free(buffer);
     }
 
     static PyObject* body_tracker_create(PyObject* self, PyObject *args) {
-        fprintf(stderr, "body_tracker_create start\n");
         k4a_calibration_t* calibration_handle;
-        PyObject *device_capsule;
         PyObject *calibration_capsule;
         int thread_safe;
         PyThreadState *thread_state;
         k4a_result_t result;
 
-        PyArg_ParseTuple(args, "Op", &device_capsule, &calibration_capsule, &thread_safe);
-        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(calibration_capsule, CAPSULE_DEVICE_NAME);
+        PyArg_ParseTuple(args, "Op", &calibration_capsule, &thread_safe);
+        calibration_handle = (k4a_calibration_t*)PyCapsule_GetPointer(calibration_capsule, CAPSULE_CALIBRATION_NAME);
 
         thread_state = _gil_release(thread_safe);
-        k4abt_tracker_configuration_t tracker_calibration = K4ABT_TRACKER_CONFIG_DEFAULT;
+        k4abt_tracker_configuration_t tracker_configuration = K4ABT_TRACKER_CONFIG_DEFAULT;
+        // tracker_configuration.processing_mode = K4ABT_TRACKER_PROCESSING_MODE_CPU;
         k4abt_tracker_t* body_tracker_handle = (k4abt_tracker_t*) malloc(sizeof(k4abt_tracker_t));
-        result = k4abt_tracker_create(calibration_handle, tracker_calibration, body_tracker_handle);
+        result = k4abt_tracker_create(calibration_handle, tracker_configuration, body_tracker_handle);
         _gil_restore(thread_state);
 
         if (result == K4A_RESULT_FAILED) {
             free(body_tracker_handle);
-            return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
+            return Py_BuildValue("N", Py_None);
         }
 
-        PyObject *capsule = PyCapsule_New(body_tracker_handle, CAPSULE_BODY_TRACKER_NAME, capsule_cleanup_body_tracker);
-        fprintf(stderr, "body_tracker_create end\n");
-        return Py_BuildValue("IN", result, capsule);
+        PyObject *body_tracker_capsule = PyCapsule_New(body_tracker_handle, CAPSULE_BODY_TRACKER_NAME, capsule_cleanup_body_tracker);
+        return Py_BuildValue("N", body_tracker_capsule);
     }
 
     static PyObject* capture_get_body_tracking(PyObject* self, PyObject *args) {
-        fprintf(stderr, "capture_get_body_tracking start\n");
         int thread_safe;
         PyThreadState *thread_state;
         PyObject *capture_capsule;
@@ -1188,33 +1193,44 @@ extern "C" {
         k4a_capture_t *capture;
         k4a_calibration_t *calibration;
         k4abt_tracker_t *body_tracker;
-        k4abt_frame_t body_frame = NULL;
+        k4abt_frame_t body_frame;
         k4a_wait_result_t wait_res;
-        PyArg_ParseTuple(args, "IpO", &body_tracker_capsule, &capture_capsule, &calibration_capsule, &thread_safe);
 
+        PyArg_ParseTuple(args, "OOOp", &capture_capsule, &calibration_capsule, &body_tracker_capsule, &thread_safe);
         capture = (k4a_capture_t*)PyCapsule_GetPointer(capture_capsule, CAPSULE_CAPTURE_NAME);
         calibration = (k4a_calibration_t*)PyCapsule_GetPointer(calibration_capsule, CAPSULE_CALIBRATION_NAME);
         body_tracker = (k4abt_tracker_t*)PyCapsule_GetPointer(body_tracker_capsule, CAPSULE_BODY_TRACKER_NAME);
-        thread_state = _gil_release(thread_safe);
-        wait_res = k4abt_tracker_enqueue_capture(*body_tracker, *capture, 0);
-        if (wait_res == K4A_WAIT_RESULT_FAILED ) {
+
+        //thread_state = _gil_release(thread_safe);
+        //_gil_restore(thread_state);
+
+        wait_res = k4abt_tracker_enqueue_capture(*body_tracker, *capture, K4A_WAIT_INFINITE);
+        if (wait_res != K4A_WAIT_RESULT_SUCCEEDED ) {
+            fprintf(stderr, "fail to enqueue capture\n");
             return Py_BuildValue("NN", Py_None, Py_None);
         }
-        wait_res = k4abt_tracker_pop_result(*body_tracker, &body_frame, 0);
-        _gil_restore(thread_state);
+        wait_res = k4abt_tracker_pop_result(*body_tracker, &body_frame, K4A_WAIT_INFINITE);
         if (wait_res == K4A_WAIT_RESULT_SUCCEEDED) {
-            size_t num_bodies = k4abt_frame_get_num_bodies(body_frame);
+            uint32_t num_bodies = k4abt_frame_get_num_bodies(body_frame);
+            if (num_bodies == 0) {
+                k4abt_frame_release(body_frame);
+                return Py_BuildValue("NN", Py_None, Py_None);
+            }
             k4abt_skeleton_t skeleton;
             npy_intp dims[3];
             dims[0] = num_bodies;
             dims[1] = K4ABT_JOINT_COUNT;
-            dims[2] = 10;
-            size_t body_stride = K4ABT_JOINT_COUNT*10;
+            dims[2] = DATA_PER_JOINT;
+            size_t body_stride = K4ABT_JOINT_COUNT*DATA_PER_JOINT;
             float* buffer_pose = (float*) malloc(sizeof(float)*num_bodies*body_stride);
+            if (capture == NULL) {
+                fprintf(stderr, "Cannot allocate memory");
+                return Py_BuildValue("NN", Py_None, Py_None);
+            }
 
-            for (size_t body_index = 0; body_index < num_bodies; body_index++) {
-                k4abt_frame_get_body_skeleton(body_frame, body_index, &skeleton);
-                for (int joint_index=0; joint_index<K4ABT_JOINT_COUNT*8; joint_index++) {
+            for (uint32_t body_index = 0; body_index < num_bodies; body_index++) {
+                k4a_result_t result = k4abt_frame_get_body_skeleton(body_frame, body_index, &skeleton);
+                for (int joint_index=0; joint_index<K4ABT_JOINT_COUNT; joint_index++) {
                     size_t offset = body_index * body_stride + joint_index;
                     buffer_pose[offset + 0] = skeleton.joints[joint_index].position.xyz.x;
                     buffer_pose[offset + 1] = skeleton.joints[joint_index].position.xyz.y;
@@ -1229,8 +1245,8 @@ extern "C" {
                     int valid;
                     k4a_calibration_3d_to_2d(calibration, &skeleton.joints[joint_index].position, K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR, &position_image, &valid);
 
-                    buffer_pose[offset + 8] = (float) position_image.v[0];
-                    buffer_pose[offset + 9] = (float) position_image.v[1];
+                    buffer_pose[offset + 8] = position_image.v[0];
+                    buffer_pose[offset + 9] = position_image.v[1];
                 }
             }
 
@@ -1242,8 +1258,9 @@ extern "C" {
             PyArrayObject* np_body_index_map;
             k4a_image_t body_index_map = k4abt_frame_get_body_index_map(body_frame);
             k4a_image_to_numpy(&body_index_map, &np_body_index_map);
+
             k4abt_frame_release(body_frame);
-            return Py_BuildValue("OO", np_body_data, np_body_index_map);
+            return Py_BuildValue("OO", np_body_data, Py_None);
         }
         else {
             return Py_BuildValue("NN", Py_None, Py_None);
