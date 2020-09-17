@@ -44,7 +44,7 @@ from pyk4a import PyK4A
 
 # Load camera with the default config
 k4a = PyK4A()
-k4a.connect()
+k4a.start()
 
 # Get the next capture (blocking function)
 capture = k4a.get_capture()
