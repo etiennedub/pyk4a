@@ -27,7 +27,6 @@ extern "C" {
     const char* CAPSULE_DEVICE_NAME = "pyk4a device handle";
     const char* CAPSULE_CALIBRATION_NAME = "pyk4a calibration handle";
     const char* CAPSULE_TRANSFORMATION_NAME = "pyk4a transformation handle";
-    const char* CAPSULE_BODY_TRACKER_NAME = "pyk4a body tracker handle";
 
     static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
@@ -1128,6 +1127,9 @@ extern "C" {
         return Py_BuildValue("IN", result, capsule_capture);
     }
 #ifdef ENABLE_BODY_TRACKING
+
+    const char* CAPSULE_BODY_TRACKER_NAME = "pyk4a body tracker handle";
+
     static PyObject* device_start_body_tracker(PyObject* self, PyObject *args) {
         k4a_device_t* device_handle;
         k4a_calibration_t* calibration_handle;
@@ -1157,7 +1159,74 @@ extern "C" {
     }
 
     static PyObject* capture_get_body_tracking(PyObject* self, PyObject *args) {
-        // TODO
+        uint32_t device_id;
+        int thread_safe;
+        PyThreadState *thread_state;
+        PyObject *capsule_capture;
+        PyObject *body_tracker_capsule;
+        k4a_capture_t *capture;
+        k4abt_tracker_t *body_tracker;
+        k4a_result_t res;
+        k4abt_frame_t body_frame = NULL;
+        k4a_wait_result_t wait_res;
+        k4a_result_t res;
+        PyArg_ParseTuple(args, "IpO", &body_tracker_capsule, &capsule_capture, &thread_safe);
+
+        capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule_capture, CAPSULE_CAPTURE_NAME);
+        body_tracker = (k4abt_tracker_t*)PyCapsule_GetPointer(body_tracker_capsule, CAPSULE_BODY_TRACKER_NAME);
+        thread_state = _gil_release(thread_safe);
+        wait_res = k4abt_tracker_enqueue_capture(*body_tracker, *capture, 0);
+        if (wait_res == K4A_WAIT_RESULT_FAILED ) {
+            return Py_BuildValue("NN", Py_None, Py_None);
+        }
+        wait_res = k4abt_tracker_pop_result(*body_tracker, &body_frame, 0);
+        _gil_restore(thread_state);
+        if (wait_res == K4A_WAIT_RESULT_SUCCEEDED) {
+            size_t num_bodies = k4abt_frame_get_num_bodies(body_frame);
+            k4abt_skeleton_t skeleton;
+            k4abt_frame_get_body_skeleton(body_frame, i, &skeleton);
+            npy_intp dims[3];
+            dims[0] = num_bodies;
+            dims[1] = K4ABT_JOINT_COUNT;
+            dims[2] = 10;
+            size_t body_stride = K4ABT_JOINT_COUNT*10;
+            float* buffer_pose = (float*) malloc(sizeof(float)*num_bodies*body_stride);
+
+            for (int body_index = 0; body_index < num_bodies; body_index++) {
+                k4abt_frame_get_body_skeleton(body_frame, body_index, &skeleton);
+                for (int joint_index=0; joint_index<K4ABT_JOINT_COUNT*8; joint_index++) {
+                    size_t offset = body_index * body_stride + joint_index;
+                    buffer_pose[offset + 0] = skeleton.joints[joint_index].position.xyz.x;
+                    buffer_pose[offset + 1] = skeleton.joints[joint_index].position.xyz.y;
+                    buffer_pose[offset + 2] = skeleton.joints[joint_index].position.xyz.z;
+                    buffer_pose[offset + 3] = skeleton.joints[joint_index].orientation.wxyz.w;
+                    buffer_pose[offset + 4] = skeleton.joints[joint_index].orientation.wxyz.x;
+                    buffer_pose[offset + 5] = skeleton.joints[joint_index].orientation.wxyz.y;
+                    buffer_pose[offset + 6] = skeleton.joints[joint_index].orientation.wxyz.z;
+                    buffer_pose[offset + 7] = (float) skeleton.joints[joint_index].confidence_level;
+                    // convert to image positions
+                    k4a_float2_t position_image;
+                    int valid;
+                    k4a_calibration_3d_to_2d(&devices[device_id].calibration_handle, &skeleton.joints[joint_index].position, K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR, &position_image, &valid);
+
+                    buffer_pose[offset + 8] = (float) position_image.v[0];
+                    buffer_pose[offset + 9] = (float) position_image.v[1];
+                }
+            }
+            PyArrayObject* np_skeleton = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_FLOAT, buffer_pose);
+            PyObject *capsule = PyCapsule_New(buffer, capsule_body_tracking_skeleton_name, pose_capsule_cleanup);
+            PyCapsule_SetContext(capsule, buffer_pose);
+            PyArray_SetBaseObject((PyArrayObject *) np_pose_data, capsule);
+
+            PyArrayObject* np_body_index_map;
+            k4a_image_t body_index_map = k4abt_frame_get_body_index_map(body_frame);
+            k4a_image_to_numpy(body_index_map, &np_body_index_map);
+            k4abt_frame_release(body_frame);
+            return Py_BuildValue("OO", np_skeleton, np_body_index_map);
+        }
+        else {
+            return Py_BuildValue("NN", Py_None, Py_None);
+        }
     }
 
     static void capsule_cleanup_body_tracker(PyObject *capsule) {

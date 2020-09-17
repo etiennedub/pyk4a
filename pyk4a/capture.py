@@ -12,11 +12,11 @@ from .transformation import color_image_to_depth_camera, depth_image_to_color_ca
 class PyK4ACapture:
     def __init__(
         self, calibration: Calibration, capture_handle: object, color_format: ImageFormat, thread_safe: bool = True,
-        body_tracker: Optional[object] = None
+        body_tracker_handle: Optional[object] = None
     ):
         self._calibration: Calibration = calibration
         self._capture_handle: object = capture_handle  # built-in PyCapsule
-        self._body_tracker: Optional[None] = body_tracker # built-in PyCapsule
+        self._body_tracker_handle: Optional[None] = body_tracker_handle # built-in PyCapsule
         self.thread_safe = thread_safe
         self._color_format = color_format
 
@@ -100,18 +100,18 @@ class PyK4ACapture:
             position_image_1,
         )
         """
-        assert self._body_tracker is not None
+        assert self._body_tracker_handle is not None
         if self._body_skeleton is None:
             self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
-                self._body_tracker, self._capture_handle, self.thread_safe
+                self._body_tracker_handle, self._capture_handle, self.thread_safe
             )
         return self._body_skeleton
 
     @property
     def body_index_map(self) -> Optional[np.ndarray]:
-        assert self._body_tracker is not None
+        assert self._body_tracker_handle is not None
         if self.body_index_map is None:
             self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
-                self._body_tracker, self._capture_handle, self.thread_safe
+                self._body_tracker_handle, self._capture_handle, self.thread_safe
             )
         return self._body_index_map
