@@ -38,7 +38,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.6', '3.7', '3.8']
-      fail-fast: false
+      fail-fast: true
     name: Test
     runs-on: ubuntu-18.04
     steps:
