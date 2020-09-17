@@ -36,13 +36,13 @@ class CameraWorker(Worker):
     def run(self) -> None:
         print("Start run")
         camera = PyK4A(device_id=self._device_id, thread_safe=self.thread_safe)
-        camera.connect()
+        camera.start()
         while not self._halt:
             capture = camera.get_capture()
             assert capture.depth is not None
             self._count += 1
         sleep(0.1)
-        camera.disconnect()
+        camera.stop()
         del camera
         print("Stop run")
 

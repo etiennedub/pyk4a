@@ -51,5 +51,7 @@ setup(name='pyk4a',
       url='https://github.com/etiennedub/pyk4a/',
       download_url='https://github.com/etiennedub/pyk4a/archive/0.2.tar.gz',
       packages=['pyk4a'],
+      package_data={'pyk4a': ["py.typed"]},
       ext_modules=[k4a_module],
-      cmdclass={'build_ext': pyk4a_build_ext}, )
+      cmdclass={'build_ext': pyk4a_build_ext},
+       )

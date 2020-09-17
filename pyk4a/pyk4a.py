@@ -1,32 +1,18 @@
 import sys
-from enum import Enum
 from typing import Any, Optional, Tuple
 
-import numpy as np
-
 import k4a_module
-from pyk4a.config import ColorControlCommand, ColorControlMode, ColorFormat, Config
+
+from .calibration import Calibration
+from .capture import PyK4ACapture
+from .config import ColorControlCommand, ColorControlMode, Config
+from .errors import K4AException, _verify_error
 
 
 if sys.version_info < (3, 8):
     from typing_extensions import TypedDict
 else:
     from typing import TypedDict
-
-
-# k4a_wait_result_t
-class Result(Enum):
-    Success = 0
-    Failed = 1
-    Timeout = 2
-
-
-class K4AException(Exception):
-    pass
-
-
-class K4ATimeoutException(K4AException):
-    pass
 
 
 class PyK4A:
@@ -38,11 +24,34 @@ class PyK4A:
         self._config: Config = config if (config is not None) else Config()
         self.thread_safe = thread_safe
         self._device_handle: Optional[object] = None
+        self._calibration: Optional[Calibration] = None
+        self.is_running = False
+
+    def start(self):
+        """
+        Open device if device not opened, then start cameras and IMU
+        All-in-one function
+        :return:
+        """
+        if not self.opened:
+            self.open()
+        self._start_cameras()
+        self._start_imu()
+        self.is_running = True
+
+    def stop(self):
+        """
+        Stop cameras, IMU, ... and close device
+        :return:
+        """
+        self._stop_imu()
+        self._stop_cameras()
+        self._device_close()
         self.is_running = False
 
     def __del__(self):
         if self.is_running:
-            self.disconnect()
+            self.stop()
         elif self.opened:
             self.close()
 
@@ -60,72 +69,43 @@ class PyK4A:
         self._device_open()
 
     def close(self):
-        """
-        Close device
-        """
         self._validate_is_opened()
         self._device_close()
 
-    def connect(self):
-        """
-        Open device if device not opened, then start cameras and IMU
-        All-in-one function
-        :return:
-        """
-        if not self.opened:
-            self.open()
-        self._start_cameras()
-        self._start_imu()
-        self.is_running = True
-
-    def disconnect(self):
-        """
-        Stop cameras, IMU, ... and close device
-        :return:
-        """
-        self._stop_imu()
-        self._stop_cameras()
-        self._device_close()
-        self.is_running = False
-
     def save_calibration_json(self, path: Any):
-        calibration = k4a_module.device_get_calibration(self._device_id, self.thread_safe)
         with open(path, "w") as f:
-            f.write(calibration)
+            f.write(self.calibration_raw)
 
     def load_calibration_json(self, path: Any):
         with open(path, "r") as f:
             calibration = f.read()
-        res = k4a_module.calibration_set_from_raw(
-            self._device_id, self.thread_safe, calibration, *self._config.unpack()
-        )
-        self._verify_error(res)
+        self.calibration_raw = calibration
 
     def _device_open(self):
         res, handle = k4a_module.device_open(self._device_id, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
         self._device_handle = handle
 
     def _device_close(self):
         res = k4a_module.device_close(self._device_handle, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
         self._device_handle = None
 
     def _start_cameras(self):
         res = k4a_module.device_start_cameras(self._device_handle, self.thread_safe, *self._config.unpack())
-        self._verify_error(res)
+        _verify_error(res)
 
     def _start_imu(self):
         res = k4a_module.device_start_imu(self._device_handle, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
 
     def _stop_cameras(self):
         res = k4a_module.device_stop_cameras(self._device_handle, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
 
     def _stop_imu(self):
         res = k4a_module.device_stop_imu(self._device_handle, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
 
     def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE,) -> "PyK4ACapture":
         """
@@ -140,37 +120,57 @@ class PyK4A:
                 in the current capture. There are no guarantees that the returned
                 object will contain all the requested images.
 
-        If using any ColorFormat other than ColorFormat.BGRA32, the color image must be
+        If using any ImageFormat other than ImageFormat.COLOR_BGRA32, the color color_image must be
         decoded. See example/color_formats.py
         """
+        self._validate_is_opened()
         res, capture_capsule = k4a_module.device_get_capture(self._device_handle, self.thread_safe, timeout)
-        self._verify_error(res)
+        _verify_error(res)
 
-        capture = PyK4ACapture(device=self, capture_capsule=capture_capsule)
+        capture = PyK4ACapture(
+            calibration=self.calibration,
+            capture_handle=capture_capsule,
+            color_format=self._config.color_format,
+            thread_safe=self.thread_safe,
+        )
         return capture
 
     def get_imu_sample(self, timeout: int = TIMEOUT_WAIT_INFINITE) -> Optional["ImuSample"]:
-        res, imu_sample = k4a_module.device_get_imu_sample(self._device_id, self.thread_safe, timeout)
-        self._verify_error(res)
+        self._validate_is_opened()
+        res, imu_sample = k4a_module.device_get_imu_sample(self._device_handle, self.thread_safe, timeout)
+        _verify_error(res)
         return imu_sample
+
+    @property
+    def calibration_raw(self) -> str:
+        self._validate_is_opened()
+        raw = k4a_module.device_get_raw_calibration(self._device_handle, self.thread_safe)
+        return raw
+
+    @calibration_raw.setter
+    def calibration_raw(self, value: str):
+        self._validate_is_opened()
+        self._calibration = Calibration.from_raw(
+            value, self._config.depth_mode, self._config.color_resolution, self.thread_safe
+        )
 
     @property
     def sync_jack_status(self) -> Tuple[bool, bool]:
         self._validate_is_opened()
         res, jack_in, jack_out = k4a_module.device_get_sync_jack(self._device_handle, self.thread_safe)
-        self._verify_error(res)
+        _verify_error(res)
         return jack_in == 1, jack_out == 1
 
     def _get_color_control(self, cmd: ColorControlCommand) -> Tuple[int, ColorControlMode]:
         self._validate_is_opened()
         res, mode, value = k4a_module.device_get_color_control(self._device_handle, self.thread_safe, cmd)
-        self._verify_error(res)
+        _verify_error(res)
         return value, ColorControlMode(mode)
 
     def _set_color_control(self, cmd: ColorControlCommand, value: int, mode=ColorControlMode.MANUAL):
         self._validate_is_opened()
         res = k4a_module.device_set_color_control(self._device_handle, self.thread_safe, cmd, mode, value)
-        self._verify_error(res)
+        _verify_error(res)
 
     @property
     def brightness(self) -> int:
@@ -267,7 +267,7 @@ class PyK4A:
     def _get_color_control_capabilities(self, cmd: ColorControlCommand) -> Optional["ColorControlCapabilities"]:
         self._validate_is_opened()
         res, capabilities = k4a_module.device_get_color_control_capabilities(self._device_handle, self.thread_safe, cmd)
-        self._verify_error(res)
+        _verify_error(res)
         return capabilities
 
     def reset_color_control_to_default(self):
@@ -275,127 +275,25 @@ class PyK4A:
             capability = self._get_color_control_capabilities(cmd)
             self._set_color_control(cmd, capability["default_value"], capability["default_mode"])
 
-    @staticmethod
-    def _verify_error(res):
-        res = Result(res)
-        if res == Result.Failed:
-            raise K4AException()
-        elif res == Result.Timeout:
-            raise K4ATimeoutException()
+    @property
+    def calibration(self) -> Calibration:
+        self._validate_is_opened()
+        if not self._calibration:
+            res, calibration_handle = k4a_module.device_get_calibration(
+                self._device_handle, self.thread_safe, self._config.depth_mode, self._config.color_resolution
+            )
+            _verify_error(res)
+            self._calibration = Calibration(
+                handle=calibration_handle,
+                depth_mode=self._config.depth_mode,
+                color_resolution=self._config.color_resolution,
+                thread_safe=self.thread_safe,
+            )
+        return self._calibration
 
     def _validate_is_opened(self):
         if not self.opened:
             raise K4AException("Device is not opened")
-
-
-class PyK4ACapture:
-    def __init__(self, device: PyK4A, capture_capsule: object):
-        # capture is a PyCapsule containing pointer to k4a_capture_t.
-        # use properties instead of attributes
-        self.device: PyK4A = device
-        self._color: Optional[np.ndarray] = None
-        self._depth: Optional[np.ndarray] = None
-        self._ir: Optional[np.ndarray] = None
-        self._depth_point_cloud: Optional[np.ndarray] = None
-        self._transformed_depth: Optional[np.ndarray] = None
-        self._transformed_depth_point_cloud: Optional[np.ndarray] = None
-        self._transformed_color: Optional[np.ndarray] = None
-        self._cap: object = capture_capsule  # built-in PyCapsule
-
-        self._body_skeleton: Optional[np.ndarray] = None
-        self._body_index_map: Optional[np.ndarray] = None
-
-    @property
-    def color(self) -> Optional[np.ndarray]:
-        if self._color is None:
-            self._color = k4a_module.capture_get_color_image(self.device.thread_safe, self._cap)
-        return self._color
-
-    @property
-    def ir(self) -> Optional[np.ndarray]:
-        if self._ir is None:
-            self._ir = k4a_module.capture_get_ir_image(self.device.thread_safe, self._cap)
-        return self._ir
-
-    @property
-    def depth(self) -> Optional[np.ndarray]:
-        if self._depth is None:
-            self._depth = k4a_module.capture_get_depth_image(self.device.thread_safe, self._cap)
-        return self._depth
-
-    @property
-    def transformed_depth(self) -> Optional[np.ndarray]:
-        if self._transformed_depth is None and self.depth is not None:
-            self._transformed_depth = k4a_module.transformation_depth_image_to_color_camera(
-                self.device._device_id, self.device.thread_safe, self.depth, self.device._config.color_resolution,
-            )
-        return self._transformed_depth
-
-    @property
-    def depth_point_cloud(self) -> Optional[np.ndarray]:
-        if self._depth_point_cloud is None and self.depth is not None:
-            self._depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
-                self.device._device_id, self.device.thread_safe, self.depth, True
-            )
-        return self._depth_point_cloud
-
-    @property
-    def transformed_depth_point_cloud(self) -> Optional[np.ndarray]:
-        if self._transformed_depth_point_cloud is None and self.transformed_depth is not None:
-            self._transformed_depth_point_cloud = k4a_module.transformation_depth_image_to_point_cloud(
-                self.device._device_id, self.device.thread_safe, self.transformed_depth, False
-            )
-        return self._transformed_depth_point_cloud
-
-    @property
-    def transformed_color(self) -> Optional[np.ndarray]:
-        if self._transformed_color is None and self.depth is not None and self.color is not None:
-            if self.device._config.color_format != ColorFormat.BGRA32:
-                raise RuntimeError(
-                    "color image must be of format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
-                    "transformation_color_image_to_depth_camera"
-                )
-            self._transformed_color = k4a_module.transformation_color_image_to_depth_camera(
-                self.device._device_id, self.device.thread_safe, self.depth, self.color
-            )
-        return self._transformed_color
-
-    @property
-    def body_skeleton(self) -> Optional[np.ndarray]:
-        """
-        np array of floats where
-        (n_bodies, n_joints, n_data) == body_skeleton.shape
-
-        data for a joint follows this order(
-            position_x,
-            position_y,
-            position_z,
-            orientation_w,
-            orientation_x,
-            orientation_y,
-            orientation_z,
-            confidence_level,
-            position_image_0,
-            position_image_1,
-        )
-        """
-        assert self.device.BODY_TRACKING_SUPPORT
-        # TODO: assert self.device has a body_tracker
-        if self._body_skeleton is None:
-            self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
-                self.device._device_id, self.device.thread_safe
-            )
-        return self._body_skeleton
-
-    @property
-    def body_index_map(self) -> Optional[np.ndarray]:
-        assert self.device.BODY_TRACKING_SUPPORT
-        # TODO: assert self.device has a body_tracker
-        if self.body_index_map is None:
-            self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
-                self.device._device_id, self.device.thread_safe
-            )
-        return self._body_index_map
 
 
 class ImuSample(TypedDict):

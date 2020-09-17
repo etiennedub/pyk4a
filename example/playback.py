@@ -1,16 +1,29 @@
 from argparse import ArgumentParser
-from json import dumps, loads
 
+import cv2
+
+from helpers import colorize, convert_to_bgra_if_required
 from pyk4a import PyK4APlayback
 
 
 def info(playback: PyK4APlayback):
     print(f"Record length: {playback.length / 1000000: 0.2f} sec")
 
-    calibration_str = playback.calibration_json
-    calibration_formatted = dumps(loads(calibration_str), indent=2)
-    print("=== Calibration ===")
-    print(calibration_formatted)
+
+def play(playback: PyK4APlayback):
+    while True:
+        try:
+            capture = playback.get_next_capture()
+            if capture.color is not None:
+                cv2.imshow("Color", convert_to_bgra_if_required(playback.configuration["color_format"], capture.color))
+            if capture.depth is not None:
+                cv2.imshow("Depth", colorize(capture.depth, (None, 5000)))
+            key = cv2.waitKey(10)
+            if key != -1:
+                break
+        except EOFError:
+            break
+    cv2.destroyAllWindows()
 
 
 def main() -> None:
@@ -29,6 +42,7 @@ def main() -> None:
 
     if offset != 0.0:
         playback.seek(int(offset * 1000000))
+    play(playback)
 
     playback.close()
 
