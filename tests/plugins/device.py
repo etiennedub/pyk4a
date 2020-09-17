@@ -228,7 +228,7 @@ def patch_module_device(monkeypatch):
             assert self._opened is True
             if not self._cameras_started:
                 return Result.Failed.value, None
-            return Result.Success.value, (36.6, (0.1, 9.8, 0.005), time.time_ns(), (0.1, 0.2, 0.3), time.time_ns())
+            return Result.Success.value, (36.6, (0.1, 9.8, 0.005), time.time() * 1000, (0.1, 0.2, 0.3), time.time_ns())
 
         def device_get_calibration(self, depth_mode: int, color_resolution: int) -> Tuple[int, Optional[object]]:
             assert self._opened is True
