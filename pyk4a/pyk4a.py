@@ -17,7 +17,6 @@ else:
 
 class PyK4A:
     TIMEOUT_WAIT_INFINITE = -1
-    BODY_TRACKING_SUPPORT = bool(k4a_module.is_body_tracking_supported())
 
     def __init__(self, config: Optional[Config] = None, device_id: int = 0, thread_safe: bool = True):
         self._device_id = device_id
