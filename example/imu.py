@@ -26,7 +26,6 @@ def main():
         )
     )
     k4a.start()
-    k4a._start_imu()
 
     plt.ion()
     fig, axes = plt.subplots(3, sharex=False)
