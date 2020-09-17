@@ -23,12 +23,12 @@ extern "C" {
                                     {4096, 3072}};
 
     const char* CAPSULE_CAPTURE_NAME = "pyk4a capture handle";
-    const char* CAPSULE_BODY_TRACKER = "pyk4a body tracker"
     const char* CAPSULE_PLAYBACK_NAME = "pyk4a playback handle";
     const char* CAPSULE_DEVICE_NAME = "pyk4a device handle";
     const char* CAPSULE_CALIBRATION_NAME = "pyk4a calibration handle";
     const char* CAPSULE_TRANSFORMATION_NAME = "pyk4a transformation handle";
     const char* CAPSULE_CAPTURE_NAME = "pyk4a capture handle";
+    const char* CAPSULE_BODY_TRACKER_NAME = "pyk4a body tracker handle";
 
     static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
@@ -240,12 +240,6 @@ extern "C" {
         result = k4a_device_start_cameras(*device_handle, &config);
         _gil_restore(thread_state);
 
-#ifdef ENABLE_BODY_TRACKING
-            k4abt_tracker_configuration_t tracker_calibration = K4ABT_TRACKER_CONFIG_DEFAULT;
-            if (k4abt_tracker_create(&devices[device_id].calibration_handle, tracker_calibration, &devices[device_id].body_tracker) == K4A_RESULT_FAILED) {
-                return Py_BuildValue("I", K4A_RESULT_FAILED);
-            }
-#endif
         return Py_BuildValue("I", result);
     }
 
@@ -1134,6 +1128,45 @@ extern "C" {
         PyObject* capsule_capture = PyCapsule_New(capture, CAPSULE_CAPTURE_NAME, capsule_cleanup_capture);
         return Py_BuildValue("IN", result, capsule_capture);
     }
+#ifdef ENABLE_BODY_TRACKING
+    static PyObject* device_start_body_tracker(PyObject* self, PyObject *args) {
+        k4a_device_t* device_handle;
+        k4a_calibration_t* calibration_handle;
+        PyObject *device_capsule;
+        PyObject *calibration_handle;
+        int thread_safe;
+        PyThreadState *thread_state;
+        k4a_result_t result;
+
+        PyArg_ParseTuple(args, "Op", &device_capsule, &calibration_capsule, &thread_safe);
+        device_handle = (k4a_device_t*)PyCapsule_GetPointer(device_capsule, CAPSULE_DEVICE_NAME);
+        calibration_handle = (k4a_device_t*)PyCapsule_GetPointer(calibration_capsule, CAPSULE_DEVICE_NAME);
+
+        thread_state = _gil_release(thread_safe);
+        k4abt_tracker_configuration_t tracker_calibration = K4ABT_TRACKER_CONFIG_DEFAULT;
+        k4abt_tracker_t* body_tracker_handle = (k4a_tracker_t*) malloc(sizeof(k4a_tracker_t));
+        result = k4abt_tracker_create(calibration_handle, tracker_calibration, body_tracker_handle)
+        _gil_restore(thread_state);
+
+        if (result == K4A_RESULT_FAILED) {
+            free(body_tracker);
+            return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
+        }
+
+        PyObject *capsule = PyCapsule_New(body_tracker_handle, CAPSULE_BODY_TRACKER_NAME, capsule_cleanup_body_tracker);
+        return Py_BuildValue("IN", result, capsule);
+    }
+
+    static PyObject* capture_get_body_tracking(PyObject* self, PyObject *args) {
+        // TODO
+    }
+
+    static void capsule_cleanup_body_tracker(PyObject *capsule) {
+        k4abt_tracker_t *body_tracker = (k4abt_tracker_t*)PyCapsule_GetPointer(capsule, CAPSULE_BODY_TRACKER_NAME);
+        k4abt_tracker_destroy(*body_tracker);
+        free(body_tracker);
+    }
+#endif
 
     struct module_state
     {
@@ -1175,6 +1208,10 @@ extern "C" {
         {"playback_get_record_configuration", playback_get_record_configuration, METH_VARARGS, "Extract record configuration"},
         {"playback_get_next_capture", playback_get_next_capture, METH_VARARGS, "Get next capture from playback"},
         {"playback_get_previous_capture", playback_get_previous_capture, METH_VARARGS, "Get previous capture from playback"},
+#ifdef ENABLE_BODY_TRACKING
+        {"device_start_body_tracker", device_start_body_tracker, METH_VARARGS, "init and return body tracker"},
+        {"capture_get_body_tracking", device_get_body_tracking, METH_VARARGS, "Get the body tracking data associated with the given capture"},
+#endif
 
         {NULL, NULL, 0, NULL}
     };

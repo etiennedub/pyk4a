@@ -26,8 +26,9 @@ class PyK4A:
         self._device_handle: Optional[object] = None
         self._calibration: Optional[Calibration] = None
         self.is_running = False
+        self._body_tracker: Optional[object] = None
 
-    def start(self):
+    def start(self, body_tracker=False):
         """
         Open device if device not opened, then start cameras and IMU
         All-in-one function
@@ -38,6 +39,10 @@ class PyK4A:
         self._start_cameras()
         self._start_imu()
         self.is_running = True
+
+        if body_tracker:
+            assert PyK4A.BODY_TRACKING_SUPPORT == True
+            self._start_body_tracker()
 
     def stop(self):
         """
@@ -99,6 +104,13 @@ class PyK4A:
         res = k4a_module.device_start_imu(self._device_handle, self.thread_safe)
         _verify_error(res)
 
+    def _start_body_tracker(self):
+        assert self._body_tracker is None
+        res, self._body_tracker = k4a_module.device_start_body_tracker(
+            self._device_handle, self.calibration._calibration_handle, self.thread_safe
+        )
+        _verify_error(res)
+
     def _stop_cameras(self):
         res = k4a_module.device_stop_cameras(self._device_handle, self.thread_safe)
         _verify_error(res)
@@ -106,6 +118,9 @@ class PyK4A:
     def _stop_imu(self):
         res = k4a_module.device_stop_imu(self._device_handle, self.thread_safe)
         _verify_error(res)
+
+    def _stop_body_tracker(self):
+        self._body_tracker = None
 
     def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE,) -> "PyK4ACapture":
         """
@@ -132,6 +147,7 @@ class PyK4A:
             capture_handle=capture_capsule,
             color_format=self._config.color_format,
             thread_safe=self.thread_safe,
+            body_tracker=self._body_tracker,
         )
         return capture
 
