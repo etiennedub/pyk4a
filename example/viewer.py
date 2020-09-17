@@ -13,7 +13,7 @@ def main():
             synchronized_images_only=True,
         )
     )
-    k4a.connect()
+    k4a.start()
 
     # getters and setters directly get and set on device
     k4a.whitebalance = 4500
@@ -29,7 +29,7 @@ def main():
             if key != -1:
                 cv2.destroyAllWindows()
                 break
-    k4a.disconnect()
+    k4a.stop()
 
 
 if __name__ == "__main__":
