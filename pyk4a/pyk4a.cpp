@@ -27,7 +27,6 @@ extern "C" {
     const char* CAPSULE_DEVICE_NAME = "pyk4a device handle";
     const char* CAPSULE_CALIBRATION_NAME = "pyk4a calibration handle";
     const char* CAPSULE_TRANSFORMATION_NAME = "pyk4a transformation handle";
-    const char* CAPSULE_CAPTURE_NAME = "pyk4a capture handle";
     const char* CAPSULE_BODY_TRACKER_NAME = "pyk4a body tracker handle";
 
     static PyThreadState* _gil_release(int thread_safe) {
