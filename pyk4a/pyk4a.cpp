@@ -1126,8 +1126,16 @@ extern "C" {
         PyObject* capsule_capture = PyCapsule_New(capture, CAPSULE_CAPTURE_NAME, capsule_cleanup_capture);
         return Py_BuildValue("IN", result, capsule_capture);
     }
-#ifdef ENABLE_BODY_TRACKING
 
+    static PyObject* is_body_tracking_supported(PyObject* self,PyObject* args) {
+#ifdef ENABLE_BODY_TRACKING
+        return Py_BuildValue("N", Py_True);
+#else
+        return Py_BuildValue("N", Py_False);
+#endif
+    }
+
+#ifdef ENABLE_BODY_TRACKING
     const char* CAPSULE_BODY_TRACKER_NAME = "pyk4a body tracker handle";
     const char* CAPSULE_BODY_DATA_NAME = "pyk4a body data";
 
@@ -1284,11 +1292,11 @@ extern "C" {
         {"playback_get_record_configuration", playback_get_record_configuration, METH_VARARGS, "Extract record configuration"},
         {"playback_get_next_capture", playback_get_next_capture, METH_VARARGS, "Get next capture from playback"},
         {"playback_get_previous_capture", playback_get_previous_capture, METH_VARARGS, "Get previous capture from playback"},
+        {"is_body_tracking_supported", is_body_tracking_supported, METH_VARARGS, "is_body_tracking_supported"},
 #ifdef ENABLE_BODY_TRACKING
         {"body_tracker_create", body_tracker_create, METH_VARARGS, "init and return body tracker"},
         {"capture_get_body_tracking", capture_get_body_tracking, METH_VARARGS, "Get the body tracking data associated with the given capture"},
 #endif
-
         {NULL, NULL, 0, NULL}
     };
 

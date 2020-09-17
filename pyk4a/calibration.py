@@ -124,9 +124,10 @@ class Calibration:
 
     @property
     def body_tracker_handle(self) -> object:
-        assert k4a_module.is_body_tracking_supported() == True
+        assert k4a_module.is_body_tracking_supported()
         if not self._body_tracker_handle:
-            handle = k4a_module.body_tracker_create(self._calibration_handle, )
+            handle = k4a_module.body_tracker_create(self._calibration_handle,)
             if not handle:
                 raise K4AException("Cannot create body tracker handle")
             self._body_tracker_handle = handle
+        return self._body_tracker_handle

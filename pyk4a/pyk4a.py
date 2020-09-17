@@ -39,7 +39,6 @@ class PyK4A:
         self._start_imu()
         self.is_running = True
 
-
     def stop(self):
         """
         Stop cameras, IMU, ... and close device
@@ -133,7 +132,6 @@ class PyK4A:
             capture_handle=capture_capsule,
             color_format=self._config.color_format,
             thread_safe=self.thread_safe,
-            body_tracker=self._body_tracker,
         )
         return capture
 
