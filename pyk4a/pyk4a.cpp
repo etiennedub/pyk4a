@@ -5,8 +5,8 @@
 #include <k4arecord/playback.h>
 
 #ifdef ENABLE_BODY_TRACKING
-    #include <k4abt.h>
-    #define DATA_PER_JOINT 10
+#include <k4abt.h>
+#define DATA_PER_JOINT 10
 #endif
 #include <stdio.h>
 
@@ -22,11 +22,11 @@ extern "C" {
                                     {2048, 1536}, {3840, 2160},
                                     {4096, 3072}};
 
-    const char* CAPSULE_CAPTURE_NAME = "pyk4a capture handle";
     const char* CAPSULE_PLAYBACK_NAME = "pyk4a playback handle";
     const char* CAPSULE_DEVICE_NAME = "pyk4a device handle";
     const char* CAPSULE_CALIBRATION_NAME = "pyk4a calibration handle";
     const char* CAPSULE_TRANSFORMATION_NAME = "pyk4a transformation handle";
+    const char* CAPSULE_CAPTURE_NAME = "pyk4a capture handle";
 
     static PyThreadState* _gil_release(int thread_safe) {
         PyThreadState *thread_state = NULL;
