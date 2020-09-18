@@ -1,5 +1,6 @@
 name: CI
 
+
 on:
   pull_request:
   push:
@@ -22,10 +23,10 @@ jobs:
     - name: Cache PyPI
       uses: actions/cache@v2
       with:
-        key: pip-cache-${{ hashFiles('requirements-dev.txt') }}
+        key: pip-cache-lint-${{ hashFiles('requirements-dev.txt') }}
         path: ~/.cache/pip
         restore-keys: |
-            pip-cache-
+            pip-cache-lint
     - name: Install dependencies
       uses: py-actions/py-dependency-install@v2
       with:
@@ -34,6 +35,10 @@ jobs:
       run: |
         make lint
   test:
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7', '3.8']
+      fail-fast: true
     name: Test
     runs-on: ubuntu-18.04
     steps:
@@ -45,17 +50,17 @@ jobs:
           env DEBIAN_FRONTEND=noninteractive ACCEPT_EULA=Y sudo -E apt install -q -y  libk4a1.4-dev
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Setup Python 3.7
+      - name: Setup Python  ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7
+          python-version:  ${{ matrix.python-version }}
       - name: Cache PyPI
         uses: actions/cache@v2
         with:
-          key: pip-cache-${{ hashFiles('requirements-dev.txt') }}-${{ hashFiles('setup.py') }}
+          key: pip-cache-test-${{ matrix.python-version }}-${{ hashFiles('requirements-dev.txt') }}-${{ hashFiles('setup.py') }}
           path: ~/.cache/pip
           restore-keys: |
-              pip-cache-
+              pip-cache-test-${{ matrix.python-version }}
       - name: Install dependencies
         uses: py-actions/py-dependency-install@v2
         with:
