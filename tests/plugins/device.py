@@ -4,11 +4,15 @@ from typing import Any, Mapping, Optional, Tuple
 
 import pytest
 
-from pyk4a import ColorControlCapabilities, ColorControlCommand, ColorControlMode
+from pyk4a import (
+    Calibration,
+    ColorControlCapabilities,
+    ColorControlCommand,
+    ColorControlMode,
+    ColorResolution,
+    DepthMode,
+)
 from pyk4a.results import Result
-
-from .calibration import CalibrationHandle
-from .capture import random_capture
 
 
 @dataclass(frozen=True)
@@ -114,7 +118,7 @@ DEVICE_METAS: Mapping[int, DeviceMeta] = {0: DeviceMeta(id=0)}
 
 
 @pytest.fixture()
-def patch_module_device(monkeypatch):
+def patch_module_device(monkeypatch, calibration_raw, capture_factory):
     @dataclass
     class ColorControl:
         mode: int
@@ -220,7 +224,7 @@ def patch_module_device(monkeypatch):
             assert self._opened is True
             if not self._cameras_started:
                 return Result.Failed.value, None
-            return Result.Success.value, random_capture()
+            return Result.Success.value, capture_factory()
 
         def device_get_imu_sample(
             self,
@@ -232,7 +236,8 @@ def patch_module_device(monkeypatch):
 
         def device_get_calibration(self, depth_mode: int, color_resolution: int) -> Tuple[int, Optional[object]]:
             assert self._opened is True
-            return Result.Success.value, CalibrationHandle()
+            calibration = Calibration.from_raw(calibration_raw, DepthMode.NFOV_UNBINNED, ColorResolution.RES_720P)
+            return Result.Success.value, calibration._calibration_handle
 
         def device_get_raw_calibration(self) -> Optional[str]:
             assert self._opened is True
