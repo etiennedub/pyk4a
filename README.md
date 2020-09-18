@@ -1,8 +1,10 @@
 # pyk4a
-[![codecov](https://codecov.io/gh/etiennedub/pyk4a/branch/master/graph/badge.svg)](https://codecov.io/gh/etiennedub/pyk4a)
-![CI](https://github.com/etiennedub/pyk4a/workflows/CI/badge.svg)
 
-![pyk4a](https://github.com/etiennedub/pyk4a/raw/master/figs/pyk4a_logo.png)
+![CI](https://github.com/etiennedub/pyk4a/workflows/CI/badge.svg)
+[![codecov](https://codecov.io/gh/etiennedub/pyk4a/branch/master/graph/badge.svg)](https://codecov.io/gh/etiennedub/pyk4a)
+
+![pyk4a](https://github.com/etiennedub/pyk4a/raw/master/figs/pyk4a_logo.png) 
+
 
 This library is a simple and pythonic wrapper in Python 3 for the Azure-Kinect-Sensor-SDK.
 
