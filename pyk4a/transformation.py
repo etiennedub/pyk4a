@@ -17,13 +17,15 @@ def depth_image_to_color_camera(depth: np.ndarray, calibration: Calibration, thr
     )
 
 
-def depth_image_to_point_cloud(depth: np.ndarray, calibration: Calibration, thread_safe: bool) -> Optional[np.ndarray]:
+def depth_image_to_point_cloud(
+    depth: np.ndarray, calibration: Calibration, thread_safe: bool, calibration_type_depth=True
+) -> Optional[np.ndarray]:
     """
     Transform depth color_image to point cloud
     Return empty result if transformation failed
     """
     return k4a_module.transformation_depth_image_to_point_cloud(
-        calibration.transformation_handle, thread_safe, depth, True
+        calibration.transformation_handle, thread_safe, depth, calibration_type_depth,
     )
 
 
