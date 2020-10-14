@@ -53,14 +53,16 @@ class PyK4ACapture:
     @property
     def depth_point_cloud(self) -> Optional[np.ndarray]:
         if self._depth_point_cloud is None and self.depth is not None:
-            self._depth_point_cloud = depth_image_to_point_cloud(self._depth, self._calibration, self.thread_safe)
+            self._depth_point_cloud = depth_image_to_point_cloud(
+                self._depth, self._calibration, self.thread_safe, calibration_type_depth=True,
+            )
         return self._depth_point_cloud
 
     @property
     def transformed_depth_point_cloud(self) -> Optional[np.ndarray]:
         if self._transformed_depth_point_cloud is None and self.transformed_depth is not None:
-            self._depth_point_cloud = depth_image_to_point_cloud(
-                self.transformed_depth, self._calibration, self.thread_safe
+            self._transformed_depth_point_cloud = depth_image_to_point_cloud(
+                self.transformed_depth, self._calibration, self.thread_safe, calibration_type_depth=False,
             )
         return self._transformed_depth_point_cloud
 
