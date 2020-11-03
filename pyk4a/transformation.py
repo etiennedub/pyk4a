@@ -18,7 +18,7 @@ def depth_image_to_color_camera(depth: np.ndarray, calibration: Calibration, thr
 
 
 def depth_image_to_color_camera_custom(
-        depth: np.ndarray, custom: np.ndarray, calibration: Calibration, thread_safe: bool, interp_nearest: bool = True,
+    depth: np.ndarray, custom: np.ndarray, calibration: Calibration, thread_safe: bool, interp_nearest: bool = True,
 ) -> Optional[np.ndarray]:
     """
     Transforms depth image and custom image to color_image space
