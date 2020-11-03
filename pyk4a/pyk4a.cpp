@@ -674,7 +674,7 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            return PyArray_Return(np_custom_image);
+            return Py_BuildValue("OO", np_custom_image, np_depth_image);
         }
         else {
             free(depth_image_transformed);
