@@ -18,14 +18,14 @@ def depth_image_to_color_camera(depth: np.ndarray, calibration: Calibration, thr
 
 
 def depth_image_to_color_camera_custom(
-    depth: np.ndarray, custom: np.ndarray, calibration: Calibration, thread_safe: bool
+        depth: np.ndarray, custom: np.ndarray, calibration: Calibration, thread_safe: bool, interp_nearest: bool = True,
 ) -> Optional[np.ndarray]:
     """
     Transforms depth image and custom image to color_image space
     Return empty result if transformation failed
     """
     return k4a_module.transformation_depth_image_to_color_camera_custom(
-        calibration.transformation_handle, thread_safe, depth, custom, calibration.color_resolution,
+        calibration.transformation_handle, thread_safe, depth, custom, calibration.color_resolution, interp_nearest,
     )
 
 

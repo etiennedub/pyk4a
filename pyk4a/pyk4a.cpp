@@ -604,15 +604,24 @@ extern "C" {
         k4a_transformation_t* transformation_handle;
         PyObject *capsule;
         int thread_safe;
+	int interp_nearest;
         PyThreadState *thread_state;
         k4a_result_t res;
         PyArrayObject *d_array;
         PyArrayObject *c_array;
         k4a_color_resolution_t color_resolution;
-	k4a_transformation_interpolation_type_t interpolation_type = K4A_TRANSFORMATION_INTERPOLATION_TYPE_NEAREST;
+	k4a_transformation_interpolation_type_t interpolation_type;
 
 
-        PyArg_ParseTuple(args, "OpO!O!I", &capsule, &thread_safe, &PyArray_Type, &d_array, &PyArray_Type, &c_array, &color_resolution);
+        PyArg_ParseTuple(args, "OpO!O!Ip", &capsule, &thread_safe, &PyArray_Type, &d_array, &PyArray_Type, &c_array, &color_resolution, &interp_nearest);
+
+	if (interp_nearest){
+             interpolation_type = K4A_TRANSFORMATION_INTERPOLATION_TYPE_NEAREST;
+	}
+	else {
+             interpolation_type = K4A_TRANSFORMATION_INTERPOLATION_TYPE_LINEAR;
+	}
+
         transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, CAPSULE_TRANSFORMATION_NAME);
 
         k4a_image_t* depth_image_transformed = (k4a_image_t*) malloc(sizeof(k4a_image_t));
