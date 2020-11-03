@@ -508,7 +508,7 @@ extern "C" {
                 pixel_size = (int)sizeof(uint32_t);
                 break;
             case K4A_IMAGE_FORMAT_CUSTOM16:
-                pixel_size = static_cast<int32_t>(sizeof(int16_t));
+                pixel_size = (unsigned int)sizeof(int16_t);
                 break;
             default:
                 // Not supported
