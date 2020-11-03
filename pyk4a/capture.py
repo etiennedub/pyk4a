@@ -6,7 +6,12 @@ import k4a_module
 
 from .calibration import Calibration
 from .config import ImageFormat
-from .transformation import color_image_to_depth_camera, depth_image_to_color_camera, depth_image_to_point_cloud
+from .transformation import (
+    color_image_to_depth_camera,
+    depth_image_to_color_camera,
+    depth_image_to_color_camera_custom,
+    depth_image_to_point_cloud,
+)
 
 
 class PyK4ACapture:
@@ -25,6 +30,7 @@ class PyK4ACapture:
         self._transformed_depth: Optional[np.ndarray] = None
         self._transformed_depth_point_cloud: Optional[np.ndarray] = None
         self._transformed_color: Optional[np.ndarray] = None
+        self._transformed_ir: Optional[np.ndarray] = None
 
     @property
     def color(self) -> Optional[np.ndarray]:
@@ -78,3 +84,11 @@ class PyK4ACapture:
                 self.color, self.depth, self._calibration, self.thread_safe
             )
         return self._transformed_color
+
+    @property
+    def transformed_ir(self) -> Optional[np.ndarray]:
+        if self._transformed_ir is None and self.ir is not None and self.depth is not None:
+            self._transformed_ir = depth_image_to_color_camera_custom(
+                self.depth, self.ir, self._calibration, self.thread_safe
+            )
+        return self._transformed_ir
