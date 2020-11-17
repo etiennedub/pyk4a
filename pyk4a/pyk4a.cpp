@@ -535,7 +535,7 @@ extern "C" {
         thread_state = _gil_release(thread_safe);
 
         k4a_transformation_t* transformation_handle = (k4a_transformation_t*) malloc(sizeof(k4a_transformation_t));
-        if (calibration_handle == NULL) {
+        if (transformation_handle == NULL) {
             fprintf(stderr, "Cannot allocate memory");
             return Py_BuildValue("N", Py_None);
         }
