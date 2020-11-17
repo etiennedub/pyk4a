@@ -124,4 +124,3 @@ class TestGetCapture:
         assert capture.depth is not None
         assert capture.color is not None
         assert capture._calibration is not None  # Issue #81
-
