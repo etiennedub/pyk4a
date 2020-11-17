@@ -113,6 +113,7 @@ class TestGetCapture:
         assert capture is not None
         assert capture.depth is not None
         assert capture.color is not None
+        assert capture._calibration is not None  # Issue #81
         assert capture.transformed_depth is not None
 
     @staticmethod
