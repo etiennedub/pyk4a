@@ -39,15 +39,12 @@ extern "C" {
 
     static void capsule_cleanup_device(PyObject *capsule) {
         k4a_device_t* device_handle;
-        fprintf(stderr, "Cleanup device");
 
         device_handle = (k4a_device_t*)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
         free(device_handle);
     }
 
     static void capsule_cleanup_image(PyObject *capsule) {
-        fprintf(stderr, "Cleanup image");
-
         k4a_image_t *image = (k4a_image_t*)PyCapsule_GetContext(capsule);
         k4a_image_release(*image);
         free(image);
@@ -59,16 +56,12 @@ extern "C" {
     }
 
     static void capsule_cleanup_capture(PyObject *capsule) {
-        fprintf(stderr, "Cleanup capture");
-
         k4a_capture_t *capture = (k4a_capture_t*)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
         k4a_capture_release(*capture);
         free(capture);
     }
 
     static void capsule_cleanup_playback(PyObject *capsule) {
-        fprintf(stderr, "Cleanup plpayback");
-
         k4a_playback_t* playback_handle;
 
         playback_handle = (k4a_playback_t*)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
@@ -76,7 +69,6 @@ extern "C" {
     }
 
     static void capsule_cleanup_transformation(PyObject *capsule) {
-        fprintf(stderr, "Cleanup transformation");
         k4a_transformation_t *transformation = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, CAPSULE_TRANSFORMATION_NAME);
         k4a_transformation_destroy(*transformation);
         free(transformation);
@@ -543,7 +535,7 @@ extern "C" {
         thread_state = _gil_release(thread_safe);
 
         k4a_transformation_t* transformation_handle = (k4a_transformation_t*) malloc(sizeof(k4a_transformation_t));
-        if (transformation_handle == NULL) {
+        if (calibration_handle == NULL) {
             fprintf(stderr, "Cannot allocate memory");
             return Py_BuildValue("N", Py_None);
         }

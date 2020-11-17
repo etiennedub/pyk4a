@@ -52,6 +52,7 @@ class PyK4APlayback:
     def __del__(self):
         if self._handle:
             self.close()
+        self._calibration = None
 
     @property
     def path(self) -> Path:

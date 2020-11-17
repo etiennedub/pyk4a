@@ -27,6 +27,9 @@ class Calibration:
         self._color_resolution = color_resolution
         self._raw: Optional[str] = None
 
+    def __del__(self):
+        self._transformation_handle = None
+
     @classmethod
     def from_raw(
         cls, value: str, depth_mode: DepthMode, color_resolution: ColorResolution, thread_safe: bool = True
