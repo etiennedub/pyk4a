@@ -117,9 +117,9 @@ class Calibration:
 
     @property
     def transformation_handle(self) -> object:
-        if not self._transformation_handle:
+        if self._transformation_handle is None:
             handle = k4a_module.transformation_create(self._calibration_handle, self.thread_safe)
-            if not handle:
+            if handle is None:
                 raise K4AException("Cannot create transformation handle")
             self._transformation_handle = handle
         return self._transformation_handle
