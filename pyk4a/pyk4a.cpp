@@ -70,7 +70,9 @@ extern "C" {
 
     static void capsule_cleanup_transformation(PyObject *capsule) {
         k4a_transformation_t *transformation = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, CAPSULE_TRANSFORMATION_NAME);
-        k4a_transformation_destroy(*transformation);
+        if (*transformation != NULL) {
+            k4a_transformation_destroy(*transformation);
+        }
         free(transformation);
     }
 
