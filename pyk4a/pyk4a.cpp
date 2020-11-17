@@ -542,7 +542,6 @@ extern "C" {
         *transformation_handle = k4a_transformation_create(calibration_handle);
         _gil_restore(thread_state);
         if (transformation_handle == NULL ) {
-            fprintf(stderr, "ERROR HERE");
             return Py_BuildValue("N", Py_None);
         }
         PyObject *transformation_capsule = PyCapsule_New(transformation_handle, CAPSULE_TRANSFORMATION_NAME, capsule_cleanup_transformation);

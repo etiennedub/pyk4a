@@ -27,9 +27,6 @@ class Calibration:
         self._color_resolution = color_resolution
         self._raw: Optional[str] = None
 
-    def __del__(self):
-        self._transformation_handle = None
-
     @classmethod
     def from_raw(
         cls, value: str, depth_mode: DepthMode, color_resolution: ColorResolution, thread_safe: bool = True
@@ -117,9 +114,9 @@ class Calibration:
 
     @property
     def transformation_handle(self) -> object:
-        if self._transformation_handle is None:
+        if not self._transformation_handle:
             handle = k4a_module.transformation_create(self._calibration_handle, self.thread_safe)
-            if handle is None:
+            if not handle:
                 raise K4AException("Cannot create transformation handle")
             self._transformation_handle = handle
         return self._transformation_handle
