@@ -155,7 +155,7 @@ class PyK4APlayback:
         result, capture_handle = k4a_module.playback_get_next_capture(self._handle, self.thread_safe)
         self._verify_stream_error(result)
         return PyK4ACapture(
-            calibration=self._calibration,
+            calibration=self.calibration,
             capture_handle=capture_handle,
             color_format=self.configuration["color_format"],
             thread_safe=self.thread_safe,
@@ -166,7 +166,7 @@ class PyK4APlayback:
         result, capture_handle = k4a_module.playback_get_previous_capture(self._handle, self.thread_safe)
         self._verify_stream_error(result)
         return PyK4ACapture(
-            calibration=self._calibration,
+            calibration=self.calibration,
             capture_handle=capture_handle,
             color_format=self.configuration["color_format"],
             thread_safe=self.thread_safe,
