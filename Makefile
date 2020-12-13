@@ -36,4 +36,5 @@ test-hardware:
 	pytest  -m "device" $(TESTS)
 
 test-no-hardware:
-	pytest -m "not device" $(TESTS)
+	pytest -m "not device and not opengl" $(TESTS)
+

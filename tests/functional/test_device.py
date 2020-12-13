@@ -60,6 +60,7 @@ class TestProperties:
 class TestCameras:
     @staticmethod
     @pytest.mark.device
+    @pytest.mark.opengl
     def test_start_stop_cameras(device: PyK4A):
         device.open()
         device._start_cameras()
@@ -67,6 +68,7 @@ class TestCameras:
 
     @staticmethod
     @pytest.mark.device
+    @pytest.mark.opengl
     def test_capture(device: PyK4A):
         device.open()
         device._start_cameras()
@@ -77,6 +79,7 @@ class TestCameras:
 class TestIMU:
     @staticmethod
     @pytest.mark.device
+    @pytest.mark.opengl
     def test_start_stop_imu(device: PyK4A):
         device.open()
         device._start_cameras()  # imu will not work without cameras
@@ -86,6 +89,7 @@ class TestIMU:
 
     @staticmethod
     @pytest.mark.device
+    @pytest.mark.opengl
     def test_get_imu_sample(device: PyK4A):
         device.open()
         device._start_cameras()
