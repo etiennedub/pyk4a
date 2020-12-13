@@ -103,3 +103,28 @@ class TestSeek:
         playback.seek(1, origin=SeekOrigin.DEVICE_TIME)  # TODO add correct timestamp from datablock here
         capture = playback.get_next_capture()
         assert capture.color is not None
+
+
+class TestGetCapture:
+    @staticmethod
+    def test_get_next_capture(playback: PyK4APlayback):
+        playback.open()
+        capture = playback.get_next_capture()
+        assert capture is not None
+        assert capture.depth is not None
+        assert capture.color is not None
+        assert capture.depth_timestamp_usec == 800222
+        assert capture.color_timestamp_usec == 800222
+        assert capture.ir_timestamp_usec == 800222
+
+    @staticmethod
+    def test_get_previouse_capture(playback: PyK4APlayback):
+        playback.open()
+        playback.seek(0, origin=SeekOrigin.END)
+        capture = playback.get_previouse_capture()
+        assert capture is not None
+        assert capture.depth is not None
+        assert capture.color is not None
+        assert capture.depth_timestamp_usec == 800222
+        assert capture.color_timestamp_usec == 800222
+        assert capture.ir_timestamp_usec == 800222
