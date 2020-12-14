@@ -793,6 +793,7 @@ extern "C" {
         k4a_capture_t* capture_handle;
         PyObject *capsule;
         int thread_safe;
+        uint64_t device_timestamp_usec = 0;
         PyThreadState *thread_state;
         k4a_result_t res = K4A_RESULT_FAILED;
 
@@ -802,7 +803,7 @@ extern "C" {
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
             fprintf(stderr, "Cannot allocate memory");
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
 
         thread_state = _gil_release(thread_safe);
@@ -815,11 +816,12 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            return PyArray_Return(np_image);
+            device_timestamp_usec = k4a_image_get_device_timestamp_usec(*image);
+            return Py_BuildValue("NK", np_image, device_timestamp_usec);
         }
         else {
             free(image);
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
     }
 
@@ -827,6 +829,7 @@ extern "C" {
         k4a_capture_t* capture_handle;
         PyObject *capsule;
         int thread_safe;
+        uint64_t device_timestamp_usec = 0;
         PyThreadState *thread_state;
         k4a_result_t res = K4A_RESULT_FAILED;
 
@@ -836,7 +839,7 @@ extern "C" {
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
             fprintf(stderr, "Cannot allocate memory");
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
 
         thread_state = _gil_release(thread_safe);
@@ -849,11 +852,12 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            return PyArray_Return(np_image);
+            device_timestamp_usec = k4a_image_get_device_timestamp_usec(*image);
+            return Py_BuildValue("NK", np_image, device_timestamp_usec);
         }
         else {
             free(image);
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
     }
 
@@ -861,6 +865,7 @@ extern "C" {
         k4a_capture_t* capture_handle;
         PyObject *capsule;
         int thread_safe;
+        uint64_t device_timestamp_usec = 0;
         PyThreadState *thread_state;
         k4a_result_t res = K4A_RESULT_FAILED;
 
@@ -870,7 +875,7 @@ extern "C" {
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
             fprintf(stderr, "Cannot allocate memory");
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
 
         thread_state = _gil_release(thread_safe);
@@ -883,11 +888,12 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            return PyArray_Return(np_image);
+            device_timestamp_usec = k4a_image_get_device_timestamp_usec(*image);
+            return Py_BuildValue("NK", np_image, device_timestamp_usec);
         }
         else {
             free(image);
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
     }
 
@@ -974,6 +980,7 @@ extern "C" {
         // Return object...
         return Py_BuildValue("II(fff)", res, valid, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
+
 
     static PyObject* playback_open(PyObject* self, PyObject *args) {
         int thread_safe;
