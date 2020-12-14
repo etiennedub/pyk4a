@@ -94,3 +94,13 @@ class PyK4ACapture:
             else:
                 self._transformed_ir, self._transformed_depth = result
         return self._transformed_ir
+
+    @property
+    def transformed_ir(self) -> Optional[np.ndarray]:
+        if self._transformed_ir is None and self.ir is not None and self.depth is not None:
+            result = depth_image_to_color_camera_custom(self.depth, self.ir, self._calibration, self.thread_safe)
+            if result is None:
+                return None
+            else:
+                self._transformed_ir, self._transformed_depth = result
+        return self._transformed_ir
