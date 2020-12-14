@@ -6,6 +6,7 @@ line-length = 120
 
 [tool.pytest.ini_options]
 markers = [
-        "device: Tests require connected real device"
+        "device: Tests require connected real device",
+        "opengl: Tests require opengl for GPU accelerated depth engine software"
 ]
 addopts = "--cov=pyk4a --cov-report=xml --verbose"

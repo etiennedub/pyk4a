@@ -26,6 +26,7 @@ class TestCalibration:
         assert calibration
 
     @staticmethod
+    @pytest.mark.opengl
     def test_creating_transfromation_handle(calibration: Calibration):
         transformation = calibration.transformation_handle
         assert transformation is not None

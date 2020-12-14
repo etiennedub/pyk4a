@@ -24,8 +24,11 @@ class PyK4ACapture:
         self._color_format = color_format
 
         self._color: Optional[np.ndarray] = None
+        self._color_timestamp_usec: int = 0
         self._depth: Optional[np.ndarray] = None
+        self._depth_timestamp_usec: int = 0
         self._ir: Optional[np.ndarray] = None
+        self._ir_timestamp_usec: int = 0
         self._depth_point_cloud: Optional[np.ndarray] = None
         self._transformed_depth: Optional[np.ndarray] = None
         self._transformed_depth_point_cloud: Optional[np.ndarray] = None
@@ -35,20 +38,45 @@ class PyK4ACapture:
     @property
     def color(self) -> Optional[np.ndarray]:
         if self._color is None:
-            self._color = k4a_module.capture_get_color_image(self._capture_handle, self.thread_safe)
+            self._color, self._color_timestamp_usec = k4a_module.capture_get_color_image(
+                self._capture_handle, self.thread_safe
+            )
         return self._color
+
+    @property
+    def color_timestamp_usec(self) -> int:
+        """Device timestamp for color image. Not equal host machine timestamp!"""
+        if self._color is None:
+            self.color
+        return self._color_timestamp_usec
 
     @property
     def depth(self) -> Optional[np.ndarray]:
         if self._depth is None:
-            self._depth = k4a_module.capture_get_depth_image(self._capture_handle, self.thread_safe)
+            self._depth, self._depth_timestamp_usec = k4a_module.capture_get_depth_image(
+                self._capture_handle, self.thread_safe
+            )
         return self._depth
 
     @property
+    def depth_timestamp_usec(self) -> int:
+        """Device timestamp for depth image. Not equal host machine timestamp!. Like as equal IR image timestamp"""
+        if self._depth is None:
+            self.depth
+        return self._depth_timestamp_usec
+
+    @property
     def ir(self) -> Optional[np.ndarray]:
+        """Device timestamp for IR image. Not equal host machine timestamp!. Like as equal depth image timestamp"""
         if self._ir is None:
-            self._ir = k4a_module.capture_get_ir_image(self._capture_handle, self.thread_safe)
+            self._ir, self._ir_timestamp_usec = k4a_module.capture_get_ir_image(self._capture_handle, self.thread_safe)
         return self._ir
+
+    @property
+    def ir_timestamp_usec(self) -> int:
+        if self._ir is None:
+            self.ir
+        return self._ir_timestamp_usec
 
     @property
     def transformed_depth(self) -> Optional[np.ndarray]:
