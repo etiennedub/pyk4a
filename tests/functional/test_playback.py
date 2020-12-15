@@ -116,6 +116,7 @@ class TestGetCapture:
         assert capture.depth_timestamp_usec == 800222
         assert capture.color_timestamp_usec == 800222
         assert capture.ir_timestamp_usec == 800222
+        assert capture._calibration is not None  # Issue #81
 
     @staticmethod
     def test_get_previouse_capture(playback: PyK4APlayback):
@@ -128,3 +129,5 @@ class TestGetCapture:
         assert capture.depth_timestamp_usec == 800222
         assert capture.color_timestamp_usec == 800222
         assert capture.ir_timestamp_usec == 800222
+        assert capture._calibration is not None  # Issue #81
+
