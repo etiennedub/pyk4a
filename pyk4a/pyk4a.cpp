@@ -467,6 +467,7 @@ extern "C" {
                 dims[2] = 1;
                 *img_dst = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_UINT8, buffer);
                 break;
+            case K4A_IMAGE_FORMAT_CUSTOM16:
             case K4A_IMAGE_FORMAT_DEPTH16:
             case K4A_IMAGE_FORMAT_IR16:
                 dims[0] = k4a_image_get_height_pixels(*img_src);
@@ -505,6 +506,9 @@ extern "C" {
                 break;
             case K4A_IMAGE_FORMAT_COLOR_BGRA32:
                 pixel_size = (int)sizeof(uint32_t);
+                break;
+            case K4A_IMAGE_FORMAT_CUSTOM16:
+                pixel_size = (unsigned int)sizeof(int16_t);
                 break;
             default:
                 // Not supported
@@ -592,6 +596,89 @@ extern "C" {
         }
         else {
             free(depth_image_transformed);
+            return Py_BuildValue("");
+        }
+    }
+
+    static PyObject* transformation_depth_image_to_color_camera_custom(PyObject* self, PyObject* args){
+        k4a_transformation_t* transformation_handle;
+        PyObject *capsule;
+        int thread_safe;
+	int interp_nearest;
+        PyThreadState *thread_state;
+        k4a_result_t res;
+        PyArrayObject *d_array;
+        PyArrayObject *c_array;
+        k4a_color_resolution_t color_resolution;
+	k4a_transformation_interpolation_type_t interpolation_type;
+
+
+        PyArg_ParseTuple(args, "OpO!O!Ip", &capsule, &thread_safe, &PyArray_Type, &d_array, &PyArray_Type, &c_array, &color_resolution, &interp_nearest);
+
+	if (interp_nearest){
+             interpolation_type = K4A_TRANSFORMATION_INTERPOLATION_TYPE_NEAREST;
+	}
+	else {
+             interpolation_type = K4A_TRANSFORMATION_INTERPOLATION_TYPE_LINEAR;
+	}
+
+        transformation_handle = (k4a_transformation_t*)PyCapsule_GetPointer(capsule, CAPSULE_TRANSFORMATION_NAME);
+
+        k4a_image_t* depth_image_transformed = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+        k4a_image_t* custom_image_transformed = (k4a_image_t*) malloc(sizeof(k4a_image_t));
+
+        k4a_image_t depth_image;
+        k4a_image_t custom_image;
+        res = numpy_to_k4a_image(d_array, &depth_image, K4A_IMAGE_FORMAT_DEPTH16);
+	if (K4A_RESULT_SUCCEEDED == res) {
+            res = numpy_to_k4a_image(c_array, &custom_image, K4A_IMAGE_FORMAT_CUSTOM16);
+	}
+        thread_state = _gil_release(thread_safe);
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = k4a_image_create(
+                    k4a_image_get_format(depth_image),
+                    RESOLUTION_TO_DIMS[color_resolution][0],
+                    RESOLUTION_TO_DIMS[color_resolution][1],
+                    RESOLUTION_TO_DIMS[color_resolution][0] * (int)sizeof(uint16_t),
+                    depth_image_transformed);
+        }
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = k4a_image_create(
+                    k4a_image_get_format(custom_image),
+                    RESOLUTION_TO_DIMS[color_resolution][0],
+                    RESOLUTION_TO_DIMS[color_resolution][1],
+                    RESOLUTION_TO_DIMS[color_resolution][0] * static_cast<int32_t>(sizeof(int16_t)),
+                    custom_image_transformed);
+        }
+
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = k4a_transformation_depth_image_to_color_camera_custom(
+                    *transformation_handle,
+                    depth_image,
+                    custom_image,
+		    *depth_image_transformed,
+		    *custom_image_transformed,
+		    interpolation_type,
+		    0);
+            k4a_image_release(depth_image);
+            k4a_image_release(custom_image);
+        }
+        _gil_restore(thread_state);
+        PyArrayObject* np_depth_image;
+        PyArrayObject* np_custom_image;
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = k4a_image_to_numpy(depth_image_transformed, &np_depth_image);
+        }
+        if (K4A_RESULT_SUCCEEDED == res) {
+            res = k4a_image_to_numpy(custom_image_transformed, &np_custom_image);
+        }
+
+        if (K4A_RESULT_SUCCEEDED == res) {
+            return Py_BuildValue("OO", np_custom_image, np_depth_image);
+        }
+        else {
+            free(depth_image_transformed);
+            free(custom_image_transformed);
             return Py_BuildValue("");
         }
     }
@@ -706,6 +793,7 @@ extern "C" {
         k4a_capture_t* capture_handle;
         PyObject *capsule;
         int thread_safe;
+        uint64_t device_timestamp_usec = 0;
         PyThreadState *thread_state;
         k4a_result_t res = K4A_RESULT_FAILED;
 
@@ -715,7 +803,7 @@ extern "C" {
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
             fprintf(stderr, "Cannot allocate memory");
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
 
         thread_state = _gil_release(thread_safe);
@@ -728,11 +816,12 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            return PyArray_Return(np_image);
+            device_timestamp_usec = k4a_image_get_device_timestamp_usec(*image);
+            return Py_BuildValue("NK", np_image, device_timestamp_usec);
         }
         else {
             free(image);
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
     }
 
@@ -740,6 +829,7 @@ extern "C" {
         k4a_capture_t* capture_handle;
         PyObject *capsule;
         int thread_safe;
+        uint64_t device_timestamp_usec = 0;
         PyThreadState *thread_state;
         k4a_result_t res = K4A_RESULT_FAILED;
 
@@ -749,7 +839,7 @@ extern "C" {
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
             fprintf(stderr, "Cannot allocate memory");
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
 
         thread_state = _gil_release(thread_safe);
@@ -762,11 +852,12 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            return PyArray_Return(np_image);
+            device_timestamp_usec = k4a_image_get_device_timestamp_usec(*image);
+            return Py_BuildValue("NK", np_image, device_timestamp_usec);
         }
         else {
             free(image);
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
     }
 
@@ -774,6 +865,7 @@ extern "C" {
         k4a_capture_t* capture_handle;
         PyObject *capsule;
         int thread_safe;
+        uint64_t device_timestamp_usec = 0;
         PyThreadState *thread_state;
         k4a_result_t res = K4A_RESULT_FAILED;
 
@@ -783,7 +875,7 @@ extern "C" {
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
             fprintf(stderr, "Cannot allocate memory");
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
 
         thread_state = _gil_release(thread_safe);
@@ -796,11 +888,12 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            return PyArray_Return(np_image);
+            device_timestamp_usec = k4a_image_get_device_timestamp_usec(*image);
+            return Py_BuildValue("NK", np_image, device_timestamp_usec);
         }
         else {
             free(image);
-            return Py_BuildValue("");
+            return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
     }
 
@@ -887,6 +980,7 @@ extern "C" {
         // Return object...
         return Py_BuildValue("II(fff)", res, valid, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
     }
+
 
     static PyObject* playback_open(PyObject* self, PyObject *args) {
         int thread_safe;
@@ -1148,6 +1242,7 @@ extern "C" {
         {"calibration_get_from_raw", calibration_get_from_raw, METH_VARARGS, "Create new calibration handle from raw json."},
         {"transformation_create", transformation_create, METH_VARARGS, "Create transformation handle from calibration"},
         {"transformation_depth_image_to_color_camera", transformation_depth_image_to_color_camera, METH_VARARGS, "Transforms the depth map into the geometry of the color camera."},
+        {"transformation_depth_image_to_color_camera_custom", transformation_depth_image_to_color_camera_custom, METH_VARARGS, "Transforms the custom & depth map into the geometry of the color camera."},
         {"transformation_color_image_to_depth_camera", transformation_color_image_to_depth_camera, METH_VARARGS, "Transforms the color image into the geometry of the depth camera."},
         {"transformation_depth_image_to_point_cloud", transformation_depth_image_to_point_cloud, METH_VARARGS, "Transforms the depth map to a point cloud."},
         {"calibration_3d_to_3d", calibration_3d_to_3d, METH_VARARGS, "Transforms the coordinates between 2 3D systems"},

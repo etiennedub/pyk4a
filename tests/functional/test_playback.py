@@ -113,6 +113,9 @@ class TestGetCapture:
         assert capture is not None
         assert capture.depth is not None
         assert capture.color is not None
+        assert capture.depth_timestamp_usec == 800222
+        assert capture.color_timestamp_usec == 800222
+        assert capture.ir_timestamp_usec == 800222
         assert capture._calibration is not None  # Issue #81
 
     @staticmethod
@@ -123,4 +126,7 @@ class TestGetCapture:
         assert capture is not None
         assert capture.depth is not None
         assert capture.color is not None
+        assert capture.depth_timestamp_usec == 800222
+        assert capture.color_timestamp_usec == 800222
+        assert capture.ir_timestamp_usec == 800222
         assert capture._calibration is not None  # Issue #81

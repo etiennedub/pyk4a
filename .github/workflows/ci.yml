@@ -70,7 +70,7 @@ jobs:
           pip install -e .
       - name: Run tests
         run: |
-          make test-no-hardware
+          make test-ci
       - name: Coverage
         uses: codecov/codecov-action@v1
         with:

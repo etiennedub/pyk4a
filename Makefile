@@ -37,3 +37,7 @@ test-hardware:
 
 test-no-hardware:
 	pytest -m "not device" $(TESTS)
+
+test-ci:
+	pytest -m "not device and not opengl" $(TESTS)
+
