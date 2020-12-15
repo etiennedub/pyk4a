@@ -130,4 +130,3 @@ class TestGetCapture:
         assert capture.color_timestamp_usec == 800222
         assert capture.ir_timestamp_usec == 800222
         assert capture._calibration is not None  # Issue #81
-
