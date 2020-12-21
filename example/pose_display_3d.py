@@ -30,7 +30,7 @@ class Visualizer(object):
 
         # create the background grids
         gy = gl.GLGridItem()
-        gy.setSize(10000, 10000, 10000)
+        gy.setSize(4000, 4000, 4000)
         gy.setSpacing(500, 500, 500)
         gy.rotate(90, 1, 0, 0)
         gy.translate(0, 1000, 0)
@@ -51,7 +51,7 @@ class Visualizer(object):
 
     def update(self):
         capture = self.k4a.get_capture()
-        pose = capture.get_pose()
+        pose = capture.body_skeleton
         if pose is not None:
             for i in range(pose.shape[0]):
                 pts = pose[i, :, :3].reshape(-1, 3)[kinect2coco]
@@ -68,6 +68,5 @@ class Visualizer(object):
 
 # Start Qt event loop unless running in interactive mode.
 if __name__ == "__main__":
-    raise NotImplementedError("Not refactored yet")
     v = Visualizer()
     v.animation()
