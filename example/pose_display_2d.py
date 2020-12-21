@@ -7,7 +7,9 @@ from pyk4a import ColorResolution, Config, PyK4A
 
 k4a = PyK4A(
     Config(
-        color_resolution=ColorResolution.RES_720P, depth_mode=pyk4a.DepthMode.NFOV_UNBINNED, camera_fps=pyk4a.FPS.FPS_30,
+        color_resolution=ColorResolution.RES_720P,
+        depth_mode=pyk4a.DepthMode.NFOV_UNBINNED,
+        camera_fps=pyk4a.FPS.FPS_30,
     )
 )
 k4a.start()
