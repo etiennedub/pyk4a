@@ -149,7 +149,7 @@ class PyK4ACapture:
                 self._capture_handle,
                 self._calibration._calibration_handle,
                 self._calibration.body_tracker_handle,
-                self.thread_safe
+                self.thread_safe,
             )
         return self._body_skeleton
 
@@ -160,6 +160,6 @@ class PyK4ACapture:
                 self._capture_handle,
                 self._calibration._calibration_handle,
                 self._calibration.body_tracker_handle,
-                self.thread_safe
+                self.thread_safe,
             )
         return self._body_index_map
