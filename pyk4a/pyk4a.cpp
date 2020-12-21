@@ -7,7 +7,7 @@
 #ifdef ENABLE_BODY_TRACKING
 #warning "Body tracking enabled"
 #include <k4abt.h>
-#define DATA_PER_JOINT 10
+#define DATA_PER_JOINT 11
 #endif
 #include <stdio.h>
 
@@ -1229,8 +1229,10 @@ extern "C" {
 
     static PyObject* is_body_tracking_supported(PyObject* self,PyObject* args) {
 #ifdef ENABLE_BODY_TRACKING
+#warning "is_body_tracking_supported True"
         return Py_True;
 #else
+#warning "is_body_tracking_supported False"
         return Py_False;
 #endif
     }
@@ -1324,8 +1326,9 @@ extern "C" {
 
             for (uint32_t body_index = 0; body_index < num_bodies; body_index++) {
                 k4a_result_t result = k4abt_frame_get_body_skeleton(body_frame, body_index, &skeleton);
+                size_t body_offset = body_index * body_stride;
                 for (int joint_index=0; joint_index<K4ABT_JOINT_COUNT; joint_index++) {
-                    size_t offset = body_index * body_stride + joint_index;
+                    size_t offset = body_offset + joint_index * DATA_PER_JOINT;
                     buffer_pose[offset + 0] = skeleton.joints[joint_index].position.xyz.x;
                     buffer_pose[offset + 1] = skeleton.joints[joint_index].position.xyz.y;
                     buffer_pose[offset + 2] = skeleton.joints[joint_index].position.xyz.z;
@@ -1337,10 +1340,15 @@ extern "C" {
                     // convert to image positions
                     k4a_float2_t position_image;
                     int valid;
-                    k4a_calibration_3d_to_2d(calibration, &skeleton.joints[joint_index].position, K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR, &position_image, &valid);
-
-                    buffer_pose[offset + 8] = position_image.v[0];
-                    buffer_pose[offset + 9] = position_image.v[1];
+                    result = k4a_calibration_3d_to_2d(calibration, &skeleton.joints[joint_index].position, K4A_CALIBRATION_TYPE_DEPTH, K4A_CALIBRATION_TYPE_COLOR, &position_image, &valid);
+                    if (result == K4A_RESULT_SUCCEEDED) {
+                        buffer_pose[offset + 8] = position_image.xy.x;
+                        buffer_pose[offset + 9] = position_image.xy.y;
+                        buffer_pose[offset + 10] = (float) valid;
+                    }
+                    else {
+                        buffer_pose[offset + 10] = -1;
+                    }
                 }
             }
 
@@ -1354,7 +1362,7 @@ extern "C" {
             k4a_image_to_numpy(&body_index_map, &np_body_index_map);
 
             k4abt_frame_release(body_frame);
-            return Py_BuildValue("OO", np_body_data, Py_None);
+            return Py_BuildValue("OO", np_body_data, np_body_index_map);
         }
         else {
             return Py_BuildValue("NN", Py_None, Py_None);

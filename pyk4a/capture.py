@@ -131,6 +131,9 @@ class PyK4ACapture:
         np array of floats
         (n_bodies, n_joints, n_data) == body_skeleton.shape
 
+        Position_image are in color image coordinates.
+        if valid != 1: position does not fit in image.
+
         data for a joint follows this order(
             position_x,
             position_y,
@@ -142,6 +145,7 @@ class PyK4ACapture:
             confidence_level,
             position_image_0,
             position_image_1,
+            valid,
         )
         """
         if self._body_skeleton is None:
@@ -155,6 +159,7 @@ class PyK4ACapture:
 
     @property
     def body_index_map(self) -> Optional[np.ndarray]:
+        # use at your own risk.
         if self._body_index_map is None:
             self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
                 self._capture_handle,

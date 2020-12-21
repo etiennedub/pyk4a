@@ -19,17 +19,22 @@ while True:
     if body_skeleton is None:
         continue
 
-    frame = colorize(capture.depth, (None, 5000))
+    frame = colorize(capture.transformed_depth, (None, 5000))
 
-    if body_skeleton is not None and body_skeleton.shape[0] > 0:
-        pts = body_skeleton[0, :, :]
-        for i in range(1):
+    if body_skeleton is None:
+        continue
+    for body_index in range(body_skeleton.shape[0]):
+        skeleton = body_skeleton[body_index, :, :]
+        for joint_index in range(skeleton.shape[0]):
             try:
-                x, y = int(pts[i, -2]), int(pts[i, -1])
-                print(x, y)
-                assert x > 0 and y > 0
-                cv2.circle(frame, (x, y), 12, (0, 0, 0), thickness=-1, lineType=cv2.FILLED)
-            except Exception:
+                valid = int(skeleton[joint_index, -1])
+                if valid != 1:
+                    continue
+                x, y = skeleton[joint_index, (-3, -2)].astype(int)
+                cv2.circle(frame, (x, y), 12, (50, 50, 50), thickness=-1, lineType=cv2.FILLED)
+                cv2.putText(frame, str(joint_index), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, cv2.LINE_AA)
+            except Exception as e:
+                print(e)
                 pass
 
     cv2.imshow("frame", frame)
