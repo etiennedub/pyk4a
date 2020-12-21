@@ -21,6 +21,8 @@ def main():
             cv2.imshow("Transformed Depth", colorize(capture.transformed_depth, (None, 5000)))
         if capture.transformed_color is not None:
             cv2.imshow("Transformed Color", capture.transformed_color)
+        if capture.transformed_ir is not None:
+            cv2.imshow("Transformed IR", colorize(capture.transformed_ir, (None, 500), colormap=cv2.COLORMAP_JET))
 
         key = cv2.waitKey(10)
         if key != -1:

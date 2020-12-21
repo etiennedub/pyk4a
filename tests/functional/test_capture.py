@@ -7,6 +7,7 @@ from pyk4a import PyK4A
 class TestCapture:
     @staticmethod
     @pytest.mark.device
+    @pytest.mark.opengl
     def test_device_capture_images(device: PyK4A):
         device.open()
         device._start_cameras()
