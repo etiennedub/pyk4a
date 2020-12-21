@@ -34,6 +34,8 @@ class PyK4ACapture:
         self._transformed_depth_point_cloud: Optional[np.ndarray] = None
         self._transformed_color: Optional[np.ndarray] = None
         self._transformed_ir: Optional[np.ndarray] = None
+        self._body_skeleton: Optional[np.ndarray] = None
+        self._body_index_map: Optional[np.ndarray] = None
 
     @property
     def color(self) -> Optional[np.ndarray]:
@@ -122,3 +124,47 @@ class PyK4ACapture:
             else:
                 self._transformed_ir, self._transformed_depth = result
         return self._transformed_ir
+
+    @property
+    def body_skeleton(self) -> Optional[np.ndarray]:
+        """
+        np array of floats
+        (n_bodies, n_joints, n_data) == body_skeleton.shape
+
+        Position_image are in color image coordinates.
+        if valid != 1: position does not fit in image.
+
+        data for a joint follows this order(
+            position_x,
+            position_y,
+            position_z,
+            orientation_w,
+            orientation_x,
+            orientation_y,
+            orientation_z,
+            confidence_level,
+            position_image_0,
+            position_image_1,
+            valid,
+        )
+        """
+        if self._body_skeleton is None:
+            self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
+                self._capture_handle,
+                self._calibration._calibration_handle,
+                self._calibration.body_tracker_handle,
+                self.thread_safe,
+            )
+        return self._body_skeleton
+
+    @property
+    def body_index_map(self) -> Optional[np.ndarray]:
+        # use at your own risk.
+        if self._body_index_map is None:
+            self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
+                self._capture_handle,
+                self._calibration._calibration_handle,
+                self._calibration.body_tracker_handle,
+                self.thread_safe,
+            )
+        return self._body_index_map

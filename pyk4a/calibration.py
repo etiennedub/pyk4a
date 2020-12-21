@@ -22,6 +22,7 @@ class Calibration:
     ):
         self._calibration_handle = handle
         self._transformation_handle: Optional[object] = None
+        self._body_tracker_handle: Optional[object] = None
         self.thread_safe = thread_safe
         self._depth_mode = depth_mode
         self._color_resolution = color_resolution
@@ -120,3 +121,13 @@ class Calibration:
                 raise K4AException("Cannot create transformation handle")
             self._transformation_handle = handle
         return self._transformation_handle
+
+    @property
+    def body_tracker_handle(self) -> object:
+        if not self._body_tracker_handle:
+            assert k4a_module.is_body_tracking_supported()
+            handle = k4a_module.body_tracker_create(self._calibration_handle, self.thread_safe)
+            if not handle:
+                raise K4AException("Cannot create body tracker handle")
+            self._body_tracker_handle = handle
+        return self._body_tracker_handle

@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Tuple
+from typing import Optional, Tuple
 
 
 # k4a_fps_t
@@ -106,3 +106,21 @@ class Config:
             self.subordinate_delay_off_master_usec,
             self.disable_streaming_indicator,
         )
+
+
+class BTSensorOrientation(IntEnum):
+    DEFAULT = 0
+    CLOCKWISE90 = 1
+    COUNTERCLOCKWISE90 = 2
+    FLIP180 = 3
+
+
+class BTConfig:
+    def __init__(
+        self,
+        sensor_orientation: BTSensorOrientation = BTSensorOrientation.DEFAULT,
+        gpu_device_id: Optional[int] = None,
+    ):
+        self.sensor_orientation = sensor_orientation
+        self.gpu_device_id = gpu_device_id
+        self.tracker_processing_mode = self.gpu_device_id is None
