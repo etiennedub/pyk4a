@@ -29,7 +29,7 @@ class pyk4a_build_ext(build_ext):
     boolean_options = build_ext.boolean_options + ['enable-body-tracking', ]
 
     def initialize_options(self):
-        self.enable_body_tracking = False
+        self.enable_body_tracking = True
         build_ext.initialize_options(self)
 
     def finalize_options(self):
