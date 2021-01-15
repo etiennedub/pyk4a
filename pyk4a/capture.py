@@ -36,6 +36,7 @@ class PyK4ACapture:
         self._transformed_ir: Optional[np.ndarray] = None
         self._body_skeleton: Optional[np.ndarray] = None
         self._body_index_map: Optional[np.ndarray] = None
+        self._body_ids: Optional[np.ndarray] = None
 
     @property
     def color(self) -> Optional[np.ndarray]:
@@ -149,7 +150,7 @@ class PyK4ACapture:
         )
         """
         if self._body_skeleton is None:
-            self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
+            self._body_ids, self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
                 self._capture_handle,
                 self._calibration._calibration_handle,
                 self._calibration.body_tracker_handle,
@@ -161,10 +162,22 @@ class PyK4ACapture:
     def body_index_map(self) -> Optional[np.ndarray]:
         # use at your own risk.
         if self._body_index_map is None:
-            self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
+            self._body_ids, self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
                 self._capture_handle,
                 self._calibration._calibration_handle,
                 self._calibration.body_tracker_handle,
                 self.thread_safe,
             )
         return self._body_index_map
+
+    @property
+    def body_ids(self) -> Optional[np.ndarray]:
+        # use at your own risk.
+        if self._body_ids is None:
+            self._body_ids, self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
+                self._capture_handle,
+                self._calibration._calibration_handle,
+                self._calibration.body_tracker_handle,
+                self.thread_safe,
+            )
+        return self._body_ids

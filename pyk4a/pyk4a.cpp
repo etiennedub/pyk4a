@@ -1241,6 +1241,7 @@ extern "C" {
 #ifdef ENABLE_BODY_TRACKING
     const char* CAPSULE_BODY_TRACKER_NAME = "pyk4a body tracker handle";
     const char* CAPSULE_BODY_DATA_NAME = "pyk4a body data";
+    const char* CAPSULE_BODY_ID_NAME = "pyk4a body id";
 
     static void capsule_cleanup_body_tracker(PyObject *capsule) {
         k4abt_tracker_t *body_tracker = (k4abt_tracker_t*)PyCapsule_GetPointer(capsule, CAPSULE_BODY_TRACKER_NAME);
@@ -1251,6 +1252,12 @@ extern "C" {
     static void capsule_cleanup_body_data(PyObject *capsule) {
         fprintf(stdout, "free called on body data");
         void* buffer = PyCapsule_GetPointer(capsule, CAPSULE_BODY_DATA_NAME);
+        free(buffer);
+    }
+
+    static void capsule_cleanup_body_ids(PyObject *capsule) {
+        fprintf(stdout, "free called on body ids");
+        void* buffer = PyCapsule_GetPointer(capsule, CAPSULE_BODY_ID_NAME);
         free(buffer);
     }
 
@@ -1303,14 +1310,14 @@ extern "C" {
         wait_res = k4abt_tracker_enqueue_capture(*body_tracker, *capture, K4A_WAIT_INFINITE);
         if (wait_res != K4A_WAIT_RESULT_SUCCEEDED ) {
             fprintf(stderr, "fail to enqueue capture\n");
-            return Py_BuildValue("NN", Py_None, Py_None);
+            return Py_BuildValue("NNN", Py_None, Py_None, Py_None);
         }
         wait_res = k4abt_tracker_pop_result(*body_tracker, &body_frame, K4A_WAIT_INFINITE);
         if (wait_res == K4A_WAIT_RESULT_SUCCEEDED) {
             uint32_t num_bodies = k4abt_frame_get_num_bodies(body_frame);
             if (num_bodies == 0) {
                 k4abt_frame_release(body_frame);
-                return Py_BuildValue("NN", Py_None, Py_None);
+                return Py_BuildValue("NNN", Py_None, Py_None, Py_None);
             }
             k4abt_skeleton_t skeleton;
             npy_intp dims[3];
@@ -1318,13 +1325,16 @@ extern "C" {
             dims[1] = K4ABT_JOINT_COUNT;
             dims[2] = DATA_PER_JOINT;
             size_t body_stride = K4ABT_JOINT_COUNT*DATA_PER_JOINT;
+            uint32_t* buffer_id = (uint32_t*) malloc(sizeof(uint32_t)*num_bodies);
             float* buffer_pose = (float*) malloc(sizeof(float)*num_bodies*body_stride);
             if (capture == NULL) {
                 fprintf(stderr, "Cannot allocate memory");
-                return Py_BuildValue("NN", Py_None, Py_None);
+                return Py_BuildValue("NNN", Py_None, Py_None, Py_None);
             }
 
             for (uint32_t body_index = 0; body_index < num_bodies; body_index++) {
+                uint32_t body_id = k4abt_frame_get_body_id(body_frame, body_index);
+                buffer_id[body_index] = body_id;
                 k4a_result_t result = k4abt_frame_get_body_skeleton(body_frame, body_index, &skeleton);
                 size_t body_offset = body_index * body_stride;
                 for (int joint_index=0; joint_index<K4ABT_JOINT_COUNT; joint_index++) {
@@ -1352,8 +1362,13 @@ extern "C" {
                 }
             }
 
+            PyArrayObject* np_body_id = (PyArrayObject*) PyArray_SimpleNewFromData(1, dims, NPY_UINT32, buffer_id);
+            PyObject *capsule_id = PyCapsule_New(buffer_id, CAPSULE_BODY_DATA_NAME, capsule_cleanup_body_ids);
+            PyCapsule_SetContext(capsule_id, buffer_id);
+            PyArray_SetBaseObject((PyArrayObject *) np_body_id, capsule_id);
+
             PyArrayObject* np_body_data = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_FLOAT, buffer_pose);
-            PyObject *capsule = PyCapsule_New(buffer_pose, CAPSULE_BODY_DATA_NAME, capsule_cleanup_body_data);
+            PyObject *capsule = PyCapsule_New(buffer_pose, CAPSULE_BODY_ID_NAME, capsule_cleanup_body_data);
             PyCapsule_SetContext(capsule, buffer_pose);
             PyArray_SetBaseObject((PyArrayObject *) np_body_data, capsule);
 
@@ -1362,10 +1377,10 @@ extern "C" {
             k4a_image_to_numpy(&body_index_map, &np_body_index_map);
 
             k4abt_frame_release(body_frame);
-            return Py_BuildValue("OO", np_body_data, np_body_index_map);
+            return Py_BuildValue("OOO", np_body_id, np_body_data, np_body_index_map);
         }
         else {
-            return Py_BuildValue("NN", Py_None, Py_None);
+            return Py_BuildValue("NNN", Py_None, Py_None, Py_None);
         }
     }
 
