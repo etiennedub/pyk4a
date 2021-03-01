@@ -36,6 +36,8 @@ jobs:
       with:
         repo: deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main
         repo-name: llvm
+        keys: 15CF4D18AF4F7421
+        key-server: keyserver.ubuntu.com
 
     - name: Install clang-format
       run: |
