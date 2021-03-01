@@ -41,7 +41,7 @@ jobs:
     - name: Install clang-format
       run: |
         sudo apt install -yq clang-format-11
-        sudo ln -s /usr/local/bin/clang-format /usr/bin/clang-format-11
+        sudo ln -s /usr/bin/clang-format-11 /usr/local/bin/clang-format
     - name: Run linters
       run: |
         make lint
