@@ -96,3 +96,4 @@ make build
 make fmt lint
 make test
 ```
+Note: you need `clang-format` tool for formatting CPP code.

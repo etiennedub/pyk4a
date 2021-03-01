@@ -31,6 +31,12 @@ jobs:
       uses: py-actions/py-dependency-install@v2
       with:
         path: requirements-dev.txt
+    - name: Install clang-format
+      run: |
+        echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main" > /etc/apt/sources.list.d/llvm.list
+        apt update
+        apt install -yq clang-format-11
+        link -s /usr/local/bin/clang-format /usr/bin/clang-format-11
     - name: Run linters
       run: |
         make lint
