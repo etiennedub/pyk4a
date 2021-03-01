@@ -1,4 +1,5 @@
 SOURCES=pyk4a example tests
+CPP_SOURCES=pyk4a/pyk4a.cpp
 TESTS=tests
 .PHONY: setup fmt lint test help build
 .SILENT: help
@@ -23,11 +24,13 @@ build:
 fmt:
 	isort  $(SOURCES)
 	black $(SOURCES)
+	clang-format -i $(CPP_SOURCES)
 
 lint:
 	black --check $(SOURCES)
 	flake8 $(SOURCES)
 	mypy $(SOURCES)
+	clang-format --Werror --dry-run $(CPP_SOURCES)
 
 test:
 	pytest $(TESTS)
