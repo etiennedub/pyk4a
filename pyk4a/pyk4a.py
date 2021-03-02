@@ -141,6 +141,14 @@ class PyK4A:
         return imu_sample
 
     @property
+    def serial(self) -> str:
+        self._validate_is_opened()
+        ret = k4a_module.device_get_serialnum(self._device_handle, self.thread_safe)
+        if ret == "":
+            raise K4AException("Cannot read serial")
+        return ret
+
+    @property
     def calibration_raw(self) -> str:
         self._validate_is_opened()
         raw = k4a_module.device_get_raw_calibration(self._device_handle, self.thread_safe)
