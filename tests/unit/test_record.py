@@ -34,35 +34,35 @@ class TestCreate:
         record = PyK4ARecord(config=Config(), path=path)
         with pytest.raises(K4AException, match=r"Cannot create"):
             record.create()
-        assert not record.opened
+        assert not record.created
 
     @staticmethod
     def test_create(record: PyK4ARecord):
         record.create()
-        assert record.opened
+        assert record.created
 
     @staticmethod
     def test_recreate(created_record: PyK4ARecord):
-        with pytest.raises(K4AException, match=r"already opened"):
+        with pytest.raises(K4AException, match=r"already"):
             created_record.create()
 
 
 class TestClose:
     @staticmethod
     def test_not_created_record(record: PyK4ARecord):
-        with pytest.raises(K4AException, match=r"not opened"):
+        with pytest.raises(K4AException, match=r"not created"):
             record.close()
 
     @staticmethod
     def test_closing(created_record: PyK4ARecord):
         created_record.close()
-        assert not created_record.opened
+        assert not created_record.created
 
 
 class TestWriteHeader:
     @staticmethod
     def test_not_created_record(record: PyK4ARecord):
-        with pytest.raises(K4AException, match=r"not opened"):
+        with pytest.raises(K4AException, match=r"not created"):
             record.write_header()
 
     @staticmethod
@@ -75,7 +75,7 @@ class TestWriteHeader:
 class TestWriteCapture:
     @staticmethod
     def test_not_created_record(record: PyK4ARecord, capture: PyK4ACapture):
-        with pytest.raises(K4AException, match=r"not opened"):
+        with pytest.raises(K4AException, match=r"not created"):
             record.write_capture(capture)
 
     @staticmethod
@@ -92,5 +92,5 @@ class TestWriteCapture:
 class TestFlush:
     @staticmethod
     def test_not_created_record(record: PyK4ARecord):
-        with pytest.raises(K4AException, match=r"not opened"):
+        with pytest.raises(K4AException, match=r"not created"):
             record.flush()

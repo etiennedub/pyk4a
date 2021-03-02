@@ -15,9 +15,7 @@ device.start()
 
 print(f"Open record file {args.FILE}")
 record = PyK4ARecord(device=device, config=config, path=args.FILE)
-record.write_header()
-
-counter = 0
+record.create()
 try:
     print("Recording... Press CTRL-C to stop recording.")
     while True:
