@@ -1,27 +1,31 @@
-from pyk4a.config import Config, ImageFormat
-from pyk4a.pyk4a import PyK4A
-from pyk4a.record import PyK4ARecord
+from argparse import ArgumentParser
+
+from pyk4a import Config, ImageFormat, PyK4A, PyK4ARecord
 
 
+parser = ArgumentParser(description="pyk4a recorder")
+parser.add_argument("--device", type=int, help="Device ID", default=0)
+parser.add_argument("FILE", type=str, help="Path to MKV file")
+args = parser.parse_args()
+
+print(f"Starting device #{args.device}")
 config = Config(color_format=ImageFormat.COLOR_MJPG)
-device = PyK4A(config=config)
+device = PyK4A(config=config, device_id=args.device)
 device.start()
 
-record = PyK4ARecord(device=device, config=config, path="/tmp/1.mkv")
-record.create()
-record.add_imu_track()
+print(f"Open record file {args.FILE}")
+record = PyK4ARecord(device=device, config=config, path=args.FILE)
 record.write_header()
 
-captures = []
-for _ in range(30 * 10):
-    print(".", end="", flush=True)
-    captures.append(device.get_capture())
-print("Writing")
-for i, capture in enumerate(captures):
-    print(".", end="", flush=True)
-    record.write_capture(capture)
-    if i % 10 == 0:
-        record.flush()
-print("End")
+counter = 0
+try:
+    print("Recording... Press CTRL-C to stop recording.")
+    while True:
+        capture = device.get_capture()
+        record.write_capture(capture)
+except KeyboardInterrupt:
+    print("CTRL-C pressed. Exiting.")
+
 record.flush()
 record.close()
+print(f"{record.captures_count} frames written.")

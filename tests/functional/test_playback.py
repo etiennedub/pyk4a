@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 from pyk4a import K4AException, PyK4APlayback, SeekOrigin
@@ -23,16 +21,6 @@ RECORD_CONFIGURATION = Configuration(
     subordinate_delay_off_master_usec=0,
     start_timestamp_offset_usec=336277,
 )
-
-
-@pytest.fixture()
-def recording_path() -> Path:
-    return Path(__file__).parent.parent / "assets" / "recording.mkv"
-
-
-@pytest.fixture()
-def playback(recording_path: Path) -> PyK4APlayback:
-    return PyK4APlayback(path=recording_path)
 
 
 class TestInit:
