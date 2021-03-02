@@ -188,6 +188,7 @@ class TestCalibrationRaw:
 
 
 class TestInstalledCount:
-    def test_count(self):
+    @staticmethod
+    def test_count(patch_module_device):
         count = installed_count()
         assert count == 1
