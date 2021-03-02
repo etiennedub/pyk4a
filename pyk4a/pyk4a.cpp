@@ -3,6 +3,7 @@
 
 #include <k4a/k4a.h>
 #include <k4arecord/playback.h>
+#include <k4arecord/record.h>
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -21,6 +22,7 @@ const char *CAPSULE_DEVICE_NAME = "pyk4a device handle";
 const char *CAPSULE_CALIBRATION_NAME = "pyk4a calibration handle";
 const char *CAPSULE_TRANSFORMATION_NAME = "pyk4a transformation handle";
 const char *CAPSULE_CAPTURE_NAME = "pyk4a capture handle";
+const char *CAPSULE_RECORD_NAME = "pyk4a record handle";
 
 static PyThreadState *_gil_release(int thread_safe) {
   PyThreadState *thread_state = NULL;
@@ -65,6 +67,13 @@ static void capsule_cleanup_playback(PyObject *capsule) {
 
   playback_handle = (k4a_playback_t *)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
   free(playback_handle);
+}
+
+static void capsule_cleanup_record(PyObject *capsule) {
+  k4a_record_t *record_handle;
+
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(capsule, CAPSULE_RECORD_NAME);
+  free(record_handle);
 }
 
 static void capsule_cleanup_transformation(PyObject *capsule) {
@@ -1139,6 +1148,103 @@ static PyObject *playback_get_previous_capture(PyObject *self, PyObject *args) {
   return Py_BuildValue("IN", result, capsule_capture);
 }
 
+static PyObject *record_create(PyObject *self, PyObject *args) {
+  k4a_device_t *device_handle = NULL;
+  PyObject *device_capsule;
+  int thread_safe;
+  PyThreadState *thread_state;
+  const char *file_name;
+
+  k4a_record_t *record_handle = (k4a_record_t *)malloc(sizeof(k4a_record_t));
+  if (record_handle == NULL) {
+    fprintf(stderr, "Cannot allocate memory");
+    return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
+  }
+
+  k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+  PyArg_ParseTuple(args, "OspIIIIpiIIp", &device_capsule, &file_name, &thread_safe, &config.color_format,
+                   &config.color_resolution, &config.depth_mode, &config.camera_fps, &config.synchronized_images_only,
+                   &config.depth_delay_off_color_usec, &config.wired_sync_mode,
+                   &config.subordinate_delay_off_master_usec, &config.disable_streaming_indicator);
+
+  k4a_result_t result;
+  thread_state = _gil_release(thread_safe);
+  if (device_capsule != Py_None) {
+    device_handle = (k4a_device_t *)PyCapsule_GetPointer(device_capsule, CAPSULE_DEVICE_NAME);
+    result = k4a_record_create(file_name, *device_handle, config, record_handle);
+  } else {
+    result = k4a_record_create(file_name, NULL, config, record_handle);
+  }
+  _gil_restore(thread_state);
+
+  if (result != K4A_RESULT_SUCCEEDED) {
+    free(record_handle);
+    return Py_BuildValue("IN", result, Py_None);
+  }
+  PyObject *capsule = PyCapsule_New(record_handle, CAPSULE_RECORD_NAME, capsule_cleanup_record);
+  return Py_BuildValue("IN", result, capsule);
+}
+
+static PyObject *record_close(PyObject *self, PyObject *args) {
+  int thread_safe;
+  PyThreadState *thread_state;
+  PyObject *capsule;
+  k4a_record_t *record_handle;
+  PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(capsule, CAPSULE_RECORD_NAME);
+  thread_state = _gil_release(thread_safe);
+  k4a_record_close(*record_handle);
+  _gil_restore(thread_state);
+  return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
+}
+
+static PyObject *record_write_header(PyObject *self, PyObject *args) {
+  int thread_safe;
+  PyThreadState *thread_state;
+  PyObject *capsule;
+  k4a_record_t *record_handle;
+  k4a_result_t result;
+  PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(capsule, CAPSULE_RECORD_NAME);
+  thread_state = _gil_release(thread_safe);
+  result = k4a_record_write_header(*record_handle);
+  _gil_restore(thread_state);
+  return Py_BuildValue("I", result);
+}
+
+static PyObject *record_flush(PyObject *self, PyObject *args) {
+  int thread_safe;
+  PyThreadState *thread_state;
+  PyObject *capsule;
+  k4a_record_t *record_handle;
+  k4a_result_t result;
+  PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(capsule, CAPSULE_RECORD_NAME);
+  thread_state = _gil_release(thread_safe);
+  result = k4a_record_flush(*record_handle);
+  _gil_restore(thread_state);
+  return Py_BuildValue("I", result);
+}
+
+static PyObject *record_write_capture(PyObject *self, PyObject *args) {
+  int thread_safe;
+  PyThreadState *thread_state;
+  PyObject *record_capsule;
+  k4a_record_t *record_handle;
+  PyObject *capture_capsule;
+  k4a_capture_t *capture_handle;
+  k4a_result_t result;
+  PyArg_ParseTuple(args, "OOp", &record_capsule, &capture_capsule, &thread_safe);
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(record_capsule, CAPSULE_RECORD_NAME);
+  capture_handle = (k4a_capture_t *)PyCapsule_GetPointer(capture_capsule, CAPSULE_CAPTURE_NAME);
+
+  thread_state = _gil_release(thread_safe);
+  result = k4a_record_write_capture(*record_handle, *capture_handle);
+  _gil_restore(thread_state);
+
+  return Py_BuildValue("I", result);
+}
+
 struct module_state {
   PyObject *error;
 };
@@ -1197,6 +1303,11 @@ static PyMethodDef Pyk4aMethods[] = {
     {"playback_get_next_capture", playback_get_next_capture, METH_VARARGS, "Get next capture from playback"},
     {"playback_get_previous_capture", playback_get_previous_capture, METH_VARARGS,
      "Get previous capture from playback"},
+    {"record_create", record_create, METH_VARARGS, "Opens a new recording file for writing"},
+    {"record_close", record_close, METH_VARARGS, "Opens a new recording file for writing"},
+    {"record_write_header", record_write_header, METH_VARARGS, "Writes the recording header and metadata to file"},
+    {"record_flush", record_flush, METH_VARARGS, "Flushes all pending recording data to disk"},
+    {"record_write_capture", record_write_capture, METH_VARARGS, "Writes a camera capture to file"},
 
     {NULL, NULL, 0, NULL}};
 
