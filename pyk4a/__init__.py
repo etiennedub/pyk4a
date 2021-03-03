@@ -1,3 +1,5 @@
+import k4a_module
+
 from .calibration import Calibration, CalibrationType
 from .capture import PyK4ACapture
 from .config import (
@@ -20,6 +22,10 @@ from .transformation import (
     depth_image_to_color_camera_custom,
     depth_image_to_point_cloud,
 )
+
+
+def installed_count() -> int:
+    return k4a_module.device_get_installed_count()
 
 
 __all__ = (
@@ -45,4 +51,5 @@ __all__ = (
     "depth_image_to_color_camera",
     "depth_image_to_color_camera_custom",
     "PyK4ARecord",
+    "installed_count",
 )
