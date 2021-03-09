@@ -21,3 +21,5 @@ class TestCapture:
         assert np.array_equal(color, depth) is False
         assert np.array_equal(depth, ir) is False
         assert np.array_equal(ir, color) is False
+        assert capture.color_white_balance is not None
+        assert capture.color_exposure_usec is not None
