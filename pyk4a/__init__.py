@@ -24,7 +24,7 @@ from .transformation import (
 )
 
 
-def installed_count() -> int:
+def connected_device_count() -> int:
     return k4a_module.device_get_installed_count()
 
 
@@ -51,5 +51,5 @@ __all__ = (
     "depth_image_to_color_camera",
     "depth_image_to_color_camera_custom",
     "PyK4ARecord",
-    "installed_count",
+    "connected_device_count",
 )

@@ -1,6 +1,6 @@
 import pytest
 
-from pyk4a import K4AException, PyK4A, installed_count
+from pyk4a import K4AException, PyK4A, connected_device_count
 
 
 class TestOpenClose:
@@ -120,5 +120,5 @@ class TestCalibrationRaw:
 class TestInstalledCount:
     @staticmethod
     def test_count():
-        count = installed_count()
+        count = connected_device_count()
         assert count >= 0

@@ -1,7 +1,7 @@
-from pyk4a import PyK4A, installed_count
+from pyk4a import PyK4A, connected_device_count
 
 
-cnt = installed_count()
+cnt = connected_device_count()
 if not cnt:
     print("No devices available")
     exit()
