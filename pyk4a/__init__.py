@@ -15,6 +15,7 @@ from .config import (
 from .errors import K4AException, K4ATimeoutException
 from .playback import PyK4APlayback, SeekOrigin
 from .pyk4a import ColorControlCapabilities, PyK4A
+from .record import PyK4ARecord
 from .transformation import (
     color_image_to_depth_camera,
     depth_image_to_color_camera,
@@ -49,5 +50,6 @@ __all__ = (
     "depth_image_to_point_cloud",
     "depth_image_to_color_camera",
     "depth_image_to_color_camera_custom",
+    "PyK4ARecord",
     "connected_device_count",
 )
