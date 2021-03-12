@@ -562,6 +562,42 @@ k4a_result_t numpy_to_k4a_image(PyArrayObject *img_src, k4a_image_t *img_dst, k4
                                       img_dst);
 }
 
+static PyObject *color_image_get_exposure_usec(PyObject *self, PyObject *args) {
+  k4a_capture_t *capture_handle;
+  PyObject *capsule;
+  uint64_t exposure_usec = 0;
+  PyArg_ParseTuple(args, "O", &capsule);
+  capture_handle = (k4a_capture_t *)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
+
+  k4a_image_t image = k4a_capture_get_color_image(*capture_handle);
+  if (image == NULL) {
+    fprintf(stderr, "Color image missed");
+    return Py_BuildValue("K", exposure_usec);
+  }
+
+  exposure_usec = k4a_image_get_exposure_usec(image);
+  k4a_image_release(image);
+  return Py_BuildValue("K", exposure_usec);
+}
+
+static PyObject *color_image_get_white_balance(PyObject *self, PyObject *args) {
+  k4a_capture_t *capture_handle;
+  PyObject *capsule;
+  uint32_t white_balance = 0;
+  PyArg_ParseTuple(args, "O", &capsule);
+  capture_handle = (k4a_capture_t *)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
+
+  k4a_image_t image = k4a_capture_get_color_image(*capture_handle);
+  if (image == NULL) {
+    fprintf(stderr, "Color image missed");
+    return Py_BuildValue("I", white_balance);
+  }
+
+  white_balance = k4a_image_get_white_balance(image);
+  k4a_image_release(image);
+  return Py_BuildValue("I", white_balance);
+}
+
 static PyObject *transformation_create(PyObject *self, PyObject *args) {
   k4a_calibration_t *calibration_handle;
   PyObject *capsule;
@@ -1345,6 +1381,9 @@ static PyMethodDef Pyk4aMethods[] = {
     {"playback_get_next_capture", playback_get_next_capture, METH_VARARGS, "Get next capture from playback"},
     {"playback_get_previous_capture", playback_get_previous_capture, METH_VARARGS,
      "Get previous capture from playback"},
+    {"color_image_get_exposure_usec", color_image_get_exposure_usec, METH_VARARGS,
+     "Get color image exposure in microseconds"},
+    {"color_image_get_white_balance", color_image_get_white_balance, METH_VARARGS, "Get color image white balance"},
     {"record_create", record_create, METH_VARARGS, "Opens a new recording file for writing"},
     {"record_close", record_close, METH_VARARGS, "Opens a new recording file for writing"},
     {"record_write_header", record_write_header, METH_VARARGS, "Writes the recording header and metadata to file"},
