@@ -20,6 +20,7 @@ class DeviceMeta:
     id: int
     jack_in: bool = False
     jack_out: bool = False
+    serial: str = "123456789"
     color_controls: Tuple[ColorControlCapabilities, ...] = (
         ColorControlCapabilities(
             color_control_command=ColorControlCommand.EXPOSURE_TIME_ABSOLUTE,
@@ -246,6 +247,10 @@ def patch_module_device(monkeypatch, calibration_raw, capture_factory):
             assert self._opened is True
             return "{}"
 
+        def device_get_serialnum(self) -> str:
+            assert self._opened is True
+            return self._meta.serial
+
     def _device_open(device_id: int, thread_safe: bool) -> Tuple[int, object]:
         if device_id not in DEVICE_METAS:
             return Result.Failed.value, None
@@ -310,6 +315,12 @@ def patch_module_device(monkeypatch, calibration_raw, capture_factory):
     def _device_get_raw_calibration(capsule: DeviceHandle, thread_safe) -> Optional[str]:
         return capsule.device_get_raw_calibration()
 
+    def _device_get_installed_count() -> int:
+        return 1
+
+    def _device_get_serialnum(capsule: DeviceHandle, thread_safe) -> Optional[str]:
+        return capsule.device_get_serialnum()
+
     monkeypatch.setattr("k4a_module.device_open", _device_open)
     monkeypatch.setattr("k4a_module.device_close", _device_close)
     monkeypatch.setattr("k4a_module.device_get_sync_jack", _device_get_sync_jack)
@@ -324,6 +335,8 @@ def patch_module_device(monkeypatch, calibration_raw, capture_factory):
     monkeypatch.setattr("k4a_module.device_get_imu_sample", _device_get_imu_sample)
     monkeypatch.setattr("k4a_module.device_get_calibration", _device_get_calibration)
     monkeypatch.setattr("k4a_module.device_get_raw_calibration", _device_get_raw_calibration)
+    monkeypatch.setattr("k4a_module.device_get_installed_count", _device_get_installed_count)
+    monkeypatch.setattr("k4a_module.device_get_serialnum", _device_get_serialnum)
 
 
 @pytest.fixture()

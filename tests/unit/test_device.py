@@ -2,7 +2,7 @@ from typing import Iterator
 
 import pytest
 
-from pyk4a import K4AException, PyK4A
+from pyk4a import K4AException, PyK4A, connected_device_count
 
 
 DEVICE_ID = 0
@@ -139,6 +139,12 @@ class TestProperties:
         calibration = device.calibration
         assert calibration
 
+    @staticmethod
+    def test_serial(device: PyK4A):
+        device.open()
+        serial = device.serial
+        assert serial == "123456789"
+
 
 class TestCameras:
     @staticmethod
@@ -179,3 +185,10 @@ class TestCalibrationRaw:
     def test_calibration_raw(device: PyK4A):
         device.open()
         assert device.calibration_raw
+
+
+class TestInstalledCount:
+    @staticmethod
+    def test_count(patch_module_device):
+        count = connected_device_count()
+        assert count == 1
