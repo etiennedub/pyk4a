@@ -2,7 +2,6 @@ from typing import Iterator
 
 import pytest
 
-
 from pyk4a import K4AException, PyK4A, connected_device_count
 
 
