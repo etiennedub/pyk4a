@@ -1003,6 +1003,49 @@ static PyObject *calibration_2d_to_3d(PyObject *self, PyObject *args) {
                        target_point3d_mm.xyz.z);
 }
 
+static PyObject *_array_to_list(float *array, size_t length) {
+  size_t i;
+  PyObject *result = NULL, *value = NULL;
+
+  result = PyList_New(length);
+  if (result) {
+    for (i = 0; i < length; ++i) {
+      value = PyFloat_FromDouble(array[i]);
+      if (value) {
+        PyList_SET_ITEM(result, i, value);
+      } else {
+        Py_CLEAR(result);
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+static PyObject *calibration_get_intrinsics(PyObject *self, PyObject *args) {
+  k4a_calibration_t *calibration_handle;
+  PyObject *capsule;
+  int thread_safe;
+  k4a_calibration_type_t camera;
+  PyThreadState *thread_state;
+
+  PyArg_ParseTuple(args, "OpI", &capsule, &thread_safe, &camera);
+  calibration_handle = (k4a_calibration_t *)PyCapsule_GetPointer(capsule, CAPSULE_CALIBRATION_NAME);
+
+  thread_state = _gil_release(thread_safe);
+
+  k4a_calibration_camera_t calib;
+  if (camera == K4A_CALIBRATION_TYPE_DEPTH) {
+    calib = calibration_handle->depth_camera_calibration;
+  } else if (camera == K4A_CALIBRATION_TYPE_COLOR) {
+    calib = calibration_handle->color_camera_calibration;
+  }
+  _gil_restore(thread_state);
+
+  PyObject *intrinsics = _array_to_list(calib.intrinsics.parameters.v, calib.intrinsics.parameter_count);
+  return Py_BuildValue("N", intrinsics);
+}
+
 static PyObject *playback_open(PyObject *self, PyObject *args) {
   int thread_safe;
   PyThreadState *thread_state;
@@ -1368,6 +1411,8 @@ static PyMethodDef Pyk4aMethods[] = {
     {"calibration_3d_to_3d", calibration_3d_to_3d, METH_VARARGS, "Transforms the coordinates between 2 3D systems"},
     {"calibration_2d_to_3d", calibration_2d_to_3d, METH_VARARGS,
      "Transforms the coordinates between a pixel and a 3D system"},
+    {"calibration_get_intrinsics", calibration_get_intrinsics, METH_VARARGS,
+     "Gets intrinsic parameters from calibration"},
     {"playback_open", playback_open, METH_VARARGS, "Open file for playback"},
     {"playback_close", playback_close, METH_VARARGS, "Close opened playback"},
     {"playback_get_recording_length_usec", playback_get_recording_length_usec, METH_VARARGS, "Return recording length"},
