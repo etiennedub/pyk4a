@@ -1,6 +1,8 @@
 from enum import IntEnum
 from typing import Optional, Tuple
 
+import numpy as np
+
 import k4a_module
 
 from .config import ColorResolution, DepthMode
@@ -120,3 +122,28 @@ class Calibration:
                 raise K4AException("Cannot create transformation handle")
             self._transformation_handle = handle
         return self._transformation_handle
+
+    def get_camera_matrix(self, camera: CalibrationType) -> np.ndarray:
+        """
+        Get the camera matrix (in OpenCV compatible format) for the color or depth camera
+        """
+        if camera not in [CalibrationType.COLOR, CalibrationType.DEPTH]:
+            raise ValueError("Camera matrix only available for color and depth cameras.")
+        params = k4a_module.calibration_get_intrinsics(self._calibration_handle, self.thread_safe, camera)
+        if len(params) != 14:
+            raise ValueError("Unknown camera calibration type")
+
+        cx, cy, fx, fy = params[:4]
+        return np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
+
+    def get_distortion_coefficients(self, camera: CalibrationType) -> np.ndarray:
+        """
+        Get the distortion coefficients (in OpenCV compatible format) for the color or depth camera
+        """
+        if camera not in [CalibrationType.COLOR, CalibrationType.DEPTH]:
+            raise ValueError("Distortion coefficients only available for color and depth cameras.")
+        params = k4a_module.calibration_get_intrinsics(self._calibration_handle, self.thread_safe, camera)
+        if len(params) != 14:
+            raise ValueError("Unknown camera calibration type")
+
+        return np.array([params[4], params[5], params[13], params[12], *params[6:10]])
