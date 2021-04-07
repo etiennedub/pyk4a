@@ -1003,6 +1003,38 @@ static PyObject *calibration_2d_to_3d(PyObject *self, PyObject *args) {
                        target_point3d_mm.xyz.z);
 }
 
+static PyObject *calibration_3d_to_2d(PyObject *self, PyObject *args) {
+  k4a_calibration_t *calibration_handle;
+  PyObject *capsule;
+  int thread_safe;
+  PyThreadState *thread_state;
+  float source_point_x;
+  float source_point_y;
+  float source_point_z;
+  int valid;
+  k4a_calibration_type_t source_camera;
+  k4a_calibration_type_t target_camera;
+  k4a_result_t res;
+  k4a_float2_t target_point2d;
+
+  PyArg_ParseTuple(args, "Op(fff)II", &capsule, &thread_safe, &source_point_x, &source_point_y, &source_point_z,
+                   &source_camera, &target_camera);
+  calibration_handle = (k4a_calibration_t *)PyCapsule_GetPointer(capsule, CAPSULE_CALIBRATION_NAME);
+
+  thread_state = _gil_release(thread_safe);
+
+  const k4a_float3_t source_point3d_mm = {source_point_x, source_point_y, source_point_z};
+
+  res = k4a_calibration_3d_to_2d(calibration_handle, &source_point3d_mm, source_camera, target_camera, &target_point2d,
+                                 &valid);
+  _gil_restore(thread_state);
+  if (res == K4A_RESULT_FAILED) {
+    return Py_BuildValue("IIN", res, valid, Py_None);
+  }
+  // Return object...
+  return Py_BuildValue("II(ff)", res, valid, target_point2d.xy.x, target_point2d.xy.y);
+}
+
 static PyObject *_array_to_list(float *array, size_t length) {
   size_t i;
   PyObject *result = NULL, *value = NULL;
@@ -1063,7 +1095,6 @@ static PyObject *playback_open(PyObject *self, PyObject *args) {
   thread_state = _gil_release(thread_safe);
   result = k4a_playback_open(file_name, playback_handle);
   _gil_restore(thread_state);
-
   if (result == K4A_RESULT_FAILED) {
     free(playback_handle);
     return Py_BuildValue("IN", result, Py_None);
@@ -1411,6 +1442,8 @@ static PyMethodDef Pyk4aMethods[] = {
     {"calibration_3d_to_3d", calibration_3d_to_3d, METH_VARARGS, "Transforms the coordinates between 2 3D systems"},
     {"calibration_2d_to_3d", calibration_2d_to_3d, METH_VARARGS,
      "Transforms the coordinates between a pixel and a 3D system"},
+    {"calibration_3d_to_2d", calibration_3d_to_2d, METH_VARARGS,
+     "Transform a 3D point of a source coordinate system into a 2D pixel coordinate of the target camera"},
     {"calibration_get_intrinsics", calibration_get_intrinsics, METH_VARARGS,
      "Gets intrinsic parameters from calibration"},
     {"playback_open", playback_open, METH_VARARGS, "Open file for playback"},
@@ -1452,6 +1485,7 @@ static int pyk4a_clear(PyObject *m) {
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT, "k4a_module", NULL, sizeof(struct module_state), Pyk4aMethods, NULL,
     pyk4a_traverse,        pyk4a_clear,  NULL};
+
 #define INITERROR return NULL
 PyMODINIT_FUNC PyInit_k4a_module(void) {
   import_array();

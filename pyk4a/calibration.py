@@ -114,6 +114,43 @@ class Calibration:
             target_camera = source_camera
         return self._convert_2d_to_3d(coordinates, depth, source_camera, target_camera)
 
+    def _convert_3d_to_2d(
+        self,
+        source_point_3d: Tuple[float, float, float],
+        source_camera: CalibrationType,
+        target_camera: CalibrationType,
+    ) -> Tuple[float, float]:
+        """
+            Transform a 3d point of a source coordinate system into a 3d
+            point of the target coordinate system.
+            :param source_point_3d    The 3D coordinates in mm of source_camera.
+            :param source_camera      The current camera.
+            :param target_camera      The target camera.
+            :return                   The 3D coordinates in mm representing a point in target camera.
+        """
+        res, valid, target_px_2d = k4a_module.calibration_3d_to_2d(
+            self._calibration_handle, self.thread_safe, source_point_3d, source_camera, target_camera,
+        )
+
+        _verify_error(res)
+        if valid == 0:
+            raise ValueError(f"Coordinates {source_point_3d} are not valid in the calibration model")
+
+        return target_px_2d
+
+    def convert_3d_to_2d(
+        self,
+        coordinates: Tuple[float, float, float],
+        source_camera: CalibrationType,
+        target_camera: Optional[CalibrationType] = None,
+    ):
+        """
+            Transform a 3d point to a 2d pixel of the target coordinate system.
+        """
+        if target_camera is None:
+            target_camera = source_camera
+        return self._convert_3d_to_2d(coordinates, source_camera, target_camera)
+
     @property
     def transformation_handle(self) -> object:
         if not self._transformation_handle:
