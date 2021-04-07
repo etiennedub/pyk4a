@@ -45,3 +45,15 @@ class TestCalibration:
         point3d = -122.29087829589844, -45.17741394042969, 243.19528198242188
         converted = calibration.convert_2d_to_3d(point, depth, CalibrationType.COLOR, CalibrationType.DEPTH)
         assert np.allclose(converted, point3d)
+
+    def test_3d_to_2d_without_target_camera(self, calibration: Calibration):
+        point3d = -154.5365753173828, -26.12171173095703, 250.0
+        point = 250.0, 300.0
+        converted = calibration.convert_3d_to_2d(point3d, CalibrationType.COLOR)
+        assert np.allclose(converted, point)
+
+    def test_3d_to_2d_with_target_camera(self, calibration: Calibration):
+        point3d = -122.29087829589844, -45.17741394042969, 243.19528198242188
+        point = 250.0, 300.0
+        converted = calibration.convert_3d_to_2d(point3d, CalibrationType.DEPTH, CalibrationType.COLOR)
+        assert np.allclose(converted, point)
