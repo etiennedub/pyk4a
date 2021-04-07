@@ -23,7 +23,7 @@ module = Extension('k4a_module',
                    libraries=['k4a', 'k4arecord'])
 
 setup(name='pyk4a',
-      version='1.1.0',
+      version='1.2.0',
       description='Python wrapper over Azure Kinect SDK',
       license='GPL-3.0',
       author='Etienne Dubeau',
