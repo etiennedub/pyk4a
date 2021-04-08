@@ -6,6 +6,7 @@ import k4a_module
 
 from .calibration import Calibration
 from .config import ImageFormat
+from .errors import K4AException
 from .transformation import (
     color_image_to_depth_camera,
     depth_image_to_color_camera,
@@ -25,6 +26,8 @@ class PyK4ACapture:
 
         self._color: Optional[np.ndarray] = None
         self._color_timestamp_usec: int = 0
+        self._color_exposure_usec: Optional[int] = None
+        self._color_white_balance: Optional[int] = None
         self._depth: Optional[np.ndarray] = None
         self._depth_timestamp_usec: int = 0
         self._ir: Optional[np.ndarray] = None
@@ -49,6 +52,24 @@ class PyK4ACapture:
         if self._color is None:
             self.color
         return self._color_timestamp_usec
+
+    @property
+    def color_exposure_usec(self) -> int:
+        if self._color_exposure_usec is None:
+            value = k4a_module.color_image_get_exposure_usec(self._capture_handle)
+            if value == 0:
+                raise K4AException("Cannot read exposure from color image")
+            self._color_exposure_usec = value
+        return self._color_exposure_usec
+
+    @property
+    def color_white_balance(self) -> int:
+        if self._color_white_balance is None:
+            value = k4a_module.color_image_get_white_balance(self._capture_handle)
+            if value == 0:
+                raise K4AException("Cannot read white balance from color image")
+            self._color_white_balance = value
+        return self._color_white_balance
 
     @property
     def depth(self) -> Optional[np.ndarray]:

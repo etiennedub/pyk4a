@@ -3,12 +3,14 @@
 
 #include <k4a/k4a.h>
 #include <k4arecord/playback.h>
+#include <k4arecord/record.h>
 #include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-// to debug, use fprintf(stdout, "debug msg\n") or fprintf(stderr, "debug msg\n");;
+// to debug, use fprintf(stdout, "debug msg\n") or fprintf(stderr, "debug
+// msg\n");;
 
 #define NON_THREAD_SAFE 0
 // Simple way to map k4a_color_resolution_t to dimensions
@@ -20,6 +22,7 @@ const char *CAPSULE_DEVICE_NAME = "pyk4a device handle";
 const char *CAPSULE_CALIBRATION_NAME = "pyk4a calibration handle";
 const char *CAPSULE_TRANSFORMATION_NAME = "pyk4a transformation handle";
 const char *CAPSULE_CAPTURE_NAME = "pyk4a capture handle";
+const char *CAPSULE_RECORD_NAME = "pyk4a record handle";
 
 static PyThreadState *_gil_release(int thread_safe) {
   PyThreadState *thread_state = NULL;
@@ -66,6 +69,13 @@ static void capsule_cleanup_playback(PyObject *capsule) {
   free(playback_handle);
 }
 
+static void capsule_cleanup_record(PyObject *capsule) {
+  k4a_record_t *record_handle;
+
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(capsule, CAPSULE_RECORD_NAME);
+  free(record_handle);
+}
+
 static void capsule_cleanup_transformation(PyObject *capsule) {
   k4a_transformation_t *transformation =
       (k4a_transformation_t *)PyCapsule_GetPointer(capsule, CAPSULE_TRANSFORMATION_NAME);
@@ -97,6 +107,48 @@ static PyObject *device_open(PyObject *self, PyObject *args) {
   PyObject *capsule = PyCapsule_New(device_handle, CAPSULE_DEVICE_NAME, capsule_cleanup_device);
 
   return Py_BuildValue("IN", result, capsule);
+}
+
+static PyObject *device_get_installed_count(PyObject *self, PyObject *args) {
+  uint32_t count;
+  count = k4a_device_get_installed_count();
+  return Py_BuildValue("I", count);
+}
+
+static PyObject *device_get_serialnum(PyObject *self, PyObject *args) {
+  k4a_device_t *device_handle;
+  PyObject *capsule;
+  int thread_safe;
+  PyThreadState *thread_state;
+  k4a_buffer_result_t result;
+  size_t data_size;
+
+  PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+  device_handle = (k4a_device_t *)PyCapsule_GetPointer(capsule, CAPSULE_DEVICE_NAME);
+
+  thread_state = _gil_release(thread_safe);
+  result = k4a_device_get_serialnum(*device_handle, NULL, &data_size);
+  if (result == K4A_BUFFER_RESULT_FAILED) {
+    _gil_restore(thread_state);
+    return Py_BuildValue("s", "");
+  }
+  char *data = (char *)malloc(data_size);
+  if (data == NULL) {
+    _gil_restore(thread_state);
+    fprintf(stderr, "Cannot allocate memory");
+    return Py_BuildValue("s", "");
+  }
+  result = k4a_device_get_serialnum(*device_handle, data, &data_size);
+  if (result != K4A_BUFFER_RESULT_SUCCEEDED) {
+    free(data);
+    return Py_BuildValue("s", "");
+  }
+  _gil_restore(thread_state);
+
+  PyObject *res = Py_BuildValue("s", data);
+  free(data);
+
+  return res;
 }
 
 static PyObject *device_close(PyObject *self, PyObject *args) {
@@ -508,6 +560,42 @@ k4a_result_t numpy_to_k4a_image(PyArrayObject *img_src, k4a_image_t *img_dst, k4
   return k4a_image_create_from_buffer(format, width_pixels, height_pixels, width_pixels * pixel_size,
                                       (uint8_t *)img_src->data, width_pixels * height_pixels * pixel_size, NULL, NULL,
                                       img_dst);
+}
+
+static PyObject *color_image_get_exposure_usec(PyObject *self, PyObject *args) {
+  k4a_capture_t *capture_handle;
+  PyObject *capsule;
+  uint64_t exposure_usec = 0;
+  PyArg_ParseTuple(args, "O", &capsule);
+  capture_handle = (k4a_capture_t *)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
+
+  k4a_image_t image = k4a_capture_get_color_image(*capture_handle);
+  if (image == NULL) {
+    fprintf(stderr, "Color image missed");
+    return Py_BuildValue("K", exposure_usec);
+  }
+
+  exposure_usec = k4a_image_get_exposure_usec(image);
+  k4a_image_release(image);
+  return Py_BuildValue("K", exposure_usec);
+}
+
+static PyObject *color_image_get_white_balance(PyObject *self, PyObject *args) {
+  k4a_capture_t *capture_handle;
+  PyObject *capsule;
+  uint32_t white_balance = 0;
+  PyArg_ParseTuple(args, "O", &capsule);
+  capture_handle = (k4a_capture_t *)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
+
+  k4a_image_t image = k4a_capture_get_color_image(*capture_handle);
+  if (image == NULL) {
+    fprintf(stderr, "Color image missed");
+    return Py_BuildValue("I", white_balance);
+  }
+
+  white_balance = k4a_image_get_white_balance(image);
+  k4a_image_release(image);
+  return Py_BuildValue("I", white_balance);
 }
 
 static PyObject *transformation_create(PyObject *self, PyObject *args) {
@@ -947,6 +1035,49 @@ static PyObject *calibration_3d_to_2d(PyObject *self, PyObject *args) {
   return Py_BuildValue("II(ff)", res, valid, target_point2d.xy.x, target_point2d.xy.y);
 }
 
+static PyObject *_array_to_list(float *array, size_t length) {
+  size_t i;
+  PyObject *result = NULL, *value = NULL;
+
+  result = PyList_New(length);
+  if (result) {
+    for (i = 0; i < length; ++i) {
+      value = PyFloat_FromDouble(array[i]);
+      if (value) {
+        PyList_SET_ITEM(result, i, value);
+      } else {
+        Py_CLEAR(result);
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+static PyObject *calibration_get_intrinsics(PyObject *self, PyObject *args) {
+  k4a_calibration_t *calibration_handle;
+  PyObject *capsule;
+  int thread_safe;
+  k4a_calibration_type_t camera;
+  PyThreadState *thread_state;
+
+  PyArg_ParseTuple(args, "OpI", &capsule, &thread_safe, &camera);
+  calibration_handle = (k4a_calibration_t *)PyCapsule_GetPointer(capsule, CAPSULE_CALIBRATION_NAME);
+
+  thread_state = _gil_release(thread_safe);
+
+  k4a_calibration_camera_t calib;
+  if (camera == K4A_CALIBRATION_TYPE_DEPTH) {
+    calib = calibration_handle->depth_camera_calibration;
+  } else if (camera == K4A_CALIBRATION_TYPE_COLOR) {
+    calib = calibration_handle->color_camera_calibration;
+  }
+  _gil_restore(thread_state);
+
+  PyObject *intrinsics = _array_to_list(calib.intrinsics.parameters.v, calib.intrinsics.parameter_count);
+  return Py_BuildValue("N", intrinsics);
+}
+
 static PyObject *playback_open(PyObject *self, PyObject *args) {
   int thread_safe;
   PyThreadState *thread_state;
@@ -964,7 +1095,6 @@ static PyObject *playback_open(PyObject *self, PyObject *args) {
   thread_state = _gil_release(thread_safe);
   result = k4a_playback_open(file_name, playback_handle);
   _gil_restore(thread_state);
-
   if (result == K4A_RESULT_FAILED) {
     free(playback_handle);
     return Py_BuildValue("IN", result, Py_None);
@@ -1170,6 +1300,103 @@ static PyObject *playback_get_previous_capture(PyObject *self, PyObject *args) {
   return Py_BuildValue("IN", result, capsule_capture);
 }
 
+static PyObject *record_create(PyObject *self, PyObject *args) {
+  k4a_device_t *device_handle = NULL;
+  PyObject *device_capsule;
+  int thread_safe;
+  PyThreadState *thread_state;
+  const char *file_name;
+
+  k4a_record_t *record_handle = (k4a_record_t *)malloc(sizeof(k4a_record_t));
+  if (record_handle == NULL) {
+    fprintf(stderr, "Cannot allocate memory");
+    return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
+  }
+
+  k4a_device_configuration_t config = K4A_DEVICE_CONFIG_INIT_DISABLE_ALL;
+  PyArg_ParseTuple(args, "OspIIIIpiIIp", &device_capsule, &file_name, &thread_safe, &config.color_format,
+                   &config.color_resolution, &config.depth_mode, &config.camera_fps, &config.synchronized_images_only,
+                   &config.depth_delay_off_color_usec, &config.wired_sync_mode,
+                   &config.subordinate_delay_off_master_usec, &config.disable_streaming_indicator);
+
+  k4a_result_t result;
+  thread_state = _gil_release(thread_safe);
+  if (device_capsule != Py_None) {
+    device_handle = (k4a_device_t *)PyCapsule_GetPointer(device_capsule, CAPSULE_DEVICE_NAME);
+    result = k4a_record_create(file_name, *device_handle, config, record_handle);
+  } else {
+    result = k4a_record_create(file_name, NULL, config, record_handle);
+  }
+  _gil_restore(thread_state);
+
+  if (result != K4A_RESULT_SUCCEEDED) {
+    free(record_handle);
+    return Py_BuildValue("IN", result, Py_None);
+  }
+  PyObject *capsule = PyCapsule_New(record_handle, CAPSULE_RECORD_NAME, capsule_cleanup_record);
+  return Py_BuildValue("IN", result, capsule);
+}
+
+static PyObject *record_close(PyObject *self, PyObject *args) {
+  int thread_safe;
+  PyThreadState *thread_state;
+  PyObject *capsule;
+  k4a_record_t *record_handle;
+  PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(capsule, CAPSULE_RECORD_NAME);
+  thread_state = _gil_release(thread_safe);
+  k4a_record_close(*record_handle);
+  _gil_restore(thread_state);
+  return Py_BuildValue("I", K4A_RESULT_SUCCEEDED);
+}
+
+static PyObject *record_write_header(PyObject *self, PyObject *args) {
+  int thread_safe;
+  PyThreadState *thread_state;
+  PyObject *capsule;
+  k4a_record_t *record_handle;
+  k4a_result_t result;
+  PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(capsule, CAPSULE_RECORD_NAME);
+  thread_state = _gil_release(thread_safe);
+  result = k4a_record_write_header(*record_handle);
+  _gil_restore(thread_state);
+  return Py_BuildValue("I", result);
+}
+
+static PyObject *record_flush(PyObject *self, PyObject *args) {
+  int thread_safe;
+  PyThreadState *thread_state;
+  PyObject *capsule;
+  k4a_record_t *record_handle;
+  k4a_result_t result;
+  PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(capsule, CAPSULE_RECORD_NAME);
+  thread_state = _gil_release(thread_safe);
+  result = k4a_record_flush(*record_handle);
+  _gil_restore(thread_state);
+  return Py_BuildValue("I", result);
+}
+
+static PyObject *record_write_capture(PyObject *self, PyObject *args) {
+  int thread_safe;
+  PyThreadState *thread_state;
+  PyObject *record_capsule;
+  k4a_record_t *record_handle;
+  PyObject *capture_capsule;
+  k4a_capture_t *capture_handle;
+  k4a_result_t result;
+  PyArg_ParseTuple(args, "OOp", &record_capsule, &capture_capsule, &thread_safe);
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(record_capsule, CAPSULE_RECORD_NAME);
+  capture_handle = (k4a_capture_t *)PyCapsule_GetPointer(capture_capsule, CAPSULE_CAPTURE_NAME);
+
+  thread_state = _gil_release(thread_safe);
+  result = k4a_record_write_capture(*record_handle, *capture_handle);
+  _gil_restore(thread_state);
+
+  return Py_BuildValue("I", result);
+}
+
 struct module_state {
   PyObject *error;
 };
@@ -1190,7 +1417,8 @@ static PyMethodDef Pyk4aMethods[] = {
     {"device_get_imu_sample", device_get_imu_sample, METH_VARARGS, "Reads an imu sample"},
     {"device_close", device_close, METH_VARARGS, "Close an Azure Kinect device"},
     {"device_get_sync_jack", device_get_sync_jack, METH_VARARGS,
-     "Get the device jack status for the synchronization in and synchronization out connectors."},
+     "Get the device jack status for the synchronization in and "
+     "synchronization out connectors."},
     {"device_get_color_control", device_get_color_control, METH_VARARGS, "Get device color control."},
     {"device_set_color_control", device_set_color_control, METH_VARARGS, "Set device color control."},
     {"device_get_color_control_capabilities", device_get_color_control_capabilities, METH_VARARGS,
@@ -1204,7 +1432,9 @@ static PyMethodDef Pyk4aMethods[] = {
     {"transformation_depth_image_to_color_camera", transformation_depth_image_to_color_camera, METH_VARARGS,
      "Transforms the depth map into the geometry of the color camera."},
     {"transformation_depth_image_to_color_camera_custom", transformation_depth_image_to_color_camera_custom,
-     METH_VARARGS, "Transforms the custom & depth map into the geometry of the color camera."},
+     METH_VARARGS,
+     "Transforms the custom & depth map into the geometry of the color "
+     "camera."},
     {"transformation_color_image_to_depth_camera", transformation_color_image_to_depth_camera, METH_VARARGS,
      "Transforms the color image into the geometry of the depth camera."},
     {"transformation_depth_image_to_point_cloud", transformation_depth_image_to_point_cloud, METH_VARARGS,
@@ -1214,6 +1444,8 @@ static PyMethodDef Pyk4aMethods[] = {
      "Transforms the coordinates between a pixel and a 3D system"},
     {"calibration_3d_to_2d", calibration_3d_to_2d, METH_VARARGS,
      "Transform a 3D point of a source coordinate system into a 2D pixel coordinate of the target camera"},
+    {"calibration_get_intrinsics", calibration_get_intrinsics, METH_VARARGS,
+     "Gets intrinsic parameters from calibration"},
     {"playback_open", playback_open, METH_VARARGS, "Open file for playback"},
     {"playback_close", playback_close, METH_VARARGS, "Close opened playback"},
     {"playback_get_recording_length_usec", playback_get_recording_length_usec, METH_VARARGS, "Return recording length"},
@@ -1227,6 +1459,16 @@ static PyMethodDef Pyk4aMethods[] = {
     {"playback_get_next_capture", playback_get_next_capture, METH_VARARGS, "Get next capture from playback"},
     {"playback_get_previous_capture", playback_get_previous_capture, METH_VARARGS,
      "Get previous capture from playback"},
+    {"color_image_get_exposure_usec", color_image_get_exposure_usec, METH_VARARGS,
+     "Get color image exposure in microseconds"},
+    {"color_image_get_white_balance", color_image_get_white_balance, METH_VARARGS, "Get color image white balance"},
+    {"record_create", record_create, METH_VARARGS, "Opens a new recording file for writing"},
+    {"record_close", record_close, METH_VARARGS, "Opens a new recording file for writing"},
+    {"record_write_header", record_write_header, METH_VARARGS, "Writes the recording header and metadata to file"},
+    {"record_flush", record_flush, METH_VARARGS, "Flushes all pending recording data to disk"},
+    {"record_write_capture", record_write_capture, METH_VARARGS, "Writes a camera capture to file"},
+    {"device_get_installed_count", device_get_installed_count, METH_VARARGS, "Gets the number of connected devices"},
+    {"device_get_serialnum", device_get_serialnum, METH_VARARGS, "Get the Azure Kinect device serial number."},
 
     {NULL, NULL, 0, NULL}};
 
@@ -1243,6 +1485,7 @@ static int pyk4a_clear(PyObject *m) {
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT, "k4a_module", NULL, sizeof(struct module_state), Pyk4aMethods, NULL,
     pyk4a_traverse,        pyk4a_clear,  NULL};
+
 #define INITERROR return NULL
 PyMODINIT_FUNC PyInit_k4a_module(void) {
   import_array();
