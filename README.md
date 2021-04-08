@@ -13,6 +13,7 @@ Images are returned as numpy arrays and behave like python objects.
 This approach incurs almost no overhead in terms of CPU, memory or other resources.
 It also simplifies usage. Kinect C api image buffers are directly reused and image releases are performed automatically by the python garbage collector.
 
+Homepage: https://github.com/etiennedub/pyk4a/
 
 ## Prerequisites
 The [Azure-Kinect-Sensor-SDK](https://github.com/microsoft/Azure-Kinect-Sensor-SDK) is required to build this library.
