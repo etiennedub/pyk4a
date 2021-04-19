@@ -838,6 +838,7 @@ static PyObject *capture_get_color_image(PyObject *self, PyObject *args) {
   PyObject *capsule;
   int thread_safe;
   uint64_t device_timestamp_usec = 0;
+  uint64_t system_timestamp_nsec = 0;
   PyThreadState *thread_state;
   k4a_result_t res = K4A_RESULT_FAILED;
 
@@ -847,7 +848,7 @@ static PyObject *capture_get_color_image(PyObject *self, PyObject *args) {
   k4a_image_t *image = (k4a_image_t *)malloc(sizeof(k4a_image_t));
   if (image == NULL) {
     fprintf(stderr, "Cannot allocate memory");
-    return Py_BuildValue("NK", Py_None, device_timestamp_usec);
+    return Py_BuildValue("NKK", Py_None, device_timestamp_usec, system_timestamp_nsec);
   }
 
   thread_state = _gil_release(thread_safe);
@@ -861,10 +862,11 @@ static PyObject *capture_get_color_image(PyObject *self, PyObject *args) {
 
   if (K4A_RESULT_SUCCEEDED == res) {
     device_timestamp_usec = k4a_image_get_device_timestamp_usec(*image);
-    return Py_BuildValue("NK", np_image, device_timestamp_usec);
+    system_timestamp_nsec = k4a_image_get_system_timestamp_nsec(*image);
+    return Py_BuildValue("NKK", np_image, device_timestamp_usec, system_timestamp_nsec);
   } else {
     free(image);
-    return Py_BuildValue("NK", Py_None, device_timestamp_usec);
+    return Py_BuildValue("NKK", Py_None, device_timestamp_usec, system_timestamp_nsec);
   }
 }
 
@@ -873,6 +875,7 @@ static PyObject *capture_get_depth_image(PyObject *self, PyObject *args) {
   PyObject *capsule;
   int thread_safe;
   uint64_t device_timestamp_usec = 0;
+  uint64_t system_timestamp_nsec = 0;
   PyThreadState *thread_state;
   k4a_result_t res = K4A_RESULT_FAILED;
 
@@ -882,7 +885,7 @@ static PyObject *capture_get_depth_image(PyObject *self, PyObject *args) {
   k4a_image_t *image = (k4a_image_t *)malloc(sizeof(k4a_image_t));
   if (image == NULL) {
     fprintf(stderr, "Cannot allocate memory");
-    return Py_BuildValue("NK", Py_None, device_timestamp_usec);
+    return Py_BuildValue("NKK", Py_None, device_timestamp_usec, system_timestamp_nsec);
   }
 
   thread_state = _gil_release(thread_safe);
@@ -896,10 +899,11 @@ static PyObject *capture_get_depth_image(PyObject *self, PyObject *args) {
 
   if (K4A_RESULT_SUCCEEDED == res) {
     device_timestamp_usec = k4a_image_get_device_timestamp_usec(*image);
-    return Py_BuildValue("NK", np_image, device_timestamp_usec);
+    system_timestamp_nsec = k4a_image_get_system_timestamp_nsec(*image);
+    return Py_BuildValue("NKK", np_image, device_timestamp_usec, system_timestamp_nsec);
   } else {
     free(image);
-    return Py_BuildValue("NK", Py_None, device_timestamp_usec);
+    return Py_BuildValue("NKK", Py_None, device_timestamp_usec, system_timestamp_nsec);
   }
 }
 
@@ -908,6 +912,7 @@ static PyObject *capture_get_ir_image(PyObject *self, PyObject *args) {
   PyObject *capsule;
   int thread_safe;
   uint64_t device_timestamp_usec = 0;
+  uint64_t system_timestamp_nsec = 0;
   PyThreadState *thread_state;
   k4a_result_t res = K4A_RESULT_FAILED;
 
@@ -917,7 +922,7 @@ static PyObject *capture_get_ir_image(PyObject *self, PyObject *args) {
   k4a_image_t *image = (k4a_image_t *)malloc(sizeof(k4a_image_t));
   if (image == NULL) {
     fprintf(stderr, "Cannot allocate memory");
-    return Py_BuildValue("NK", Py_None, device_timestamp_usec);
+    return Py_BuildValue("NKK", Py_None, device_timestamp_usec, system_timestamp_nsec);
   }
 
   thread_state = _gil_release(thread_safe);
@@ -931,10 +936,11 @@ static PyObject *capture_get_ir_image(PyObject *self, PyObject *args) {
 
   if (K4A_RESULT_SUCCEEDED == res) {
     device_timestamp_usec = k4a_image_get_device_timestamp_usec(*image);
-    return Py_BuildValue("NK", np_image, device_timestamp_usec);
+    system_timestamp_nsec = k4a_image_get_system_timestamp_nsec(*image);
+    return Py_BuildValue("NKK", np_image, device_timestamp_usec, system_timestamp_nsec);
   } else {
     free(image);
-    return Py_BuildValue("NK", Py_None, device_timestamp_usec);
+    return Py_BuildValue("NKK", Py_None, device_timestamp_usec, system_timestamp_nsec);
   }
 }
 
