@@ -517,6 +517,11 @@ k4a_result_t k4a_image_to_numpy(k4a_image_t *img_src, PyArrayObject **img_dst) {
     dims[1] = k4a_image_get_width_pixels(*img_src);
     *img_dst = (PyArrayObject *)PyArray_SimpleNewFromData(2, dims, NPY_UINT16, buffer);
     break;
+  case K4A_IMAGE_FORMAT_CUSTOM8:
+    dims[0] = k4a_image_get_height_pixels(*img_src);
+    dims[1] = k4a_image_get_width_pixels(*img_src);
+    *img_dst = (PyArrayObject *)PyArray_SimpleNewFromData(2, dims, NPY_UINT8, buffer);
+    break;
   case K4A_IMAGE_FORMAT_CUSTOM:
     // xyz in uint16 format
     dims[0] = k4a_image_get_height_pixels(*img_src);
@@ -544,13 +549,15 @@ k4a_result_t numpy_to_k4a_image(PyArrayObject *img_src, k4a_image_t *img_dst, k4
 
   switch (format) {
   case K4A_IMAGE_FORMAT_DEPTH16:
+  case K4A_IMAGE_FORMAT_CUSTOM16:
+  case K4A_IMAGE_FORMAT_IR16:
     pixel_size = (int)sizeof(uint16_t);
     break;
   case K4A_IMAGE_FORMAT_COLOR_BGRA32:
     pixel_size = (int)sizeof(uint32_t);
     break;
-  case K4A_IMAGE_FORMAT_CUSTOM16:
-    pixel_size = (unsigned int)sizeof(int16_t);
+  case K4A_IMAGE_FORMAT_CUSTOM8:
+    pixel_size = (int)sizeof(uint8_t);
     break;
   default:
     // Not supported
@@ -707,8 +714,7 @@ static PyObject *transformation_depth_image_to_color_camera_custom(PyObject *sel
   if (K4A_RESULT_SUCCEEDED == res) {
     res = k4a_image_create(k4a_image_get_format(custom_image), RESOLUTION_TO_DIMS[color_resolution][0],
                            RESOLUTION_TO_DIMS[color_resolution][1],
-                           RESOLUTION_TO_DIMS[color_resolution][0] * static_cast<int32_t>(sizeof(int16_t)),
-                           custom_image_transformed);
+                           RESOLUTION_TO_DIMS[color_resolution][0] * (int)sizeof(uint16_t), custom_image_transformed);
   }
 
   if (K4A_RESULT_SUCCEEDED == res) {
@@ -729,7 +735,7 @@ static PyObject *transformation_depth_image_to_color_camera_custom(PyObject *sel
   }
 
   if (K4A_RESULT_SUCCEEDED == res) {
-    return Py_BuildValue("OO", np_custom_image, np_depth_image);
+    return Py_BuildValue("NN", np_custom_image, np_depth_image);
   } else {
     free(depth_image_transformed);
     free(custom_image_transformed);
