@@ -53,6 +53,13 @@ class PyK4APlayback:
         if self._handle:
             self.close()
 
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self):
+        self.close()
+
     @property
     def path(self) -> Path:
         """
