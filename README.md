@@ -32,14 +32,10 @@ pip install pyk4a
 
 ### Windows
 
-Make sure you replace the paths in the following instructions with your own k4a sdk path.
-It is important to replace `1.4.1` with your installed version of the SDK.
-
+In most cases `pip install pyk4a` will be enough for installing package but in some cases installer cannot detect kinect sdk path. Please use next snippet in this case:
+```shell
+pip install pyk4a --global-option="--kinect-sdk=PATH_TO_KINECT_SDK"
 ```
-pip install pyk4a --no-use-pep517 --global-option=build_ext --global-option="-IC:\Program Files\Azure Kinect SDK v1.4.1\sdk\include" --global-option="-LC:\Program Files\Azure Kinect SDK v1.4.1\sdk\windows-desktop\amd64\release\lib"
-```
-
-Don't forget to add the folder containing the release `k4a.dll` to your Path env variable `C:\Program Files\Azure Kinect SDK v1.2.0\sdk\windows-desktop\amd64\release\bin`
 
 ## Example
 
