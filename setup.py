@@ -47,8 +47,8 @@ class BuildExt(build_ext):
                 arch = os.getenv("PROCESSOR_ARCHITECTURE", "amd64")
                 include_path = kinect_sdk / "sdk" / "include"
                 lib_path = kinect_sdk / "windows-desktop" / arch / "release" / "lib"
-                self.include_dirs.append(include_path)
-                self.library_dirs.append(lib_path)
+                self.include_dirs.append(str(include_path))
+                self.library_dirs.append(str(lib_path))
 
         super().run()
 
