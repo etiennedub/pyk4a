@@ -25,41 +25,29 @@ def _detect_kinect_sdk():
         program_files = Path(os.getenv("ProgramFiles", "C:\\Program Files\\"))
         for dir in sorted(program_files.glob("Azure Kinect SDK v*"), reverse=True):
             include = dir / "sdk" / "include"
-            if include.exists():
-                return dir.resolve()
-    return None
-
-class BuildExt(build_ext):
-    user_options = build_ext.user_options + [
-        ('kinect-sdk=', None ,"Kinect SDK dir for windows, leave empty for autodetect")]
-    kinect_sdk = None
+            arch = os.getenv("PROCESSOR_ARCHITECTURE", "amd64")
+            lib = dir / "sdk" / "windows-desktop" / arch / "release"
+            if include.exists() and lib.exists():
+                return str(include), str(lib)
+    return None, None
 
 
+include_dirs = [get_numpy_include()]
+library_dirs = []
 
-    def __init__(self, *args, **kwargs):
-        print(111)
-        super().__init__(*args, **kwargs)
-
-    def run(self):
-        if sys.platform == "win32":
-            kinect_sdk = Path(self.kinect_sdk) if self.kinect_sdk else _detect_kinect_sdk()
-            if kinect_sdk:
-                arch = os.getenv("PROCESSOR_ARCHITECTURE", "amd64")
-                include_path = kinect_sdk / "sdk" / "include"
-                lib_path = kinect_sdk / "windows-desktop" / arch / "release" / "lib"
-                self.include_dirs.append(str(include_path))
-                self.library_dirs.append(str(lib_path))
-
-        super().run()
+kinect_include_dir, kinect_library_dir = _detect_kinect_sdk()
+if kinect_include_dir:
+    include_dirs.insert(0, kinect_include_dir)
+if kinect_library_dir:
+    library_dirs.insert(0, kinect_library_dir)
 
 module = Extension('k4a_module',
                    sources=['pyk4a/pyk4a.cpp'],
-                   include_dirs=[get_numpy_include()],
-                   libraries=['k4a', 'k4arecord'])
+                   libraries=['k4a', 'k4arecord'],
+                   include_dirs=include_dirs,
+                   library_dirs=library_dirs
+                   )
 
 setup(
     ext_modules=[module],
-    cmdclass={
-        'build_ext': BuildExt
-    }
 )
