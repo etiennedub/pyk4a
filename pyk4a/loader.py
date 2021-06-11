@@ -25,4 +25,4 @@ if sys.platform == "win32":
 try:
     import k4a_module  # noqa: F401
 except BaseException as e:
-    raise RuntimeError(f"Cannot load k4a_module, maybe kinect SDK is not available: {e}")
+    raise ImportError(f"Cannot load k4a_module, maybe kinect SDK is not available or module is not built: {e}")
