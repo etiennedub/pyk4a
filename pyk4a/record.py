@@ -4,7 +4,7 @@ from typing import Optional, Union
 from .capture import PyK4ACapture
 from .config import Config
 from .errors import K4AException
-from .loader import k4a_module
+from .module import k4a_module
 from .pyk4a import PyK4A
 from .results import Result
 

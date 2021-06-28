@@ -11,7 +11,7 @@ from .config import (
     WiredSyncMode,
 )
 from .errors import K4AException, K4ATimeoutException
-from .loader import k4a_module
+from .module import k4a_module
 from .playback import PyK4APlayback, SeekOrigin
 from .pyk4a import ColorControlCapabilities, PyK4A
 from .record import PyK4ARecord

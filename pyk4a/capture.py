@@ -5,7 +5,7 @@ import numpy as np
 from .calibration import Calibration
 from .config import ImageFormat
 from .errors import K4AException
-from .loader import k4a_module
+from .module import k4a_module
 from .transformation import (
     color_image_to_depth_camera,
     depth_image_to_color_camera,

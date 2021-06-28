@@ -5,7 +5,7 @@ import numpy as np
 
 from .config import ColorResolution, DepthMode
 from .errors import K4AException, _verify_error
-from .loader import k4a_module
+from .module import k4a_module
 
 
 class CalibrationType(IntEnum):

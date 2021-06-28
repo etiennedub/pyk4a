@@ -13,7 +13,7 @@ from .calibration import Calibration
 from .capture import PyK4ACapture
 from .config import FPS, ColorResolution, DepthMode, ImageFormat, WiredSyncMode
 from .errors import K4AException, _verify_error
-from .loader import k4a_module
+from .module import k4a_module
 from .results import Result, StreamResult
 
 

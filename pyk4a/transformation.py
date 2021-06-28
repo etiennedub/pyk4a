@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 
 from .calibration import Calibration
-from .loader import k4a_module
+from .module import k4a_module
 
 
 def depth_image_to_color_camera(depth: np.ndarray, calibration: Calibration, thread_safe: bool) -> Optional[np.ndarray]:
