@@ -43,7 +43,7 @@ pip install pyk4a --no-use-pep517 --global-option=build_ext --global-option="-IC
 ```
 
 During execution, `k4a.dll` is required. The automatic detection should be able to find this file.
-It is also possible to specify the path to the directory by using the environment variable `K4A_DLL_DIR`.
+It is also possible to specify the DLL's directory with the environment variable `K4A_DLL_DIR`.
 If `K4A_DLL_DIR` is used, the automatic DLL search is not performed.
 
 ## Example
