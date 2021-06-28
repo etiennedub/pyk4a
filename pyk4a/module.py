@@ -13,8 +13,8 @@ except BaseException as e:
         except BaseException:
             raise ImportError(
                 (
-                    f"Cannot import k4a_module. "
-                    "DLL directory added was {added_dll_dir}. "
+                    "Cannot import k4a_module. "
+                    f"DLL directory added was {added_dll_dir}. "
                     "You can provide a different path containing `k4a.dll`"
                     "using the environment variable `K4A_DLL_DIR`. "
                     "Also make sure pyk4a was properly built."
