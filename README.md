@@ -26,7 +26,7 @@ To use the SDK, refer to the installation instructions [here](https://github.com
 
 Make sure your `LD_LIBRARY_PATH` contains the directory of k4a.lib
 
-```
+```shell
 pip install pyk4a
 ```
 
@@ -34,11 +34,17 @@ pip install pyk4a
 
 In most cases `pip install pyk4a` is enough to install this package.
 
-In some cases, the installer ([setup.py](setup.py)) cannot detect your kinect SDK path. The following snippet can help.
-Make sure you replace the paths in the following instructions with your own k4a SDK path. It is also important to replace 1.4.1 with your installed version of the SDK.
+Because of the numerous issues received from Windows users, the installer ([setup.py](setup.py)) automatically detects the kinect SDK path.
+
+When the installer is not able to find the path, the following snippet can help.
+Make sure you replace the paths in these instructions with your own kinect SDK path. It is important to replace 1.4.1 with your installed version of the SDK.
 ```shell
 pip install pyk4a --no-use-pep517 --global-option=build_ext --global-option="-IC:\Program Files\Azure Kinect SDK v1.4.1\sdk\include" --global-option="-LC:\Program Files\Azure Kinect SDK v1.4.1\sdk\windows-desktop\amd64\release\lib""
 ```
+
+During execution, `k4a.dll` is required. The automatic detection should be able to find this file.
+It is also possible to specify the path to the directory by using the environment variable `K4A_DLL_DIR`.
+If `K4A_DLL_DIR` is used, the automatic DLL search is not performed.
 
 ## Example
 

@@ -4,6 +4,7 @@ from setuptools import setup, Extension
 from pathlib import Path
 import sys
 from setuptools.command.build_ext import build_ext
+from typing import Tuple, Optional
 if sys.version_info[0] == 2:
     sys.exit("Python 2 is not supported.")
 
@@ -20,27 +21,42 @@ class get_numpy_include:
         return numpy.get_include()
 
 
-def _detect_kinect_sdk():
+def detect_win32_sdk_include_and_library_dirs() -> Optional[Tuple[str, str]]:
+    # get program_files path
+    for k in ("ProgramFiles", "PROGRAMFILES"):
+        if k in os.environ:
+            program_files = Path(os.environ[k])
+            break
+    else:
+        program_files = Path("C:\\Program Files\\")
+    # search through program_files
+    arch = os.getenv("PROCESSOR_ARCHITECTURE", "amd64")
+    for dir in sorted(program_files.glob("Azure Kinect SDK v*"), reverse=True):
+        include = dir / "sdk" / "include"
+        lib = dir / "sdk" / "windows-desktop" / arch / "release"
+        if include.exists() and lib.exists():
+            return str(include), str(lib)
+    return None
+
+def detect_and_insert_sdk_include_and_library_dirs(include_dirs, library_dirs) -> None:
     if sys.platform == "win32":
-        program_files = Path(os.getenv("ProgramFiles", "C:\\Program Files\\"))
-        for dir in sorted(program_files.glob("Azure Kinect SDK v*"), reverse=True):
-            include = dir / "sdk" / "include"
-            arch = os.getenv("PROCESSOR_ARCHITECTURE", "amd64")
-            lib = dir / "sdk" / "windows-desktop" / arch / "release"
-            if include.exists() and lib.exists():
-                return str(include), str(lib)
-    return None, None
+        r = detect_win32_sdk_include_and_library_dirs()
+    else:
+        # Only implemented for windows
+        r = None
+    
+    if r is None:
+        print("Automatic kinect SDK detection did not yield any results.")
+    else:
+        include_dir, library_dir = r
+        print(f"Automatically detected kinect SDK. Adding include dir: {include_dir} and library dir {library_dir}.")
+        include_dirs.insert(0, include_dir)
+        library_dirs.insert(0, library_dir)
 
 
 include_dirs = [get_numpy_include()]
 library_dirs = []
-
-kinect_include_dir, kinect_library_dir = _detect_kinect_sdk()
-if kinect_include_dir:
-    include_dirs.insert(0, kinect_include_dir)
-if kinect_library_dir:
-    library_dirs.insert(0, kinect_library_dir)
-
+detect_and_insert_sdk_include_and_library_dirs(include_dirs, library_dirs)
 module = Extension('k4a_module',
                    sources=['pyk4a/pyk4a.cpp'],
                    libraries=['k4a', 'k4arecord'],
