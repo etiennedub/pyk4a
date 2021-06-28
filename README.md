@@ -32,11 +32,13 @@ pip install pyk4a
 
 ### Windows
 
-In most cases `pip install pyk4a` will be enough for installing package but in some cases installer cannot detect kinect sdk path. Please use next snippet in this case:
+In most cases `pip install pyk4a` is enough to install this package.
+
+In some cases, the installer ([setup.py](setup.py)) cannot detect your kinect SDK path. The following snippet can help.
+Make sure you replace the paths in the following instructions with your own k4a SDK path. It is also important to replace 1.4.1 with your installed version of the SDK.
 ```shell
 pip install pyk4a --no-use-pep517 --global-option=build_ext --global-option="-IC:\Program Files\Azure Kinect SDK v1.4.1\sdk\include" --global-option="-LC:\Program Files\Azure Kinect SDK v1.4.1\sdk\windows-desktop\amd64\release\lib""
 ```
-Make sure you replace the paths in the above instructions with your own k4a sdk path. It is important to replace 1.4.1 with your installed version of the SDK.
 
 ## Example
 
@@ -69,8 +71,11 @@ python viewer.py
 
 ## Documentation
 
-No documentation is available but most methods are used in the example. You can follow it as reference.
-You can also check directly the code of the main class [PyK4A](https://github.com/etiennedub/pyk4a/blob/master/pyk4a/pyk4a.py).
+No documentation is available but all functinos are properly [type hinted](https://docs.python.org/3/library/typing.html).
+The code of the main class is a good place to start[PyK4A](https://github.com/etiennedub/pyk4a/blob/master/pyk4a/pyk4a.py).
+
+You can also follow the various [example folder](example) scripts as reference.
+
 
 ## Bug Reports
 Submit an issue and please include as much details as possible.
