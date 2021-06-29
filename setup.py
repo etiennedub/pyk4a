@@ -33,7 +33,7 @@ def detect_win32_sdk_include_and_library_dirs() -> Optional[Tuple[str, str]]:
     arch = os.getenv("PROCESSOR_ARCHITECTURE", "amd64")
     for dir in sorted(program_files.glob("Azure Kinect SDK v*"), reverse=True):
         include = dir / "sdk" / "include"
-        lib = dir / "sdk" / "windows-desktop" / arch / "release"
+        lib = dir / "sdk" / "windows-desktop" / arch / "release" / "lib"
         if include.exists() and lib.exists():
             return str(include), str(lib)
     return None
