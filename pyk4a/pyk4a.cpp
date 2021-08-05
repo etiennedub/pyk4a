@@ -1409,6 +1409,30 @@ static PyObject *record_write_capture(PyObject *self, PyObject *args) {
   return Py_BuildValue("I", result);
 }
 
+static PyObject *record_add_tag(PyObject *self, PyObject *args) {
+  PyObject *record_capsule;
+  k4a_record_t *record_handle;
+  k4a_result_t result;
+  const char *tag_name;
+  const char *tag_value;
+  PyArg_ParseTuple(args, "Oss", &record_capsule, &tag_name, &tag_value);
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(record_capsule, CAPSULE_RECORD_NAME);
+  result = k4a_record_add_tag(*record_handle, tag_name, tag_value);
+  return Py_BuildValue("I", result);
+}
+
+static PyObject *record_add_attachment(PyObject *self, PyObject *args) {
+  PyObject *record_capsule;
+  k4a_record_t *record_handle;
+  k4a_result_t result;
+  const char *attachment_name;
+  Py_buffer buffer;
+  PyArg_ParseTuple(args, "Osy*", &record_capsule, &attachment_name, &buffer);
+  record_handle = (k4a_record_t *)PyCapsule_GetPointer(record_capsule, CAPSULE_RECORD_NAME);
+  result = k4a_record_add_attachment(*record_handle, attachment_name, (uint8_t *)buffer.buf, buffer.len);
+  return Py_BuildValue("I", result);
+}
+
 struct module_state {
   PyObject *error;
 };
@@ -1479,6 +1503,8 @@ static PyMethodDef Pyk4aMethods[] = {
     {"record_write_header", record_write_header, METH_VARARGS, "Writes the recording header and metadata to file"},
     {"record_flush", record_flush, METH_VARARGS, "Flushes all pending recording data to disk"},
     {"record_write_capture", record_write_capture, METH_VARARGS, "Writes a camera capture to file"},
+    {"record_add_tag", record_add_tag, METH_VARARGS, "Adds a tag to the recording"},
+    {"record_add_attachment", record_add_attachment, METH_VARARGS, "Adds an attachment to the recording"},
     {"device_get_installed_count", device_get_installed_count, METH_VARARGS, "Gets the number of connected devices"},
     {"device_get_serialnum", device_get_serialnum, METH_VARARGS, "Get the Azure Kinect device serial number."},
 

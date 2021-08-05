@@ -1,4 +1,5 @@
 from pathlib import Path
+from re import fullmatch
 from typing import Optional, Union
 
 from .capture import PyK4ACapture
@@ -42,6 +43,28 @@ class PyK4ARecord:
         self._validate_is_created()
         k4a_module.record_close(self._handle, self.thread_safe)
         self._handle = None
+
+    def add_tag(self, name: str, value: str):
+        """ Adds a tag to the recording. """
+        self._validate_is_created()
+        if self.header_written:
+            raise K4AException("All tags need to be added before the recording header is written.")
+        if not name.isupper():
+            raise K4AException("Tag name must be ALL CAPS")
+        if not fullmatch("^[-_A-Z0-9]+$", name):
+            raise K4AException("Tag name may only contain A-Z, 0-9, '-' and '_'.")
+        result = k4a_module.record_add_tag(self._handle, name, value)
+        if result != Result.Success:
+            raise K4AException(f"Cannot add tag {name}={value}")
+
+    def add_attachment(self, name: str, value: bytes):
+        """ Adds an attachment to the recording. """
+        self._validate_is_created()
+        if self.header_written:
+            raise K4AException("All attachments need to be added before the recording header is written.")
+        result = k4a_module.record_add_attachment(self._handle, name, value)
+        if result != Result.Success:
+            raise K4AException(f"Cannot add attachment {name}")
 
     def write_header(self):
         """ Write MKV header """

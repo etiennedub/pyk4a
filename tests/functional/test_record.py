@@ -50,3 +50,29 @@ class TestFlush:
         created_record.flush()
         size_after = created_record.path.stat().st_size
         assert size_after > size_before
+
+
+class TestAddTag:
+    @staticmethod
+    def test_adding_tag(created_record: PyK4ARecord, capture: PyK4ACapture):
+        created_record.add_tag("MYTAG", "Some tag value")
+        created_record.write_header()
+        created_record.write_capture(capture)
+        created_record.close()
+        bytes = created_record.path.read_bytes()
+        # very simple
+        assert b"MYTAG" in bytes, f"Tag MYTAG not found in {created_record.path}"
+        assert b"Some tag value" in bytes, f"Tag value not found in {created_record.path}"
+
+
+class TestAddAttachment:
+    @staticmethod
+    def test_adding_tag(created_record: PyK4ARecord, capture: PyK4ACapture):
+        created_record.add_attachment("file.txt", b"Some text value")
+        created_record.write_header()
+        created_record.write_capture(capture)
+        created_record.close()
+        bytes = created_record.path.read_bytes()
+        # very simple
+        assert b"file.txt" in bytes, f"Attached file.txt not found in {created_record.path}"
+        assert b"Some text value" in bytes, f"Attached file content not found in {created_record.path}"
