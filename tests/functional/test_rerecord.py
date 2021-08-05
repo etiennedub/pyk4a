@@ -7,7 +7,7 @@ from pyk4a import Config, PyK4APlayback, PyK4ARecord
 
 @pytest.fixture()
 def record_path(tmp_path: Path) -> Path:
-    return "/tmp/1.mkv"  # tmp_path / "record.mkv"
+    return tmp_path / "record.mkv"
 
 
 def test_transfering_calibration(playback: PyK4APlayback, record_path: Path):
