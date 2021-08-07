@@ -3,10 +3,9 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-import k4a_module
-
 from .config import ColorResolution, DepthMode
 from .errors import K4AException, _verify_error
+from .module import k4a_module
 
 
 class CalibrationType(IntEnum):

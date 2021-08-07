@@ -9,12 +9,11 @@ if sys.version_info < (3, 8):
 else:
     from typing import TypedDict
 
-import k4a_module
-
 from .calibration import Calibration
 from .capture import PyK4ACapture
 from .config import FPS, ColorResolution, DepthMode, ImageFormat, WiredSyncMode
 from .errors import K4AException, _verify_error
+from .module import k4a_module
 from .results import Result, StreamResult
 
 
@@ -52,6 +51,13 @@ class PyK4APlayback:
     def __del__(self):
         if self._handle:
             self.close()
+
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self):
+        self.close()
 
     @property
     def path(self) -> Path:
