@@ -178,6 +178,12 @@ class PyK4APlayback:
             thread_safe=self.thread_safe,
         )
 
+    def get_next_imu_sample(self) -> Optional["ImuSample"]:
+        self._validate_is_open()
+        result, imu_sample = k4a_module.playback_get_next_imu_sample(self._handle, self.thread_safe)
+        self._verify_stream_error(result)
+        return imu_sample
+
     def _validate_is_open(self):
         if not self._handle:
             raise K4AException("Playback not opened.")

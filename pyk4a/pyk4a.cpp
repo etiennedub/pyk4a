@@ -1312,6 +1312,31 @@ static PyObject *playback_get_previous_capture(PyObject *self, PyObject *args) {
   return Py_BuildValue("IN", result, capsule_capture);
 }
 
+static PyObject *playback_get_next_imu_sample(PyObject *self, PyObject *args) {
+  int thread_safe;
+  PyThreadState *thread_state;
+  PyObject *capsule;
+  k4a_playback_t *playback_handle;
+  k4a_imu_sample_t imu_sample;
+  k4a_stream_result_t result;
+
+  PyArg_ParseTuple(args, "Op", &capsule, &thread_safe);
+  playback_handle = (k4a_playback_t *)PyCapsule_GetPointer(capsule, CAPSULE_PLAYBACK_NAME);
+
+  thread_state = _gil_release(thread_safe);
+  result = k4a_playback_get_next_imu_sample(*playback_handle, &imu_sample);
+  _gil_restore(thread_state);
+
+  if (result != K4A_STREAM_RESULT_SUCCEEDED) {
+    return Py_BuildValue("IN", result, Py_None);
+  }
+  return Py_BuildValue("I{s:f,s:(fff),s:L,s:(fff),s:L}", result, "temperature", imu_sample.temperature, "acc_sample",
+                         imu_sample.acc_sample.xyz.x, imu_sample.acc_sample.xyz.y, imu_sample.acc_sample.xyz.z,
+                         "acc_timestamp", imu_sample.acc_timestamp_usec, "gyro_sample", imu_sample.gyro_sample.xyz.x,
+                         imu_sample.gyro_sample.xyz.y, imu_sample.gyro_sample.xyz.z, "gyro_timestamp",
+                         imu_sample.gyro_timestamp_usec);
+}
+
 static PyObject *record_create(PyObject *self, PyObject *args) {
   k4a_device_t *device_handle = NULL;
   PyObject *device_capsule;
@@ -1471,6 +1496,7 @@ static PyMethodDef Pyk4aMethods[] = {
     {"playback_get_next_capture", playback_get_next_capture, METH_VARARGS, "Get next capture from playback"},
     {"playback_get_previous_capture", playback_get_previous_capture, METH_VARARGS,
      "Get previous capture from playback"},
+    {"playback_get_next_imu_sample", playback_get_next_imu_sample, METH_VARARGS, "Get next imu sample from playback"},
     {"color_image_get_exposure_usec", color_image_get_exposure_usec, METH_VARARGS,
      "Get color image exposure in microseconds"},
     {"color_image_get_white_balance", color_image_get_white_balance, METH_VARARGS, "Get color image white balance"},
