@@ -39,7 +39,7 @@ Because of the numerous issues received from Windows users, the installer ([setu
 When the installer is not able to find the path, the following snippet can help.
 Make sure you replace the paths in these instructions with your own kinect SDK path. It is important to replace 1.4.1 with your installed version of the SDK.
 ```shell
-pip install pyk4a --no-use-pep517 --global-option=build_ext --global-option="-IC:\Program Files\Azure Kinect SDK v1.4.1\sdk\include" --global-option="-LC:\Program Files\Azure Kinect SDK v1.4.1\sdk\windows-desktop\amd64\release\lib""
+pip install pyk4a --no-use-pep517 --global-option=build_ext --global-option="-IC:\Program Files\Azure Kinect SDK v1.4.1\sdk\include" --global-option="-LC:\Program Files\Azure Kinect SDK v1.4.1\sdk\windows-desktop\amd64\release\lib"
 ```
 
 During execution, `k4a.dll` is required. The automatic detection should be able to find this file.
