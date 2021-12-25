@@ -1,5 +1,6 @@
 import glob
 import os
+import shutil
 
 from setuptools import setup, Extension
 from pathlib import Path
@@ -76,19 +77,25 @@ def bundle_release_libraries(package_data: Dict):
         binary_dir = Path(library_dir).parent / "bin"
     elif system_name == "Linux":
         binary_ext = "*.so"
-        binary_dir = ""
+        binary_dir = Path("/")
         raise NotImplementedError("Linux currently not supported.")
     else:
         raise Exception(f"OS {system_name} not supported.")
 
     # add libraries to package
-    package_data[package_name] = list(glob.glob(str(Path(binary_dir) / binary_ext)))
+    for file in glob.glob(str(Path(binary_dir) / binary_ext)):
+        shutil.copy(file, package_name)
+
+    package_data[package_name] = [binary_ext]
 
 
 # include native libraries
 package_name = "pyk4a"
 package_data = {}
-bundle_release_libraries(package_data)
+
+if "bdist_wheel" in sys.argv:
+    print("adding native files to package")
+    bundle_release_libraries(package_data)
 
 include_dirs = [get_numpy_include()]
 library_dirs = []
