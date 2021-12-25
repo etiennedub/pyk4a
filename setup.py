@@ -72,19 +72,31 @@ def bundle_release_libraries(package_data: Dict):
 
     # detect release folder by os
     if system_name == "Windows":
+        # todo: define path directly because on
+        #  build server we don't have to search the dir
         include_dir, library_dir = detect_win32_sdk_include_and_library_dirs()
         binary_ext = "*.dll"
         binary_dir = Path(library_dir).parent / "bin"
+
+        # add libraries to package
+        for file in glob.glob(str(Path(binary_dir) / binary_ext)):
+            shutil.copy(file, package_name)
+
     elif system_name == "Linux":
-        binary_ext = "*.so"
-        binary_dir = Path("/")
-        raise NotImplementedError("Linux currently not supported.")
+        binary_ext = "*.so*"
+
+        if arch == "arm64":
+            binary_dir = Path("/usr/lib/aarch64-linux-gnu/")
+        else:
+            binary_dir = Path("/usr/lib/x86_64-linux-gnu/")
+
+        # add linux specific libraries
+        # version number is needed
+        shutil.copy(binary_dir / "libk4a.so.1.4", package_name, follow_symlinks=True)
+        shutil.copy(binary_dir / "libk4arecord.so.1.4", package_name, follow_symlinks=True)
+        shutil.copy(binary_dir / "libk4a1.4" / "libdepthengine.so.2.0", package_name, follow_symlinks=True)
     else:
         raise Exception(f"OS {system_name} not supported.")
-
-    # add libraries to package
-    for file in glob.glob(str(Path(binary_dir) / binary_ext)):
-        shutil.copy(file, package_name)
 
     package_data[package_name] = [binary_ext]
 
