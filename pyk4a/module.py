@@ -1,16 +1,21 @@
+import os
 import sys
+from pathlib import Path
 
+import pyk4a
 
 try:
     import k4a_module  # noqa: F401
 except BaseException as e:
-    if sys.platform == "win32":
-        from .win32_utils import prepare_import_k4a_module
 
-        added_dll_dir = prepare_import_k4a_module()
-        try:
-            import k4a_module  # noqa: F401
-        except BaseException:
+    added_dll_dir = Path(os.path.abspath(os.path.dirname(pyk4a.__file__)))
+
+    try:
+        from .win32_utils import add_dll_directory
+        add_dll_directory(added_dll_dir)
+        import k4a_module  # noqa: F401
+    except BaseException:
+        if sys.platform == "win32":
             raise ImportError(
                 (
                     "Cannot import k4a_module. "
@@ -20,12 +25,12 @@ except BaseException as e:
                     "Also make sure pyk4a was properly built."
                 )
             ) from e
-    else:
-        raise ImportError(
-            (
-                "Cannot import k4a_module. "
-                "Make sure `libk4a.so` can be found. "
-                "Add the directory to your `LD_LIBRARY_PATH` if required. "
-                "Also make sure pyk4a is properly built."
-            )
-        ) from e
+        else:
+            raise ImportError(
+                (
+                    "Cannot import k4a_module. "
+                    "Make sure `libk4a.so` can be found. "
+                    "Add the directory to your `LD_LIBRARY_PATH` if required. "
+                    "Also make sure pyk4a is properly built."
+                )
+            ) from e
