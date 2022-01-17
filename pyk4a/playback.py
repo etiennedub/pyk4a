@@ -14,6 +14,7 @@ from .capture import PyK4ACapture
 from .config import FPS, ColorResolution, DepthMode, ImageFormat, WiredSyncMode
 from .errors import K4AException, _verify_error
 from .module import k4a_module
+from .pyk4a import ImuSample
 from .results import Result, StreamResult
 
 
