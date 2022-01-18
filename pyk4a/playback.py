@@ -14,6 +14,7 @@ from .capture import PyK4ACapture
 from .config import FPS, ColorResolution, DepthMode, ImageFormat, WiredSyncMode
 from .errors import K4AException, _verify_error
 from .module import k4a_module
+from .pyk4a import ImuSample
 from .results import Result, StreamResult
 
 
@@ -177,6 +178,12 @@ class PyK4APlayback:
             color_format=self.configuration["color_format"],
             thread_safe=self.thread_safe,
         )
+
+    def get_next_imu_sample(self) -> Optional["ImuSample"]:
+        self._validate_is_open()
+        result, imu_sample = k4a_module.playback_get_next_imu_sample(self._handle, self.thread_safe)
+        self._verify_stream_error(result)
+        return imu_sample
 
     def _validate_is_open(self):
         if not self._handle:
