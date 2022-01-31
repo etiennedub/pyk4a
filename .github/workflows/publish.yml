@@ -1,0 +1,41 @@
+name: Publish Python Package to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version Tag'
+        required: false
+        default: '1.3.0-bundle'
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: "Download binaries from ${{ github.event.inputs.tag }}"
+      uses: robinraju/release-downloader@v1.3
+      with:
+        repository: ${{ github.repository }}
+        tag: ${{ github.event.inputs.tag }}
+        fileName: "*"
+        out-file-path: "dist"
+
+    - name: Test
+      run: |
+          ls dist
+
+    - name: Publish package
+      # if: ${{ false }}
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
