@@ -68,7 +68,7 @@ jobs:
           wheel_file="${files[0]}"
 
           # repaire wheel
-          auditwheel repair $wheel_file
+          auditwheel repair $wheel_file --plat manylinux_2_27
 
           # remove original wheel
           rm $wheel_file
