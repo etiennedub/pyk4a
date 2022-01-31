@@ -57,6 +57,22 @@ jobs:
           python setup.py bdist_wheel
           ls dist
 
+      # fix many-linux
+      - name: Preqrequisites Ubuntu-18.04
+        if: matrix.os == 'ubuntu-18.04'
+        run: |
+          pip install auditwheel
+
+          # get path of first wheel
+          files=(dist/*)
+          wheel_file="${files[0]}"
+
+          # repaire wheel
+          auditwheel repair $wheel_file
+
+          # remove original wheel
+          rm $wheel_file
+
       # upload dist
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
