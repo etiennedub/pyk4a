@@ -98,12 +98,12 @@ def bundle_release_libraries(package_data: Dict):
     else:
         raise Exception(f"OS {system_name} not supported.")
 
-    package_data[package_name] = [binary_ext]
+    package_data[package_name] += [binary_ext]
 
 
 # include native libraries
 package_name = "pyk4a"
-package_data = {}
+package_data = {package_name: ["py.typed"]}
 
 if "bdist_wheel" in sys.argv:
     print("adding native files to package")
