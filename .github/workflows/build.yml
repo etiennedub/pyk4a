@@ -53,7 +53,8 @@ jobs:
       # run build command
       - name: Build pyk4a
         run: |
-          python -m pip install wheel numpy
+          python -m pip install wheel
+          python -m pip install -r numpy-versions.txt
           python setup.py bdist_wheel
           ls dist
 
