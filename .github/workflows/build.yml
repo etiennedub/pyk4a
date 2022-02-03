@@ -73,6 +73,16 @@ jobs:
 
           # remove original wheel
           rm $wheel_file
+          
+          # adjust repaired wheel with depthengine
+          cd dist
+          whlname=$(ls *.whl)
+          wheel unpack $whlname
+          whldir=$(ls -d pyk4a*/)
+          mv "$whldir/pyk4a/libdepthengine.so.2.0" "$whldir/pyk4a_bundle.libs"
+          find $whldir/pyk4a -name '*.so.*' -delete
+          wheel pack $whldir
+          cd ..
 
       # upload dist
       - name: Upload binaries to release

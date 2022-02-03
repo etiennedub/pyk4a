@@ -114,7 +114,7 @@ library_dirs = []
 detect_and_insert_sdk_include_and_library_dirs(include_dirs, library_dirs)
 module = Extension('k4a_module',
                    sources=['pyk4a/pyk4a.cpp'],
-                   libraries=['k4a', 'k4arecord', 'depthengine'],
+                   libraries=['k4a', 'k4arecord'],
                    include_dirs=include_dirs,
                    library_dirs=library_dirs
                    )
