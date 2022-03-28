@@ -514,13 +514,15 @@ extern "C" {
 
         switch (format){
             case K4A_IMAGE_FORMAT_DEPTH16:
+            case K4A_IMAGE_FORMAT_CUSTOM16:
+            case K4A_IMAGE_FORMAT_IR16:
                 pixel_size = (int)sizeof(uint16_t);
                 break;
             case K4A_IMAGE_FORMAT_COLOR_BGRA32:
                 pixel_size = (int)sizeof(uint32_t);
                 break;
-            case K4A_IMAGE_FORMAT_CUSTOM16:
-                pixel_size = (unsigned int)sizeof(int16_t);
+            case K4A_IMAGE_FORMAT_CUSTOM8:
+                pixel_size = (int)sizeof(uint8_t);
                 break;
             default:
                 // Not supported
@@ -659,8 +661,7 @@ extern "C" {
                     k4a_image_get_format(custom_image),
                     RESOLUTION_TO_DIMS[color_resolution][0],
                     RESOLUTION_TO_DIMS[color_resolution][1],
-                    RESOLUTION_TO_DIMS[color_resolution][0] * static_cast<int32_t>(sizeof(int16_t)),
-                    custom_image_transformed);
+                    RESOLUTION_TO_DIMS[color_resolution][0] * (int)sizeof(uint16_t), custom_image_transformed);
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
@@ -686,7 +687,7 @@ extern "C" {
         }
 
         if (K4A_RESULT_SUCCEEDED == res) {
-            return Py_BuildValue("OO", np_custom_image, np_depth_image);
+            return Py_BuildValue("NN", np_custom_image, np_depth_image);
         }
         else {
             free(depth_image_transformed);
@@ -1245,20 +1246,19 @@ extern "C" {
 
     static void capsule_cleanup_body_tracker(PyObject *capsule) {
         k4abt_tracker_t *body_tracker = (k4abt_tracker_t*)PyCapsule_GetPointer(capsule, CAPSULE_BODY_TRACKER_NAME);
+        k4abt_tracker_shutdown(*body_tracker);
         k4abt_tracker_destroy(*body_tracker);
         free(body_tracker);
     }
 
     static void capsule_cleanup_body_data(PyObject *capsule) {
-        fprintf(stdout, "free called on body data");
         void* buffer = PyCapsule_GetPointer(capsule, CAPSULE_BODY_DATA_NAME);
-        free(buffer);
+        if (buffer) free(buffer);
     }
 
     static void capsule_cleanup_body_ids(PyObject *capsule) {
-        fprintf(stdout, "free called on body ids");
         void* buffer = PyCapsule_GetPointer(capsule, CAPSULE_BODY_ID_NAME);
-        free(buffer);
+        if (buffer) free(buffer);
     }
 
     static PyObject* body_tracker_create(PyObject* self, PyObject *args) {
@@ -1282,7 +1282,6 @@ extern "C" {
             free(body_tracker_handle);
             return Py_BuildValue("N", Py_None);
         }
-
         PyObject *body_tracker_capsule = PyCapsule_New(body_tracker_handle, CAPSULE_BODY_TRACKER_NAME, capsule_cleanup_body_tracker);
         return Py_BuildValue("N", body_tracker_capsule);
     }
@@ -1293,31 +1292,29 @@ extern "C" {
         PyObject *capture_capsule;
         PyObject *calibration_capsule;
         PyObject *body_tracker_capsule;
-        k4a_capture_t *capture;
-        k4a_calibration_t *calibration;
-        k4abt_tracker_t *body_tracker;
+
         k4abt_frame_t body_frame;
         k4a_wait_result_t wait_res;
 
         PyArg_ParseTuple(args, "OOOp", &capture_capsule, &calibration_capsule, &body_tracker_capsule, &thread_safe);
-        capture = (k4a_capture_t*)PyCapsule_GetPointer(capture_capsule, CAPSULE_CAPTURE_NAME);
-        calibration = (k4a_calibration_t*)PyCapsule_GetPointer(calibration_capsule, CAPSULE_CALIBRATION_NAME);
-        body_tracker = (k4abt_tracker_t*)PyCapsule_GetPointer(body_tracker_capsule, CAPSULE_BODY_TRACKER_NAME);
+        k4a_capture_t *capture = (k4a_capture_t*)PyCapsule_GetPointer(capture_capsule, CAPSULE_CAPTURE_NAME);
+        k4a_calibration_t *calibration = (k4a_calibration_t*)PyCapsule_GetPointer(calibration_capsule, CAPSULE_CALIBRATION_NAME);
+        k4abt_tracker_t *body_tracker = (k4abt_tracker_t*)PyCapsule_GetPointer(body_tracker_capsule, CAPSULE_BODY_TRACKER_NAME);
 
-        //thread_state = _gil_release(thread_safe);
-        //_gil_restore(thread_state);
-
+        thread_state = _gil_release(thread_safe);
         wait_res = k4abt_tracker_enqueue_capture(*body_tracker, *capture, K4A_WAIT_INFINITE);
         if (wait_res != K4A_WAIT_RESULT_SUCCEEDED ) {
+            _gil_restore(thread_state);
             fprintf(stderr, "fail to enqueue capture\n");
-            return Py_BuildValue("NNN", Py_None, Py_None, Py_None);
+            return Py_BuildValue("NN", Py_None, Py_None);
         }
         wait_res = k4abt_tracker_pop_result(*body_tracker, &body_frame, K4A_WAIT_INFINITE);
+        _gil_restore(thread_state);
         if (wait_res == K4A_WAIT_RESULT_SUCCEEDED) {
             uint32_t num_bodies = k4abt_frame_get_num_bodies(body_frame);
             if (num_bodies == 0) {
                 k4abt_frame_release(body_frame);
-                return Py_BuildValue("NNN", Py_None, Py_None, Py_None);
+                return Py_BuildValue("NN", Py_None, Py_None);
             }
             k4abt_skeleton_t skeleton;
             npy_intp dims[3];
@@ -1329,7 +1326,8 @@ extern "C" {
             float* buffer_pose = (float*) malloc(sizeof(float)*num_bodies*body_stride);
             if (capture == NULL) {
                 fprintf(stderr, "Cannot allocate memory");
-                return Py_BuildValue("NNN", Py_None, Py_None, Py_None);
+                k4abt_frame_release(body_frame);
+                return Py_BuildValue("NN", Py_None, Py_None);
             }
 
             for (uint32_t body_index = 0; body_index < num_bodies; body_index++) {
@@ -1361,26 +1359,23 @@ extern "C" {
                     }
                 }
             }
+            k4abt_frame_release(body_frame);
 
             PyArrayObject* np_body_id = (PyArrayObject*) PyArray_SimpleNewFromData(1, dims, NPY_UINT32, buffer_id);
-            PyObject *capsule_id = PyCapsule_New(buffer_id, CAPSULE_BODY_DATA_NAME, capsule_cleanup_body_ids);
+            PyObject *capsule_id = PyCapsule_New(buffer_id, CAPSULE_BODY_ID_NAME, capsule_cleanup_body_ids);
             PyCapsule_SetContext(capsule_id, buffer_id);
             PyArray_SetBaseObject((PyArrayObject *) np_body_id, capsule_id);
 
             PyArrayObject* np_body_data = (PyArrayObject*) PyArray_SimpleNewFromData(3, dims, NPY_FLOAT, buffer_pose);
-            PyObject *capsule = PyCapsule_New(buffer_pose, CAPSULE_BODY_ID_NAME, capsule_cleanup_body_data);
+            PyObject *capsule = PyCapsule_New(buffer_pose, CAPSULE_BODY_DATA_NAME, capsule_cleanup_body_data);
             PyCapsule_SetContext(capsule, buffer_pose);
             PyArray_SetBaseObject((PyArrayObject *) np_body_data, capsule);
 
-            PyArrayObject* np_body_index_map;
-            k4a_image_t body_index_map = k4abt_frame_get_body_index_map(body_frame);
-            k4a_image_to_numpy(&body_index_map, &np_body_index_map);
-
-            k4abt_frame_release(body_frame);
-            return Py_BuildValue("OOO", np_body_id, np_body_data, np_body_index_map);
+            return Py_BuildValue("NN", np_body_id, np_body_data);
         }
         else {
-            return Py_BuildValue("NNN", Py_None, Py_None, Py_None);
+            k4abt_frame_release(body_frame);
+            return Py_BuildValue("NN", Py_None, Py_None);
         }
     }
 

@@ -27,7 +27,7 @@ fmt:
 lint:
 	black --check $(SOURCES)
 	flake8 $(SOURCES)
-	mypy $(SOURCES)
+	mypy $(SOURCES) --exclude example/playback.py
 
 test:
 	pytest $(TESTS)
