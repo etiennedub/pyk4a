@@ -12,19 +12,31 @@ def depth_image_to_color_camera(depth: np.ndarray, calibration: Calibration, thr
     Return empty result if transformation failed
     """
     return k4a_module.transformation_depth_image_to_color_camera(
-        calibration.transformation_handle, thread_safe, depth, calibration.color_resolution,
+        calibration.transformation_handle,
+        thread_safe,
+        depth,
+        calibration.color_resolution,
     )
 
 
 def depth_image_to_color_camera_custom(
-    depth: np.ndarray, custom: np.ndarray, calibration: Calibration, thread_safe: bool, interp_nearest: bool = True,
+    depth: np.ndarray,
+    custom: np.ndarray,
+    calibration: Calibration,
+    thread_safe: bool,
+    interp_nearest: bool = True,
 ) -> Optional[np.ndarray]:
     """
     Transforms depth image and custom image to color_image space
     Return empty result if transformation failed
     """
     return k4a_module.transformation_depth_image_to_color_camera_custom(
-        calibration.transformation_handle, thread_safe, depth, custom, calibration.color_resolution, interp_nearest,
+        calibration.transformation_handle,
+        thread_safe,
+        depth,
+        custom,
+        calibration.color_resolution,
+        interp_nearest,
     )
 
 
@@ -36,7 +48,10 @@ def depth_image_to_point_cloud(
     Return empty result if transformation failed
     """
     return k4a_module.transformation_depth_image_to_point_cloud(
-        calibration.transformation_handle, thread_safe, depth, calibration_type_depth,
+        calibration.transformation_handle,
+        thread_safe,
+        depth,
+        calibration_type_depth,
     )
 
 
