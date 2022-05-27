@@ -118,3 +118,18 @@ class TestGetCapture:
         assert capture.color_timestamp_usec == 800222
         assert capture.ir_timestamp_usec == 800222
         assert capture._calibration is not None  # Issue #81
+
+
+class TestGetImuSample:
+    @staticmethod
+    def test_get_next_imu_sample(playback: PyK4APlayback):
+        playback.open()
+        imu_sample = playback.get_next_imu_sample()
+        assert imu_sample is not None
+        assert imu_sample["temperature"] is not None
+        assert imu_sample["acc_sample"] is not None
+        assert len(imu_sample["acc_sample"]) == 3
+        assert imu_sample["gyro_sample"] is not None
+        assert len(imu_sample["gyro_sample"]) == 3
+        assert imu_sample["acc_timestamp"] == 336277
+        assert imu_sample["gyro_timestamp"] == 336277

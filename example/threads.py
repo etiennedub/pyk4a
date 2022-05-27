@@ -93,10 +93,16 @@ def draw(results: Dict[int, Dict[bool, int]]):
     plt.ylabel("Operations Count")
     plt.xlabel("CPU Workers count")
     plt.plot(
-        results.keys(), [result[True] for result in results.values()], "r", label="Thread safe",
+        results.keys(),
+        [result[True] for result in results.values()],
+        "r",
+        label="Thread safe",
     )
     plt.plot(
-        results.keys(), [result[False] for result in results.values()], "g", label="Non thread safe",
+        results.keys(),
+        [result[False] for result in results.values()],
+        "g",
+        label="Non thread safe",
     )
     plt.legend()
 
@@ -105,7 +111,8 @@ def draw(results: Dict[int, Dict[bool, int]]):
     plt.ylabel("Difference, %")
     plt.xlabel("CPU Workers count")
     plt.plot(
-        results.keys(), [float(result[False] - result[True]) / result[True] * 100 for result in results.values()],
+        results.keys(),
+        [float(result[False] - result[True]) / result[True] * 100 for result in results.values()],
     )
     xmin, xmax, ymin, ymax = plt.axis()
     if ymin > 0:
