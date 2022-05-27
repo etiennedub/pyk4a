@@ -63,7 +63,7 @@ class PyK4APlayback:
     @property
     def path(self) -> Path:
         """
-            Record file path
+        Record file path
         """
         return self._path
 
@@ -94,7 +94,7 @@ class PyK4APlayback:
     @property
     def length(self) -> int:
         """
-            Record length in usec
+        Record length in usec
         """
         if self._length is None:
             self._validate_is_open()
@@ -131,7 +131,7 @@ class PyK4APlayback:
 
     def open(self) -> None:
         """
-            Open record file
+        Open record file
         """
         if self._handle:
             raise K4AException("Playback already opened")
@@ -143,7 +143,7 @@ class PyK4APlayback:
 
     def close(self):
         """
-            Close record file
+        Close record file
         """
         self._validate_is_open()
         k4a_module.playback_close(self._handle, self.thread_safe)
@@ -151,7 +151,7 @@ class PyK4APlayback:
 
     def seek(self, offset: int, origin: SeekOrigin = SeekOrigin.BEGIN) -> None:
         """
-            Seek playback pointer to specified offset
+        Seek playback pointer to specified offset
         """
         self._validate_is_open()
         result = k4a_module.playback_seek_timestamp(self._handle, self.thread_safe, offset, int(origin))

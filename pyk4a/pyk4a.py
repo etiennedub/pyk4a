@@ -105,7 +105,10 @@ class PyK4A:
         res = k4a_module.device_stop_imu(self._device_handle, self.thread_safe)
         _verify_error(res)
 
-    def get_capture(self, timeout=TIMEOUT_WAIT_INFINITE,) -> "PyK4ACapture":
+    def get_capture(
+        self,
+        timeout=TIMEOUT_WAIT_INFINITE,
+    ) -> "PyK4ACapture":
         """
         Fetch a capture from the device and return a PyK4ACapture object. Images are
         lazily fetched.
