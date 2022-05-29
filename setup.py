@@ -24,6 +24,7 @@ site.ENABLE_USER_SITE = "--user" in sys.argv[1:]
 class get_numpy_include:
     def __str__(self):
         import numpy
+
         return numpy.get_include()
 
 
@@ -112,12 +113,13 @@ if "bdist_wheel" in sys.argv:
 include_dirs = [get_numpy_include()]
 library_dirs = []
 detect_and_insert_sdk_include_and_library_dirs(include_dirs, library_dirs)
-module = Extension('k4a_module',
-                   sources=['pyk4a/pyk4a.cpp'],
-                   libraries=['k4a', 'k4arecord'],
-                   include_dirs=include_dirs,
-                   library_dirs=library_dirs
-                   )
+module = Extension(
+    "k4a_module",
+    sources=["pyk4a/pyk4a.cpp"],
+    libraries=["k4a", "k4arecord"],
+    include_dirs=include_dirs,
+    library_dirs=library_dirs,
+)
 
 setup(
     ext_modules=[module],

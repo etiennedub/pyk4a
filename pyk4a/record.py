@@ -26,7 +26,7 @@ class PyK4ARecord:
             self.close()
 
     def create(self) -> None:
-        """ Create record file """
+        """Create record file"""
         if self.created:
             raise K4AException(f"Record already created {self._path}")
         device_handle = self._device._device_handle if self._device else None
@@ -38,13 +38,13 @@ class PyK4ARecord:
         self._handle = handle
 
     def close(self):
-        """ Close record """
+        """Close record"""
         self._validate_is_created()
         k4a_module.record_close(self._handle, self.thread_safe)
         self._handle = None
 
     def write_header(self):
-        """ Write MKV header """
+        """Write MKV header"""
         self._validate_is_created()
         if self.header_written:
             raise K4AException(f"Header already written {self._path}")
@@ -54,7 +54,7 @@ class PyK4ARecord:
         self._header_written = True
 
     def write_capture(self, capture: PyK4ACapture):
-        """ Write capture to file (send to queue) """
+        """Write capture to file (send to queue)"""
         self._validate_is_created()
         if not self.header_written:
             self.write_header()
@@ -64,7 +64,7 @@ class PyK4ARecord:
         self._captures_count += 1
 
     def flush(self):
-        """ Flush queue"""
+        """Flush queue"""
         self._validate_is_created()
         result: Result = k4a_module.record_flush(self._handle, self.thread_safe)
         if result != Result.Success:

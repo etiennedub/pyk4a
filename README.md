@@ -34,6 +34,8 @@ pip install pyk4a
 
 In most cases `pip install pyk4a` is enough to install this package.
 
+When using an anaconda environment, you need to set the environment variable `CONDA_DLL_SEARCH_MODIFICATION_ENABLE=1` https://github.com/conda/conda/issues/10897
+
 Because of the numerous issues received from Windows users, the installer ([setup.py](setup.py)) automatically detects the kinect SDK path.
 
 When the installer is not able to find the path, the following snippet can help.
