@@ -27,6 +27,7 @@ class PyK4ACapture:
         self._color_timestamp_usec: int = 0
         self._color_system_timestamp_nsec: int = 0
         self._color_exposure_usec: Optional[int] = None
+        self._color_iso_speed: Optional[int] = None
         self._color_white_balance: Optional[int] = None
         self._depth: Optional[np.ndarray] = None
         self._depth_timestamp_usec: int = 0
@@ -72,6 +73,21 @@ class PyK4ACapture:
                 raise K4AException("Cannot read exposure from color image")
             self._color_exposure_usec = value
         return self._color_exposure_usec
+
+    @property
+    def color_iso_speed(self) -> int:
+        """
+        Returns the ISO speed of the image. 0 indicates the ISO speed was not available or an error occurred.
+
+        This function is only valid for color captures, and not for depth or IR captures.
+        """
+        if self._color_iso_speed is None:
+            value = k4a_module.color_image_get_iso_speed(self._capture_handle)
+            print(value)
+            if value == 0:
+                raise K4AException("Cannot read iso from color_image")
+            self._color_iso_speed = value
+        return self._color_iso_speed
 
     @property
     def color_white_balance(self) -> int:

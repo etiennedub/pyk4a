@@ -587,6 +587,23 @@ static PyObject *color_image_get_exposure_usec(PyObject *self, PyObject *args) {
   return Py_BuildValue("K", exposure_usec);
 }
 
+static PyObject *color_image_get_iso_speed(PyObject *self, PyObject *args) {
+  k4a_capture_t *capture_handle;
+  PyObject *capsule;
+  uint64_t iso_speed = 0;
+  PyArg_ParseTuple(args, "O", &capsule);
+  capture_handle = (k4a_capture_t *)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
+
+  k4a_image_t image = k4a_capture_get_color_image(*capture_handle);
+  if (image == NULL) {
+    fprintf(stderr, "Color image missed");
+    return Py_BuildValue("K", iso_speed);
+  }
+  iso_speed = k4a_image_get_iso_speed(image);
+  k4a_image_release(image);
+  return Py_BuildValue("K", iso_speed);
+}
+
 static PyObject *color_image_get_white_balance(PyObject *self, PyObject *args) {
   k4a_capture_t *capture_handle;
   PyObject *capsule;
@@ -1499,6 +1516,7 @@ static PyMethodDef Pyk4aMethods[] = {
     {"playback_get_next_imu_sample", playback_get_next_imu_sample, METH_VARARGS, "Get next imu sample from playback"},
     {"color_image_get_exposure_usec", color_image_get_exposure_usec, METH_VARARGS,
      "Get color image exposure in microseconds"},
+    {"color_image_get_iso_speed", color_image_get_iso_speed, METH_VARARGS, "Get ISO speed"},
     {"color_image_get_white_balance", color_image_get_white_balance, METH_VARARGS, "Get color image white balance"},
     {"record_create", record_create, METH_VARARGS, "Opens a new recording file for writing"},
     {"record_close", record_close, METH_VARARGS, "Opens a new recording file for writing"},
