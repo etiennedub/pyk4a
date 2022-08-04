@@ -76,14 +76,8 @@ class PyK4ACapture:
 
     @property
     def color_iso_speed(self) -> int:
-        """
-        Returns the ISO speed of the image. 0 indicates the ISO speed was not available or an error occurred.
-
-        This function is only valid for color captures, and not for depth or IR captures.
-        """
         if self._color_iso_speed is None:
             value = k4a_module.color_image_get_iso_speed(self._capture_handle)
-            print(value)
             if value == 0:
                 raise K4AException("Cannot read iso from color_image")
             self._color_iso_speed = value
