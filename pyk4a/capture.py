@@ -182,7 +182,8 @@ class PyK4ACapture:
                         "color color_image must be of color_format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
                         "transformation_color_image_to_depth_camera"
                     )
-
+            else:
+                color_BGRA = self.color
             self._transformed_color = color_image_to_depth_camera(
                 color_BGRA, self.depth, self._calibration, self.thread_safe
             )
