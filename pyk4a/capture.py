@@ -172,8 +172,7 @@ class PyK4ACapture:
         if self._transformed_color is None and self.depth is not None and self.color is not None:
             # match self._color_format only available from Python 3.10
             if self._color_format == ImageFormat.COLOR_BGRA32: # default record format
-                    color_BGR = cv2.imdecode(self._color, cv2.IMREAD_COLOR)
-                    color_BGRA = cv2.cvtColor(color_BGR, cv2.COLOR_BGR2BGRA)
+                    color_BGRA = cv2.cvtColor(cv2.imdecode(self._color, cv2.IMREAD_COLOR), cv2.COLOR_BGR2BGRA)
             elif self._color_format == ImageFormat.COLOR_NV12:
                 color_BGRA = cv2.cvtColor(self._color, cv2.COLOR_YUV2BGRA_NV12)
             elif self._color_format == ImageFormat.COLOR_YUY2:
