@@ -1,4 +1,5 @@
 import sys
+import warnings
 from enum import IntEnum
 from pathlib import Path
 from typing import Any, Optional, Tuple, Union
@@ -167,6 +168,12 @@ class PyK4APlayback:
             color_format=self.configuration["color_format"],
             thread_safe=self.thread_safe,
         )
+
+    def get_previouse_capture(self):
+        warnings.warn(
+            "get_previouse_capture() deprecated, please use get_previous_capture() instead", DeprecationWarning
+        )
+        return self.get_previous_capture()
 
     def get_previous_capture(self):
         self._validate_is_open()
