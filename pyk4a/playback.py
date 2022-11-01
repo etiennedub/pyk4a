@@ -168,7 +168,7 @@ class PyK4APlayback:
             thread_safe=self.thread_safe,
         )
 
-    def get_previouse_capture(self):
+    def get_previous_capture(self):
         self._validate_is_open()
         result, capture_handle = k4a_module.playback_get_previous_capture(self._handle, self.thread_safe)
         self._verify_stream_error(result)
