@@ -203,4 +203,7 @@ class Calibration:
         """
         params = k4a_module.calibration_get_extrinsics(self._calibration_handle, self.thread_safe, source_camera, target_camera)
 
-        return np.array(params[0]), np.array(params[1])
+        rotation = np.reshape(np.array(params[0]), [3, 3])
+        translation = np.reshape(np.array(params[1]), [1, 3]) / 1000 # Millimeter to meter conversion
+
+        return rotation, translation
