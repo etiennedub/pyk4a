@@ -587,6 +587,23 @@ static PyObject *color_image_get_exposure_usec(PyObject *self, PyObject *args) {
   return Py_BuildValue("K", exposure_usec);
 }
 
+static PyObject *color_image_get_iso_speed(PyObject *self, PyObject *args) {
+  k4a_capture_t *capture_handle;
+  PyObject *capsule;
+  uint32_t iso_speed = 0;
+  PyArg_ParseTuple(args, "O", &capsule);
+  capture_handle = (k4a_capture_t *)PyCapsule_GetPointer(capsule, CAPSULE_CAPTURE_NAME);
+
+  k4a_image_t image = k4a_capture_get_color_image(*capture_handle);
+  if (image == NULL) {
+    fprintf(stderr, "Color image missed");
+    return Py_BuildValue("I", iso_speed);
+  }
+  iso_speed = k4a_image_get_iso_speed(image);
+  k4a_image_release(image);
+  return Py_BuildValue("I", iso_speed);
+}
+
 static PyObject *color_image_get_white_balance(PyObject *self, PyObject *args) {
   k4a_capture_t *capture_handle;
   PyObject *capsule;
@@ -1090,6 +1107,29 @@ static PyObject *calibration_get_intrinsics(PyObject *self, PyObject *args) {
   return Py_BuildValue("N", intrinsics);
 }
 
+static PyObject *calibration_get_extrinsics(PyObject *self, PyObject *args) {
+  k4a_calibration_t *calibration_handle;
+  PyObject *capsule;
+  int thread_safe;
+  k4a_calibration_type_t source_camera;
+  k4a_calibration_type_t target_camera;
+  PyThreadState *thread_state;
+
+  PyArg_ParseTuple(args, "OpII", &capsule, &thread_safe, &source_camera, &target_camera);
+  calibration_handle = (k4a_calibration_t *)PyCapsule_GetPointer(capsule, CAPSULE_CALIBRATION_NAME);
+
+  thread_state = _gil_release(thread_safe);
+
+  k4a_calibration_extrinsics_t calib = calibration_handle->extrinsics[source_camera][target_camera];
+
+  _gil_restore(thread_state);
+
+  PyObject *rotation = _array_to_list(calib.rotation, 9);
+  PyObject *translation = _array_to_list(calib.translation, 3);
+
+  return Py_BuildValue("NN", rotation, translation);
+}
+
 static PyObject *playback_open(PyObject *self, PyObject *args) {
   int thread_safe;
   PyThreadState *thread_state;
@@ -1483,6 +1523,8 @@ static PyMethodDef Pyk4aMethods[] = {
      "Transform a 3D point of a source coordinate system into a 2D pixel coordinate of the target camera"},
     {"calibration_get_intrinsics", calibration_get_intrinsics, METH_VARARGS,
      "Gets intrinsic parameters from calibration"},
+    {"calibration_get_extrinsics", calibration_get_extrinsics, METH_VARARGS,
+     "Gets extrinsic parameters from calibration"},
     {"playback_open", playback_open, METH_VARARGS, "Open file for playback"},
     {"playback_close", playback_close, METH_VARARGS, "Close opened playback"},
     {"playback_get_recording_length_usec", playback_get_recording_length_usec, METH_VARARGS, "Return recording length"},
@@ -1499,6 +1541,7 @@ static PyMethodDef Pyk4aMethods[] = {
     {"playback_get_next_imu_sample", playback_get_next_imu_sample, METH_VARARGS, "Get next imu sample from playback"},
     {"color_image_get_exposure_usec", color_image_get_exposure_usec, METH_VARARGS,
      "Get color image exposure in microseconds"},
+    {"color_image_get_iso_speed", color_image_get_iso_speed, METH_VARARGS, "Get color image ISO speed"},
     {"color_image_get_white_balance", color_image_get_white_balance, METH_VARARGS, "Get color image white balance"},
     {"record_create", record_create, METH_VARARGS, "Opens a new recording file for writing"},
     {"record_close", record_close, METH_VARARGS, "Opens a new recording file for writing"},

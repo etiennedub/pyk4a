@@ -68,27 +68,31 @@ def parse_args() -> Namespace:
     parser.add_argument("--device-id", type=int, default=0, help="Device ID, from zero. Default: 0")
     parser.add_argument(
         "--color-resolution",
-        type=ColorResolution,
+        type=lambda i: ColorResolution(int(i)),
         action=EnumActionTuned,
         default=ColorResolution.RES_720P,
         help="Color sensor resoultion. Default: 720P",
     )
     parser.add_argument(
         "--color-format",
-        type=ImageFormat,
+        type=lambda i: ImageFormat(int(i)),
         action=EnumActionTuned,
         default=ImageFormat.COLOR_BGRA32,
         help="Color color_image color_format. Default: BGRA32",
     )
     parser.add_argument(
         "--depth-mode",
-        type=DepthMode,
+        type=lambda i: DepthMode(int(i)),
         action=EnumAction,
         default=DepthMode.NFOV_UNBINNED,
         help="Depth sensor mode. Default: NFOV_UNBINNED",
     )
     parser.add_argument(
-        "--camera-fps", type=FPS, action=EnumActionTuned, default=FPS.FPS_30, help="Camera FPS. Default: 30"
+        "--camera-fps",
+        type=lambda i: FPS(int(i)),
+        action=EnumActionTuned,
+        default=FPS.FPS_30,
+        help="Camera FPS. Default: 30",
     )
     parser.add_argument(
         "--synchronized-images-only",
@@ -105,7 +109,7 @@ def parse_args() -> Namespace:
     parser.set_defaults(synchronized_images_only=True)
     parser.add_argument(
         "--wired-sync-mode",
-        type=WiredSyncMode,
+        type=lambda i: WiredSyncMode(int(i)),
         action=EnumActionTuned,
         default=WiredSyncMode.STANDALONE,
         help="Wired sync mode. Default: STANDALONE",

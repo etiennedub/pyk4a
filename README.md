@@ -17,12 +17,16 @@ Homepage: https://github.com/etiennedub/pyk4a/
 
 ## Prerequisites
 The [Azure-Kinect-Sensor-SDK](https://github.com/microsoft/Azure-Kinect-Sensor-SDK) is required to build this library.
-To use the SDK, refer to the installation instructions [here](https://github.com/microsoft/Azure-Kinect-Sensor-SDK).
+To use the SDK, refer to the installation instructions [here](https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md).
 
 
 ## Install
 
 ### Linux
+
+Linux specific installation instructions [here](https://docs.microsoft.com/en-us/azure/kinect-dk/sensor-sdk-download#linux-installation-instructions)
+
+Install both packages `libk4a<major>.<minor>` and `libk4a<major>.<minor>-dev`. The latter contains the headers and CMake files to build pyk4a.
 
 Make sure your `LD_LIBRARY_PATH` contains the directory of k4a.lib
 

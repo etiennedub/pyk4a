@@ -1,4 +1,5 @@
 import sys
+import warnings
 from enum import IntEnum
 from pathlib import Path
 from typing import Any, Optional, Tuple, Union
@@ -57,7 +58,7 @@ class PyK4APlayback:
         self.open()
         return self
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
     @property
@@ -71,9 +72,9 @@ class PyK4APlayback:
     def configuration(self) -> Configuration:
         self._validate_is_open()
         if self._configuration is None:
-            res, conf = k4a_module.playback_get_record_configuration(
-                self._handle, self.thread_safe
-            )  # type: int, Tuple[Any,...]
+            res: int
+            conf: Tuple[Any, ...]
+            res, conf = k4a_module.playback_get_record_configuration(self._handle, self.thread_safe)
             _verify_error(res)
             self._configuration = Configuration(
                 color_format=ImageFormat(conf[0]),
@@ -169,6 +170,12 @@ class PyK4APlayback:
         )
 
     def get_previouse_capture(self):
+        warnings.warn(
+            "get_previouse_capture() deprecated, please use get_previous_capture() instead", DeprecationWarning
+        )
+        return self.get_previous_capture()
+
+    def get_previous_capture(self):
         self._validate_is_open()
         result, capture_handle = k4a_module.playback_get_previous_capture(self._handle, self.thread_safe)
         self._verify_stream_error(result)

@@ -10,3 +10,12 @@ markers = [
         "opengl: Tests require opengl for GPU accelerated depth engine software"
 ]
 addopts = "--cov=pyk4a --cov-report=xml --verbose"
+
+[[tool.mypy.overrides]]
+module = [
+    "cv2",
+    "matplotlib",
+    "mpl_toolkits",
+    "k4a_module"
+]
+ignore_missing_imports = true

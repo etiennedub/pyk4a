@@ -2,14 +2,14 @@ import sys
 
 
 try:
-    import k4a_module  # noqa: F401
+    import k4a_module  # type: ignore  # noqa: F401
 except BaseException as e:
     if sys.platform == "win32":
         from .win32_utils import prepare_import_k4a_module
 
         added_dll_dir = prepare_import_k4a_module()
         try:
-            import k4a_module  # noqa: F401
+            import k4a_module  # type: ignore  # noqa: F401
         except BaseException:
             raise ImportError(
                 (

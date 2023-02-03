@@ -27,6 +27,7 @@ class PyK4ACapture:
         self._color_timestamp_usec: int = 0
         self._color_system_timestamp_nsec: int = 0
         self._color_exposure_usec: Optional[int] = None
+        self._color_iso_speed: Optional[int] = None
         self._color_white_balance: Optional[int] = None
         self._depth: Optional[np.ndarray] = None
         self._depth_timestamp_usec: int = 0
@@ -72,6 +73,15 @@ class PyK4ACapture:
                 raise K4AException("Cannot read exposure from color image")
             self._color_exposure_usec = value
         return self._color_exposure_usec
+
+    @property
+    def color_iso_speed(self) -> int:
+        if self._color_iso_speed is None:
+            value = k4a_module.color_image_get_iso_speed(self._capture_handle)
+            if value == 0:
+                raise K4AException("Cannot read iso from color_image")
+            self._color_iso_speed = value
+        return self._color_iso_speed
 
     @property
     def color_white_balance(self) -> int:
@@ -131,14 +141,18 @@ class PyK4ACapture:
     @property
     def transformed_depth(self) -> Optional[np.ndarray]:
         if self._transformed_depth is None and self.depth is not None:
-            self._transformed_depth = depth_image_to_color_camera(self._depth, self._calibration, self.thread_safe)
+            self._transformed_depth = depth_image_to_color_camera(
+                self._depth,  # type: ignore
+                self._calibration,
+                self.thread_safe,
+            )
         return self._transformed_depth
 
     @property
     def depth_point_cloud(self) -> Optional[np.ndarray]:
         if self._depth_point_cloud is None and self.depth is not None:
             self._depth_point_cloud = depth_image_to_point_cloud(
-                self._depth,
+                self._depth,  # type: ignore
                 self._calibration,
                 self.thread_safe,
                 calibration_type_depth=True,

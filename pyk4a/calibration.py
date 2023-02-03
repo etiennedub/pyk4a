@@ -196,3 +196,18 @@ class Calibration:
             raise ValueError("Unknown camera calibration type")
 
         return np.array([params[4], params[5], params[13], params[12], *params[6:10]])
+
+    def get_extrinsic_parameters(
+        self, source_camera: CalibrationType, target_camera: CalibrationType
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        The extrinsic parameters allow 3D coordinate conversions between depth camera, color camera, the IMU's gyroscope and accelerometer.
+        """
+        params = k4a_module.calibration_get_extrinsics(
+            self._calibration_handle, self.thread_safe, source_camera, target_camera
+        )
+
+        rotation = np.reshape(np.array(params[0]), [3, 3])
+        translation = np.reshape(np.array(params[1]), [1, 3]) / 1000  # Millimeter to meter conversion
+
+        return rotation, translation

@@ -72,14 +72,14 @@ class TestSeek:
         capture = playback.get_next_capture()
         assert capture.color is not None
         with pytest.raises(EOFError):
-            playback.get_previouse_capture()
+            playback.get_previous_capture()
 
     @staticmethod
     def test_seek_from_end(playback: PyK4APlayback):
         # TODO fetch capture/data and validate time
         playback.open()
         playback.seek(0, origin=SeekOrigin.END)
-        capture = playback.get_previouse_capture()
+        capture = playback.get_previous_capture()
         assert capture.color is not None
         with pytest.raises(EOFError):
             playback.get_next_capture()
@@ -107,10 +107,10 @@ class TestGetCapture:
         assert capture._calibration is not None  # Issue #81
 
     @staticmethod
-    def test_get_previouse_capture(playback: PyK4APlayback):
+    def test_get_previous_capture(playback: PyK4APlayback):
         playback.open()
         playback.seek(0, origin=SeekOrigin.END)
-        capture = playback.get_previouse_capture()
+        capture = playback.get_previous_capture()
         assert capture is not None
         assert capture.depth is not None
         assert capture.color is not None
