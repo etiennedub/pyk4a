@@ -29,7 +29,7 @@ def colorize(
     colormap: int = cv2.COLORMAP_HSV,
 ) -> np.ndarray:
     if clipping_range[0] or clipping_range[1]:
-        img = image.clip(clipping_range[0], clipping_range[1])
+        img = image.clip(clipping_range[0], clipping_range[1])  # type: ignore
     else:
         img = image.copy()
     img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)

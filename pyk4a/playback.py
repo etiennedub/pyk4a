@@ -72,9 +72,9 @@ class PyK4APlayback:
     def configuration(self) -> Configuration:
         self._validate_is_open()
         if self._configuration is None:
-            res, conf = k4a_module.playback_get_record_configuration(
-                self._handle, self.thread_safe
-            )  # type: int, Tuple[Any,...]
+            res: int
+            conf: Tuple[Any, ...]
+            res, conf = k4a_module.playback_get_record_configuration(self._handle, self.thread_safe)
             _verify_error(res)
             self._configuration = Configuration(
                 color_format=ImageFormat(conf[0]),

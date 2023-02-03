@@ -84,7 +84,7 @@ def bench(camera_workers: List[CameraWorker], cpu_workers: List[CpuWorker], dura
 
 def draw(results: Dict[int, Dict[bool, int]]):
     try:
-        import matplotlib.pyplot as plt
+        from matplotlib import pyplot as plt
     except ImportError:
         return
     plt.figure()

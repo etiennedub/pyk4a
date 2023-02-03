@@ -134,12 +134,13 @@ def patch_module_device(monkeypatch, calibration_raw, capture_factory):
             self._color_controls: Mapping[ColorControlCommand, ColorControl] = self._default_color_controls()
 
         def _default_color_controls(self) -> Mapping[ColorControlCommand, ColorControl]:
-            ret: Mapping[ColorControlCommand, ColorControl] = {}
-            for color_control in self._meta.color_controls:
-                ret[color_control["color_control_command"]] = ColorControl(
-                    mode=color_control["default_mode"], value=color_control["default_value"]
+            return {
+                color_control["color_control_command"]: ColorControl(
+                    mode=color_control["default_mode"],
+                    value=color_control["default_value"],
                 )
-            return ret
+                for color_control in self._meta.color_controls
+            }
 
         def close(self) -> int:
             assert self._opened is True
@@ -304,7 +305,7 @@ def patch_module_device(monkeypatch, calibration_raw, capture_factory):
 
     def _device_get_imu_sample(
         capsule: DeviceHandle, thread_safe: bool, timeout: int
-    ) -> Tuple[int, Tuple[float, Tuple[float, float, float], int, Tuple[float, float, float], int]]:
+    ) -> Tuple[int, Optional[Tuple[float, Tuple[float, float, float], int, Tuple[float, float, float], int]]]:
         return capsule.device_get_imu_sample()
 
     def _device_get_calibration(
