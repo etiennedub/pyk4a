@@ -1,6 +1,6 @@
 black~=23.1.0
 flake8~=5.0.4
-isort~=5.12.0
+isort~=5.11.5
 flake8-isort~=6.0.0
 mypy==0.991
 mypy-extensions~=0.4.3
