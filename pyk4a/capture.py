@@ -7,6 +7,7 @@ import k4a_module
 from .calibration import Calibration
 from .config import ImageFormat
 from .transformation import (
+    capture_get_body_tracking,
     color_image_to_depth_camera,
     depth_image_to_color_camera,
     depth_image_to_color_camera_custom,
@@ -35,7 +36,7 @@ class PyK4ACapture:
         self._transformed_color: Optional[np.ndarray] = None
         self._transformed_ir: Optional[np.ndarray] = None
         self._body_skeleton: Optional[np.ndarray] = None
-        self._body_index_map: Optional[np.ndarray] = None
+        self._body_ids: Optional[np.ndarray] = None
 
     @property
     def color(self) -> Optional[np.ndarray]:
@@ -48,8 +49,10 @@ class PyK4ACapture:
     @property
     def color_timestamp_usec(self) -> int:
         """Device timestamp for color image. Not equal host machine timestamp!"""
-        if self._color is None:
-            self.color
+        if self._color_timestamp_usec is None:
+            self._color, self._color_timestamp_usec = k4a_module.capture_get_color_image(
+                self._capture_handle, self.thread_safe
+            )
         return self._color_timestamp_usec
 
     @property
@@ -63,8 +66,10 @@ class PyK4ACapture:
     @property
     def depth_timestamp_usec(self) -> int:
         """Device timestamp for depth image. Not equal host machine timestamp!. Like as equal IR image timestamp"""
-        if self._depth is None:
-            self.depth
+        if self._depth_timestamp_usec is None:
+            self._depth, self._depth_timestamp_usec = k4a_module.capture_get_depth_image(
+                self._capture_handle, self.thread_safe
+            )
         return self._depth_timestamp_usec
 
     @property
@@ -76,8 +81,8 @@ class PyK4ACapture:
 
     @property
     def ir_timestamp_usec(self) -> int:
-        if self._ir is None:
-            self.ir
+        if self._ir_timestamp_usec is None:
+            self._ir, self._ir_timestamp_usec = k4a_module.capture_get_ir_image(self._capture_handle, self.thread_safe)
         return self._ir_timestamp_usec
 
     @property
@@ -149,22 +154,15 @@ class PyK4ACapture:
         )
         """
         if self._body_skeleton is None:
-            self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
-                self._capture_handle,
-                self._calibration._calibration_handle,
-                self._calibration.body_tracker_handle,
-                self.thread_safe,
+            self._body_ids, self._body_skeleton = capture_get_body_tracking(
+                self._capture_handle, self._calibration, self.thread_safe,
             )
         return self._body_skeleton
 
     @property
-    def body_index_map(self) -> Optional[np.ndarray]:
-        # use at your own risk.
-        if self._body_index_map is None:
-            self._body_skeleton, self._body_index_map = k4a_module.capture_get_body_tracking(
-                self._capture_handle,
-                self._calibration._calibration_handle,
-                self._calibration.body_tracker_handle,
-                self.thread_safe,
+    def body_ids(self) -> Optional[np.ndarray]:
+        if self._body_ids is None:
+            self._body_ids, self._body_skeleton = capture_get_body_tracking(
+                self._capture_handle, self._calibration, self.thread_safe,
             )
-        return self._body_index_map
+        return self._body_ids
