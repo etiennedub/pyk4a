@@ -55,7 +55,7 @@ def color_image_to_depth_camera(
 
 def capture_get_body_tracking(
     capture_handle: object, calibration: Calibration, thread_safe: bool
-) -> tuple[np.ndarray, np.ndarray]:
+):
     return k4a_module.capture_get_body_tracking(
         capture_handle, calibration._calibration_handle, calibration.body_tracker_handle, thread_safe,
     )
