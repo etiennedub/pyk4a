@@ -59,4 +59,4 @@ setup(name='pyk4a',
       package_data={'pyk4a': ["py.typed"]},
       ext_modules=[k4a_module],
       cmdclass={'build_ext': pyk4a_build_ext},
-       )
+      )
