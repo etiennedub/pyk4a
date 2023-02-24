@@ -89,6 +89,7 @@ extern "C" {
 
         if (device_handle == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
 
@@ -98,6 +99,7 @@ extern "C" {
 
         if (result == K4A_RESULT_FAILED ) {
             free(device_handle);
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", result, Py_None);
         }
 
@@ -205,6 +207,7 @@ extern "C" {
         _gil_restore(thread_state);
 
         if (result == K4A_RESULT_FAILED) {
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", result, Py_None);
         }
 
@@ -304,6 +307,7 @@ extern "C" {
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
         if (capture == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
         k4a_capture_create(capture);
@@ -340,7 +344,7 @@ extern "C" {
                     "gyro_sample", imu_sample.gyro_sample.xyz.x, imu_sample.gyro_sample.xyz.y, imu_sample.gyro_sample.xyz.z,
                     "gyro_timestamp", imu_sample.gyro_timestamp_usec);
         }
-
+        Py_INCREF(Py_None);
         return Py_BuildValue("IN", result, Py_None);
     }
 
@@ -360,6 +364,7 @@ extern "C" {
         calibration_handle = (k4a_calibration_t*) malloc(sizeof(k4a_calibration_t));
         if (calibration_handle == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
 
@@ -369,6 +374,7 @@ extern "C" {
                 color_resolution, calibration_handle);
         if (result == K4A_RESULT_FAILED) {
             _gil_restore(thread_state);
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", result, Py_None);
         }
         _gil_restore(thread_state);
@@ -392,6 +398,7 @@ extern "C" {
         k4a_calibration_t* calibration_handle = (k4a_calibration_t*) malloc(sizeof(k4a_calibration_t));
         if (calibration_handle == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
 
@@ -401,6 +408,7 @@ extern "C" {
 
         if (result != K4A_RESULT_SUCCEEDED) {
             free(calibration_handle);
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
 
@@ -553,11 +561,13 @@ extern "C" {
         k4a_transformation_t* transformation_handle = (k4a_transformation_t*) malloc(sizeof(k4a_transformation_t));
         if (calibration_handle == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("N", Py_None);
         }
         *transformation_handle = k4a_transformation_create(calibration_handle);
         _gil_restore(thread_state);
         if (transformation_handle == NULL ) {
+            Py_INCREF(Py_None);
             return Py_BuildValue("N", Py_None);
         }
         PyObject *transformation_capsule = PyCapsule_New(transformation_handle, CAPSULE_TRANSFORMATION_NAME, capsule_cleanup_transformation);
@@ -815,6 +825,7 @@ extern "C" {
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
 
@@ -833,6 +844,7 @@ extern "C" {
         }
         else {
             free(image);
+            Py_INCREF(Py_None);
             return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
     }
@@ -851,6 +863,7 @@ extern "C" {
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
 
@@ -869,6 +882,7 @@ extern "C" {
         }
         else {
             free(image);
+            Py_INCREF(Py_None);
             return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
     }
@@ -887,6 +901,7 @@ extern "C" {
         k4a_image_t* image = (k4a_image_t*) malloc(sizeof(k4a_image_t));
         if (image == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
 
@@ -905,6 +920,7 @@ extern "C" {
         }
         else {
             free(image);
+            Py_INCREF(Py_None);
             return Py_BuildValue("NK", Py_None, device_timestamp_usec);
         }
     }
@@ -944,6 +960,7 @@ extern "C" {
                                         &target_point3d_mm);
        _gil_restore(thread_state);
         if (res == K4A_RESULT_FAILED ) {
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", res, Py_None);
         }
         return Py_BuildValue("I(fff)", res, target_point3d_mm.xyz.x, target_point3d_mm.xyz.y, target_point3d_mm.xyz.z);
@@ -987,6 +1004,7 @@ extern "C" {
                                         &valid);
         _gil_restore(thread_state);
         if (res == K4A_RESULT_FAILED ) {
+            Py_INCREF(Py_None);
             return Py_BuildValue("IIN", res, valid, Py_None);
         }
         // Return object...
@@ -1003,6 +1021,7 @@ extern "C" {
 
         if (playback_handle == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
 
@@ -1014,6 +1033,7 @@ extern "C" {
 
         if (result == K4A_RESULT_FAILED ) {
             free(playback_handle);
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", result, Py_None);
         }
 
@@ -1071,6 +1091,7 @@ extern "C" {
         result = k4a_playback_get_raw_calibration(*playback_handle, NULL, &data_size);
         if (result == K4A_BUFFER_RESULT_FAILED) {
             _gil_restore(thread_state);
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", result, Py_None);
         }
         uint8_t* data = (uint8_t*) malloc(data_size);
@@ -1078,6 +1099,7 @@ extern "C" {
         _gil_restore(thread_state);
         if (result != K4A_BUFFER_RESULT_SUCCEEDED) {
             free(data);
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", result, Py_None);
         }
         PyObject* res = Py_BuildValue("Is", result, data);
@@ -1118,6 +1140,7 @@ extern "C" {
         calibration_handle = (k4a_calibration_t*) malloc(sizeof(k4a_calibration_t));
         if (calibration_handle == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
 
@@ -1127,6 +1150,7 @@ extern "C" {
 
         if (result == K4A_RESULT_FAILED ) {
             free(calibration_handle);
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", result, Py_None);
         }
 
@@ -1151,6 +1175,7 @@ extern "C" {
         _gil_restore(thread_state);
 
         if (result == K4A_RESULT_FAILED ) {
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", result, Py_None);
         }
 
@@ -1184,6 +1209,7 @@ extern "C" {
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
         if (capture == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
 
@@ -1193,6 +1219,7 @@ extern "C" {
 
         if (result != K4A_STREAM_RESULT_SUCCEEDED) {
             free(capture);
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", result, Py_None);
         }
         PyObject* capsule_capture = PyCapsule_New(capture, CAPSULE_CAPTURE_NAME, capsule_cleanup_capture);
@@ -1212,6 +1239,7 @@ extern "C" {
         k4a_capture_t* capture = (k4a_capture_t*) malloc(sizeof(k4a_capture_t));
         if (capture == NULL) {
             fprintf(stderr, "Cannot allocate memory");
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", K4A_RESULT_FAILED, Py_None);
         }
 
@@ -1221,6 +1249,7 @@ extern "C" {
 
         if (result != K4A_STREAM_RESULT_SUCCEEDED) {
             free(capture);
+            Py_INCREF(Py_None);
             return Py_BuildValue("IN", result, Py_None);
         }
         PyObject* capsule_capture = PyCapsule_New(capture, CAPSULE_CAPTURE_NAME, capsule_cleanup_capture);
@@ -1273,6 +1302,7 @@ extern "C" {
 
         if (result == K4A_RESULT_FAILED) {
             free(body_tracker_handle);
+            Py_INCREF(Py_None);
             return Py_BuildValue("N", Py_None);
         }
 
@@ -1303,6 +1333,8 @@ extern "C" {
         wait_res = k4abt_tracker_enqueue_capture(*body_tracker, *capture, K4A_WAIT_INFINITE);
         if (wait_res != K4A_WAIT_RESULT_SUCCEEDED ) {
             fprintf(stderr, "fail to enqueue capture\n");
+            Py_INCREF(Py_None);
+            Py_INCREF(Py_None);
             return Py_BuildValue("NN", Py_None, Py_None);
         }
         wait_res = k4abt_tracker_pop_result(*body_tracker, &body_frame, K4A_WAIT_INFINITE);
@@ -1310,6 +1342,8 @@ extern "C" {
             uint32_t num_bodies = k4abt_frame_get_num_bodies(body_frame);
             if (num_bodies == 0) {
                 k4abt_frame_release(body_frame);
+                Py_INCREF(Py_None);
+                Py_INCREF(Py_None);
                 return Py_BuildValue("NN", Py_None, Py_None);
             }
             k4abt_skeleton_t skeleton;
@@ -1321,6 +1355,8 @@ extern "C" {
             float* buffer_pose = (float*) malloc(sizeof(float)*num_bodies*body_stride);
             if (capture == NULL) {
                 fprintf(stderr, "Cannot allocate memory");
+                Py_INCREF(Py_None);
+                Py_INCREF(Py_None);
                 return Py_BuildValue("NN", Py_None, Py_None);
             }
 
@@ -1365,6 +1401,8 @@ extern "C" {
             return Py_BuildValue("OO", np_body_data, np_body_index_map);
         }
         else {
+            Py_INCREF(Py_None);
+            Py_INCREF(Py_None);
             return Py_BuildValue("NN", Py_None, Py_None);
         }
     }
