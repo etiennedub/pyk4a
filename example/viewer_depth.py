@@ -9,8 +9,8 @@ from pyk4a import Config, PyK4A
 def main():
     k4a = PyK4A(
         Config(
-            color_resolution=pyk4a.ColorResolution.OFF,
-            depth_mode=pyk4a.DepthMode.NFOV_UNBINNED,
+            color_resolution=pyk4a.config.ColorResolution.OFF,
+            depth_mode=pyk4a.config.DepthMode.NFOV_UNBINNED,
             synchronized_images_only=False,
         )
     )
