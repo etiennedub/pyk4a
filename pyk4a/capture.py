@@ -1,6 +1,7 @@
 from typing import Optional
 
 import numpy as np
+import cv2
 
 from .calibration import Calibration
 from .config import ImageFormat
@@ -173,13 +174,23 @@ class PyK4ACapture:
     @property
     def transformed_color(self) -> Optional[np.ndarray]:
         if self._transformed_color is None and self.depth is not None and self.color is not None:
-            if self._color_format != ImageFormat.COLOR_BGRA32:
+            # match self._color_format only available from Python 3.10
+            if self._color_format == ImageFormat.COLOR_BGRA32: # default record format
+                    color_BGR = cv2.imdecode(self._color, cv2.IMREAD_COLOR)
+                    color_BGRA = cv2.cvtColor(color_BGR, cv2.COLOR_BGR2BGRA)
+            elif self._color_format == ImageFormat.COLOR_NV12:
+                color_BGRA = cv2.cvtColor(self._color, cv2.COLOR_YUV2BGRA_NV12)
+            elif self._color_format == ImageFormat.COLOR_YUY2:
+                color_BGRA = cv2.cvtColor(self._color, cv2.COLOR_YUV2BGRA_YUY2)
+            elif self._color_format == ImageFormat.COLOR_BGRA32:
+                color_BGRA = self.color
+            else:
                 raise RuntimeError(
                     "color color_image must be of color_format K4A_IMAGE_FORMAT_COLOR_BGRA32 for "
                     "transformation_color_image_to_depth_camera"
                 )
             self._transformed_color = color_image_to_depth_camera(
-                self.color, self.depth, self._calibration, self.thread_safe
+                color_BGRA, self.depth, self._calibration, self.thread_safe
             )
         return self._transformed_color
 
