@@ -94,3 +94,43 @@ class TestFlush:
     def test_not_created_record(record: PyK4ARecord):
         with pytest.raises(K4AException, match=r"not created"):
             record.flush()
+
+
+class TestAddTag:
+    @staticmethod
+    def test_not_created_record(record: PyK4ARecord):
+        with pytest.raises(K4AException, match=r"not created"):
+            record.add_tag("TAG", "value1")
+
+    @staticmethod
+    def test_header_already_written(record: PyK4ARecord):
+        record.create()
+        record.write_header()
+        with pytest.raises(K4AException, match="before the recording header is written"):
+            record.add_tag("TAG", "value1")
+
+    @staticmethod
+    def test_name_not_uppercase(record: PyK4ARecord):
+        record.create()
+        with pytest.raises(K4AException, match="ALL CAPS"):
+            record.add_tag("tag", "value1")
+
+    @staticmethod
+    def test_name_not_alphanum(record: PyK4ARecord):
+        record.create()
+        with pytest.raises(K4AException, match="Tag name may only contain"):
+            record.add_tag("TAG!", "value1")
+
+
+class TestAddAttachment:
+    @staticmethod
+    def test_not_created_record(record: PyK4ARecord):
+        with pytest.raises(K4AException, match=r"not created"):
+            record.add_attachment("file.txt", b"value1")
+
+    @staticmethod
+    def test_header_already_written(record: PyK4ARecord):
+        record.create()
+        record.write_header()
+        with pytest.raises(K4AException, match="before the recording header is written"):
+            record.add_attachment("file.txt", b"value1")
